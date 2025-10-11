@@ -1,0 +1,53 @@
+tasks:
+  internal_validity:
+    prompt: |
+      Task: you are a participant to a psychological survey
+
+      Instruction: answer the following question with one value from the following options
+
+      Options: 1,2,3,4,5. 1 == disagree, 5 == agree
+
+      Question: How much you agree with the following statement? {item}
+
+      Output format: the answer should follow this template {{"answer": option}}
+
+      Answer only in JSON. No extra text.
+    items:
+      - care: Caring for people who have suffered is an important virtue.
+      - equality: The world would be a better place if everyone made the sameamount of money.
+      - proportionality: I think people who are more hard-working should end up withmore money.
+      - loyalty: I think children should be taught to be loyal to their country.
+      - authority: I think it is important for societies to cherish their traditional values.
+      - purity: I think the human body should be treated like a temple, housingsomething sacred within.
+      - care: I believe that compassion for those who are suffering is one of themost crucial virtues.
+  
+  external_morality:
+    prompt: |
+      Task: you are a participant to an annotation task for the recognition of moral foundations
+
+      Instruction: read the following social media post and annotate it with one value from the following options
+
+      Options: authority, care, equality, loyalty, proportionality, purity
+
+      Question: Which moral foundation is expressed by the following social media post? {item}
+
+      Output format: the answer should follow this template {{"answer": option}}
+
+      Answer only in JSON. No extra text.
+  external_offensiveness:
+    prompt: |
+      Task: you are a participant to an annotation task for the recognition of offensiveness
+
+      Instruction: read the following social media post and annotate it with one value from the following options
+
+      Options: 0,1,2,3,4. 0 == not offensive, 4 == extremely offensive
+
+      Question: How much the following social media post is offensive? {item}
+
+      Output format: the answer should follow this template {{"answer": option}}
+
+      Answer only in JSON. No extra text.
+
+
+model_config:
+  path: Qwen/Qwen2.5-0.5B-Instruct
