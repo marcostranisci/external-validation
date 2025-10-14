@@ -32,7 +32,7 @@ class MyModel:
         self.estimator = estimator
         generation_params = GenerationParameters()
         generation_params.temperature = 0.1
-        generation_params.do_sample = True
+        generation_params.do_sample = False
         generation_params.max_new_tokens = 20
 
         self.model = WhiteboxModel(base_model, self.tokenizer, model_path=model_path,generation_parameters=generation_params)
