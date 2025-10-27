@@ -15,4 +15,5 @@ This first draft of the experiment involves 3 experiments that you can find in '
 * **mft_offensiveness:** it asks the LLM to rank the offensiveness of a set of posts annotated by an annotator with a given moral stance.
 
 ### configuration
-give a look at 'config.yml' to check the configuration of each experiments (they are very shallow and straightforward)
+give a look at 'config.yml' to check the configuration of each experiments (they are very shallow and straightforward).
+

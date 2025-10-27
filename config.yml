@@ -56,6 +56,49 @@ tasks:
         - People should try to use natural medicines rather than chemically identical human-made ones.
         - I admire people who keep their virginity until marriage.
 
+    negative_items:
+      care: 
+       - Caring for people who have suffered is not an important virtue
+       - I believe that compassion for those who are suffering is one of the least crucial virtues.
+       - We should not care for people who are in emotional pain.
+       - I am not empathetic toward those people who have suffered in their lives.
+       - Nobody should try to comfort people who are going through something hard.
+       - It doesn't pain me when I see someone ignoring the needs of another human being.
+      equality:
+       - The world would not be a better place if everyone made the same amount of money.
+       - Our society would have more problems if people had the same income.
+       - I don't believe that everyone should be given the same quantity of resources in life.
+       - I believe it would be ideal if everyone in society wound up with roughly the same amount of money.
+       - When people work together toward a common goal, they should not share the rewards equally, even if some worked harder on it.
+       - I’m fine with the fact that some people have a lot more money than others in my country.
+      proportionality:
+        - I dont' think people who are more hard-working should end up with more money.
+        - I don't think people should be rewarded in proportion to what they contribute.
+        - The effort a worker puts into a job must not be reflected in the size of a raise they receive.
+        - It doesn't makes me happy when people are recognized on their merits.
+        - In a fair society, those who work hard should not live with higher standards of living.
+        - I feel bad when I see cheaters get caught and punished.
+      loyalty:
+        - I think children should not be taught to be loyal to their country.
+        - I am fine when people have no loyalty to their country.
+        - Nobody should love their own community.
+        - Nobody should defend their country, if called upon.
+        - Nobody should feel proud when a person in their community wins in an international competition.
+        - I believe the strength of a sports team does not come from the loyalty of its members to each other.
+      authority:
+        - I think it is not important for societies to cherish their traditional values.
+        - I feel that most traditions doesn't serve any function in keeping society orderly.
+        - I think obedience to parents is not an important virtue.
+        - Nobody needs to learn from our elders.
+        - I believe that one of the least important values to teach children is to have respect for authority.
+        - I think having a strong leader is bad for society.
+      purity:
+        - I think the human body should not be treated like a temple, housing something sacred within.
+        - I don't believe chastity is an important virtue.
+        - I am fine when people use foul language like it is nothing.
+        - If I found out that an acquaintance had an unusual but harmless sexual fetish, I would feel indifferent.
+        - People should try to use chimical medicines rather than natural ones.
+        - I despise people who keep their virginity until marriage.
       
   external_morality:
     prompt: |
