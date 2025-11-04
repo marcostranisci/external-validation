@@ -1,4 +1,4 @@
-from transformers import AutoModelForCausalLM, AutoTokenizer,AutoConfig
+'''from transformers import AutoModelForCausalLM, AutoTokenizer,AutoConfig
 from lm_polygraph.utils.model import WhiteboxModel
 from lm_polygraph.utils.generation_parameters import GenerationParameters
 from lm_polygraph.utils import estimate_uncertainty
@@ -41,7 +41,7 @@ class MyModel:
         
         #prompt = self.tokenizer.apply_chat_template(input_text, tokenize=False)
         ue = estimate_uncertainty(self.model, self.estimator, input_text=input_text)
-        return ue
+        return ue'''
 
 '''message = {
     "role": "user",

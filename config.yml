@@ -1,5 +1,12 @@
 tasks:
   internal_validity:
+    labels:
+      - 1
+      - 2
+      - 3
+      - 4
+      - 5
+
     prompt: |
       Task: you are a participant to a psychological survey
 
@@ -9,9 +16,7 @@ tasks:
 
       Question: How much you agree with the following statement? {item}
 
-      Output format: the answer should follow this template {{"answer": option}}
-
-      Answer only in JSON. No extra text.
+      You should return only a token
     items:
       care: 
        - Caring for people who have suffered is an important virtue
@@ -101,6 +106,14 @@ tasks:
         - I despise people who keep their virginity until marriage.
       
   external_morality:
+    labels:
+      - authority
+      - care
+      - equality
+      - loyalty
+      - proportionality
+      - purity
+
     prompt: |
       Task: you are a participant to an annotation task for the recognition of moral foundations
 
@@ -108,12 +121,21 @@ tasks:
 
       Options: authority, care, equality, loyalty, proportionality, purity
 
-      Question: Which moral foundation is expressed by the following social media post? {item}
+      Question: Which moral foundation is expressed by the following social media post? 
+      
+      Post: {item}
 
-      Output format: the answer should follow this template {{"answer": option}}
+      You should return only a token
 
-      Answer only in JSON. No extra text.
+      Answer: 
+
   external_offensiveness:
+    labels:
+     - 0
+     - 1
+     - 2
+     - 3
+     - 4
     prompt: |
       Task: you are a participant to an annotation task for the recognition of offensiveness
 
@@ -121,12 +143,13 @@ tasks:
 
       Options: 0,1,2,3,4. 0 == not offensive, 4 == extremely offensive
 
-      Question: How much the following social media post is offensive? {item}
+      Question: How much the following social media post is offensive? 
+      
+      Post: {item}
 
-      Output format: the answer should follow this template {{"answer": option}}
+      You should return only a token
 
-      Answer only in JSON. No extra text.
-
+      Answer:
 
 model_config:
   path: Qwen/Qwen2.5-0.5B-Instruct
