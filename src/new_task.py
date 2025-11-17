@@ -2,6 +2,7 @@ import yaml
 from conformal_model import ConformalGeneration
 import regex as re
 import pandas as pd
+import itertools, numpy as np
 
 with open("config.yml", "r") as file:
     config = yaml.safe_load(file)
@@ -75,6 +76,28 @@ def mft_social_media(test=20):
     
     return results
 
+def choose_raters(a_df,profile=[1.2,3.2,2,3.4,0.9,4.1], n=5):
+    age = list(set(a_df.Age.to_list()))
+    gender = list(set(a_df.Gender.to_list()))
+    region = list(set(a_df.Region.to_list()))
+
+    intersections = list(itertools.product(age, gender, region))
+    d = dict()
+    for i in intersections:
+        tmp = a_df[(a_df.Age==i[0])&(a_df.Gender==i[1])&(a_df.Region==i[2])]
+        l = list()
+        for _,row in tmp.iterrows():
+            rater = row[['care','equality','proportionality','authority','loyalty','purity']].to_list()
+            sim = np.dot(profile, rater / (np.linalg.norm(profile) * np.linalg.norm(rater)))
+            l.append(sim)
+        tmp['similarity'] = l
+
+        tmp = tmp.sort_values(by='similarity', ascending=False)
+        d['_'.join(list(i))] = {}
+        d['_'.join(list(i))]['nearest'] = tmp.iloc[:n].rater_id.to_list()
+        d['_'.join(list(i))]['farthest'] = tmp.iloc[-n:].rater_id.to_list()
+
+    return d
 
 def mft_offensiveness(rater='R_1hMVgTaJkuUgaDQ'):
     '''
@@ -105,4 +128,6 @@ def mft_offensiveness(rater='R_1hMVgTaJkuUgaDQ'):
     
     return results
 
-print(mft_social_media())
+x = choose_raters(pd.read_csv('data/d3-raters.csv'))
+
+print(len(x))
