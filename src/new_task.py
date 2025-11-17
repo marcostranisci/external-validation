@@ -76,7 +76,7 @@ def mft_social_media(test=20):
     
     return results
 
-def choose_raters(a_df,profile=[1.2,3.2,2,3.4,0.9,4.1], n=5):
+def choose_raters(a_df,profile=[1.2,3.2,2,3.4,0.9,4.1], n=10):
     age = list(set(a_df.Age.to_list()))
     gender = list(set(a_df.Gender.to_list()))
     region = list(set(a_df.Region.to_list()))
