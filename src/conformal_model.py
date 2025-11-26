@@ -53,7 +53,7 @@ class ConformalGeneration:
     def brier(self,probs,label):
         conf_scores = dict()
         for pred,prob in probs.items():
-            if int(prob) == label:
+            if int(pred) == label:
                 conf_score = (1-prob)**2
                 conf_scores[pred] = conf_score
             else:
