@@ -23,7 +23,7 @@ class ConformalGeneration:
         with torch.no_grad():
             outputs = self.model.generate(
                 **inputs,
-                max_new_tokens=1,
+                max_new_tokens=2,
                 output_scores=True,
                 return_dict_in_generate=True,
                 do_sample=False,
@@ -36,6 +36,7 @@ class ConformalGeneration:
 
         generated_ids = outputs.sequences[0][inputs.input_ids.shape[-1]:]
         generated_token = self.tokenizer.decode(generated_ids)
+        print(generated_token)
 
         vocab_probs = probs[-1, 0]  # shape [vocab_size]
         token_probs = {}
@@ -50,10 +51,16 @@ class ConformalGeneration:
         
         return token_probs
     
-    def brier(self,probs,label):
+    def brier(self,probs:List[dict],label):
+
+        '''
+        probs: dict of probabilities for each class
+        label: true label
+        '''
         conf_scores = dict()
         for pred,prob in probs.items():
-            if int(pred) == label:
+            
+            if pred == str(label):
                 conf_score = (1-prob)**2
                 conf_scores[pred] = conf_score
             else:

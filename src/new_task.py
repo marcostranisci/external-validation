@@ -13,7 +13,7 @@ internal_labels = config['tasks']['internal_validity']['labels']
 external_morality = config['tasks']['external_morality']['labels']
 external_offensiveness = config['tasks']['external_offensiveness']['labels']
 
-mod = ConformalGeneration(path,'auto',external_morality)
+mod = ConformalGeneration(path,'auto',internal_labels)
 
 
 def mft_questionnaire():
@@ -128,6 +128,5 @@ def mft_offensiveness(rater='R_1hMVgTaJkuUgaDQ'):
     
     return results
 
-x = choose_raters(pd.read_csv('data/d3-raters.csv'))
 
-print(len(x))
+print(mft_questionnaire())
