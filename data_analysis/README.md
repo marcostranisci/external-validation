@@ -2,20 +2,28 @@
 
 This folder contains the output of the reusable analysis pipeline for the
 moral-questionnaire survey results in `surveys/mft` (Moral Foundations
-Theory) and `surveys/pvq` (Portrait Values Questionnaire).
+Theory) and `surveys/pvq` (Portrait Values Questionnaire), plus a second
+analysis of the raw human-annotator exports in `surveys/mf_merged.csv` and
+`surveys/pv_merged.csv` (see "Annotator-level analysis" below).
 
 ## Code
 
-- `src/questionnaire_analysis.py` — `QuestionnaireAnalyzer` class with all
-  the reusable logic (feature engineering + statistical tests).
-- `run_questionnaire_analysis.py` — entry point that runs the full pipeline
-  on both `surveys/mft` and `surveys/pvq` and writes everything here.
+- `src/questionnaire_analysis.py` — `QuestionnaireAnalyzer` class (model
+  survey files, one file per model) and `AnnotatorSurveyAnalyzer` class
+  (merged annotator files, one row per annotator).
+- `run_questionnaire_analysis.py` — entry point that runs `QuestionnaireAnalyzer`
+  on both `surveys/mft` and `surveys/pvq` and writes everything under
+  `data_analysis/{mft,pvq}/`.
+- `run_annotator_analysis.py` — entry point that runs `AnnotatorSurveyAnalyzer`
+  on `surveys/mf_merged.csv` and `surveys/pv_merged.csv` and writes
+  everything under `data_analysis/annotators/`.
 
 ### Re-running the analysis
 
 ```bash
 pip install -r requirements.txt   # pandas, numpy, scipy already included
 python run_questionnaire_analysis.py
+python run_annotator_analysis.py
 ```
 
 ### Reusing the class on a new folder/dataset
@@ -124,6 +132,72 @@ Two things differ from the raw-column versions:
   model's rating distribution (e.g. skew, how tightly it clusters around
   its own average) rather than differences caused simply by one model
   favoring different raw numbers than another.
+
+## Annotator-level analysis: own replies vs. model evaluations
+
+`surveys/mf_merged.csv` and `surveys/pv_merged.csv` are a different shape of
+data: one row per human annotator (54 annotators in each file), rather than
+one row per model. For a shared set of questionnaire items, each annotator
+has two parallel blocks of columns:
+
+- `MF_01..MF_36` / `PV_01..PV_40` — the annotator's own evaluation of a
+  model's reply to that item.
+- `MF02_01..MF02_36` / `PV02_01..PV02_40` — the annotator's own reply to
+  that same questionnaire item, as themselves.
+
+`AnnotatorSurveyAnalyzer` correlates these two blocks — does an annotator's
+personal stance on an item relate to how they evaluate a model's reply to
+it? — at three levels, for each of `MF` and `PV`:
+
+1. **`{mf,pv}_annotator_correlations.csv`** — per annotator (row-wise):
+   Pearson/Spearman correlation between that one annotator's own-reply
+   vector and their model-evaluation vector, across all shared items
+   (`n_items` = 36 for MF, 40 for PV).
+2. **`{mf,pv}_item_correlations.csv`** — per item (column-wise): Pearson/
+   Spearman correlation between annotators' own replies and their
+   evaluations for that one item, across all 54 annotators.
+3. **`{mf,pv}_overall_correlation.csv`** — every (annotator, item) pair
+   pooled into one long vector and correlated overall, ignoring annotator/
+   item identity.
+
+Results (excluding the `notes` column, empty when a test ran cleanly):
+
+| | annotators: median r (significant / 54) | items: median r (significant / N items) | overall r (n pairs, p) |
+|---|---|---|---|
+| MF | 0.14 (17 positive, 1 negative) | 0.24 (16 / 36) | 0.31 (n=1944, p≈2e-45) |
+| PV | 0.30 (26 positive, 0 negative) | 0.35 (30 / 40) | 0.40 (n=2160, p≈4e-82) |
+
+Own replies and model evaluations are positively correlated overall in both
+questionnaires — annotators who personally lean toward agreement on an item
+also tend to rate a model's reply to it more favorably — but the
+association is modest (r≈0.3-0.4 pooled) and far from universal at the
+individual level: about a third of MF annotators and half of PV annotators
+show a statistically significant positive correlation, essentially none
+show a significant negative one, and the rest show no detectable
+relationship at their own individual n=36/40.
+
+Rerun with:
+
+```bash
+python run_annotator_analysis.py
+```
+
+Reuse on a new merged file:
+
+```python
+from src.questionnaire_analysis import AnnotatorSurveyAnalyzer
+
+analyzer = AnnotatorSurveyAnalyzer(output_dir="data_analysis")
+analyzer.run("surveys/mf_merged.csv", prefix="MF")   # one file
+analyzer.run_all({"MF": "surveys/mf_merged.csv", "PV": "surveys/pv_merged.csv"})
+```
+
+`prefix` must match the column naming convention `<prefix>_NN` /
+`<prefix>02_NN` (case-sensitive); item numbers present in only one of the
+two blocks are skipped and reported in
+`data_analysis/annotators/data_quality_warnings.log`. No such gaps were
+found in `mf_merged.csv`/`pv_merged.csv` — both files had complete,
+non-missing data for every annotator and item.
 
 ## Data quality notes
 
