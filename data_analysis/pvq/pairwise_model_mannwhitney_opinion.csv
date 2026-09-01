@@ -1,0 +1,22 @@
+model_a,model_b,column,n_a,n_b,u_stat,p,rank_biserial_r,notes
+Apertus-8B-Instruct,Falcon3-7B-Instruct,opinion,40,40,444.5,8.158132275866973e-05,0.44437499999999996,
+Apertus-8B-Instruct,Llama-3.1-8B-Instruct,opinion,40,40,0.0,5.748428510554412e-17,1.0,
+Apertus-8B-Instruct,Ministral-3-8B-Instruct,opinion,40,0,,,,fewer than 3 valid observations in at least one group
+Apertus-8B-Instruct,Ministral-3-8B-Instruct-2512,opinion,40,40,264.5,7.826482961961031e-08,0.669375,
+Apertus-8B-Instruct,Olmo-3-7B-Instruct,opinion,40,40,249.0,2.5421466240100948e-08,0.68875,
+Apertus-8B-Instruct,Qwen3-8B,opinion,40,40,486.5,0.000525065882090726,0.391875,
+Falcon3-7B-Instruct,Llama-3.1-8B-Instruct,opinion,40,40,20.0,6.649007758592434e-17,0.975,
+Falcon3-7B-Instruct,Ministral-3-8B-Instruct,opinion,40,0,,,,fewer than 3 valid observations in at least one group
+Falcon3-7B-Instruct,Ministral-3-8B-Instruct-2512,opinion,40,40,413.5,5.157977409912713e-05,0.483125,
+Falcon3-7B-Instruct,Olmo-3-7B-Instruct,opinion,40,40,417.0,4.271791892812772e-05,0.47875,
+Falcon3-7B-Instruct,Qwen3-8B,opinion,40,40,828.0,0.7102628239034889,-0.03499999999999992,
+Llama-3.1-8B-Instruct,Ministral-3-8B-Instruct,opinion,40,0,,,,fewer than 3 valid observations in at least one group
+Llama-3.1-8B-Instruct,Ministral-3-8B-Instruct-2512,opinion,40,40,1000.0,0.017579954395944564,-0.25,
+Llama-3.1-8B-Instruct,Olmo-3-7B-Instruct,opinion,40,40,840.0,0.6744280445873629,-0.050000000000000044,
+Llama-3.1-8B-Instruct,Qwen3-8B,opinion,40,40,1600.0,1.3008548705333902e-17,-1.0,
+Ministral-3-8B-Instruct,Ministral-3-8B-Instruct-2512,opinion,0,40,,,,fewer than 3 valid observations in at least one group
+Ministral-3-8B-Instruct,Olmo-3-7B-Instruct,opinion,0,40,,,,fewer than 3 valid observations in at least one group
+Ministral-3-8B-Instruct,Qwen3-8B,opinion,0,40,,,,fewer than 3 valid observations in at least one group
+Ministral-3-8B-Instruct-2512,Olmo-3-7B-Instruct,opinion,40,40,701.5,0.3270922419510426,0.12312500000000004,
+Ministral-3-8B-Instruct-2512,Qwen3-8B,opinion,40,40,1209.0,1.6854409754770307e-05,-0.51125,
+Olmo-3-7B-Instruct,Qwen3-8B,opinion,40,40,1199.5,1.7396634266757572e-05,-0.4993749999999999,

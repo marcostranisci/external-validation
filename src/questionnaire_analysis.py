@@ -167,9 +167,6 @@ class QuestionnaireAnalyzer:
     surveys_dir: str | Path = "surveys"
     output_dir: str | Path = "data_analysis"
     warnings: list[str] = field(default_factory=list)
-    #: number of equal-frequency quantile buckets used to discretize
-    #: continuous z-scored (``*_normalized``) columns for chi-square tests
-    normalized_bins: int = 4
 
     def __post_init__(self) -> None:
         self.surveys_dir = Path(self.surveys_dir)
@@ -256,23 +253,10 @@ class QuestionnaireAnalyzer:
         return _correlations(a, b)
 
     @staticmethod
-    def _discretize(series: pd.Series, bins: int | None) -> pd.Series | None:
-        """Bucket a numeric series into categories for a chi-square test.
-
-        ``bins=None`` rounds to the nearest integer (fits raw Likert-scale
-        ratings). ``bins=k`` cuts the series into ``k`` equal-frequency
-        quantile buckets instead (fits continuous z-scored/normalized data,
-        where rounding would mostly yield unique values).
-        """
-        if bins is None:
-            return series.round()
-        try:
-            return pd.qcut(series, q=bins, duplicates="drop")
-        except (ValueError, IndexError):
-            return None
-
-    @classmethod
-    def _chi2_independence(cls, a: pd.Series, b: pd.Series, bins: int | None = None) -> dict:
+    def _chi2_independence(a: pd.Series, b: pd.Series) -> dict:
+        """Chi-square test on integer-rounded values. Intended for raw
+        Likert-scale ratings only; use ``pairwise_model_mannwhitney``/
+        ``kruskal_wallis`` for continuous values instead."""
         mask = a.notna() & b.notna()
         a, b = a[mask], b[mask]
         result = {"n": int(mask.sum()), "chi2_stat": np.nan, "chi2_p": np.nan,
@@ -280,11 +264,7 @@ class QuestionnaireAnalyzer:
         if mask.sum() < 3:
             result["notes"] = "fewer than 3 valid paired observations"
             return result
-        cat_a, cat_b = cls._discretize(a, bins), cls._discretize(b, bins)
-        if cat_a is None or cat_b is None:
-            result["notes"] = "could not bin values into categories"
-            return result
-        table = pd.crosstab(cat_a, cat_b)
+        table = pd.crosstab(a.round(), b.round())
         if table.shape[0] < 2 or table.shape[1] < 2:
             result["notes"] = "fewer than 2 distinct categories on one axis"
             return result
@@ -301,23 +281,15 @@ class QuestionnaireAnalyzer:
         folder_name: str,
         column_a: str = "opinion",
         column_b: str = "external_opinion",
-        bins: int | None = None,
         filename: str | None = None,
     ) -> pd.DataFrame:
         """Independence + correlation tests between ``column_a`` and ``column_b``,
-        run separately for each model.
-
-        ``bins`` is passed to the chi-square test's discretization step: leave
-        it ``None`` for raw Likert-scale columns (rounded to the nearest
-        integer) or set it to a bucket count for continuous/normalized
-        columns (quantile-binned instead). Note that Pearson/Spearman
-        correlations are invariant to z-score normalization, so running this
-        on ``*_normalized`` columns changes only the chi-square result.
-        """
+        run separately for each model. Intended for raw Likert-scale columns
+        (the chi-square step rounds values to the nearest integer)."""
         rows = []
         for model, df in dfs.items():
             corr = self._correlations(df[column_a], df[column_b])
-            chi2 = self._chi2_independence(df[column_a], df[column_b], bins=bins)
+            chi2 = self._chi2_independence(df[column_a], df[column_b])
             rows.append({
                 "model": model,
                 "n": corr["n"],
@@ -357,14 +329,10 @@ class QuestionnaireAnalyzer:
 
     def pairwise_model_independence(
         self, dfs: dict[str, pd.DataFrame], folder_name: str, column: str,
-        bins: int | None = None,
     ) -> pd.DataFrame:
         """Chi-square test of independence between model identity and the
-        rating distribution of ``column``, for every pair of models.
-
-        ``bins=None`` rounds ``column`` to the nearest integer (raw
-        Likert-scale columns); pass a bucket count to quantile-bin it
-        instead (for continuous/normalized columns)."""
+        (integer-rounded) rating distribution of ``column``, for every pair
+        of models. Intended for raw Likert-scale columns."""
         rows = []
         for model_a, model_b in itertools.combinations(sorted(dfs), 2):
             long = pd.concat([
@@ -377,16 +345,12 @@ class QuestionnaireAnalyzer:
             if len(long) < 3:
                 row["notes"] = "fewer than 3 valid observations"
             else:
-                categories = self._discretize(long[column], bins)
-                if categories is None:
-                    row["notes"] = "could not bin values into categories"
+                table = pd.crosstab(long["model"], long[column].round())
+                if table.shape[0] < 2 or table.shape[1] < 2:
+                    row["notes"] = "fewer than 2 distinct categories"
                 else:
-                    table = pd.crosstab(long["model"], categories)
-                    if table.shape[0] < 2 or table.shape[1] < 2:
-                        row["notes"] = "fewer than 2 distinct categories"
-                    else:
-                        chi2, p, dof, _ = stats.chi2_contingency(table)
-                        row.update(chi2_stat=float(chi2), chi2_p=float(p), chi2_dof=int(dof))
+                    chi2, p, dof, _ = stats.chi2_contingency(table)
+                    row.update(chi2_stat=float(chi2), chi2_p=float(p), chi2_dof=int(dof))
             rows.append(row)
         result = pd.DataFrame(rows)
         self._save(result, folder_name, f"pairwise_model_independence_{column}.csv")
@@ -394,14 +358,10 @@ class QuestionnaireAnalyzer:
 
     def between_model_independence(
         self, dfs: dict[str, pd.DataFrame], folder_name: str, column: str,
-        bins: int | None = None,
     ) -> pd.DataFrame:
         """Chi-square test of independence between model identity and the
-        rating distribution of ``column``, across all models.
-
-        ``bins=None`` rounds ``column`` to the nearest integer (raw
-        Likert-scale columns); pass a bucket count to quantile-bin it
-        instead (for continuous/normalized columns)."""
+        (integer-rounded) rating distribution of ``column``, across all
+        models. Intended for raw Likert-scale columns."""
         long = pd.concat(
             [df[["model", column]] for df in dfs.values()], ignore_index=True
         ).dropna()
@@ -410,16 +370,12 @@ class QuestionnaireAnalyzer:
         if long["model"].nunique() < 2:
             result_row["notes"] = "fewer than 2 models with data"
         else:
-            categories = self._discretize(long[column], bins)
-            if categories is None:
-                result_row["notes"] = "could not bin values into categories"
+            table = pd.crosstab(long["model"], long[column].round())
+            if table.shape[0] < 2 or table.shape[1] < 2:
+                result_row["notes"] = "fewer than 2 distinct categories"
             else:
-                table = pd.crosstab(long["model"], categories)
-                if table.shape[0] < 2 or table.shape[1] < 2:
-                    result_row["notes"] = "fewer than 2 distinct categories"
-                else:
-                    chi2, p, dof, _ = stats.chi2_contingency(table)
-                    result_row.update(chi2_stat=float(chi2), chi2_p=float(p), chi2_dof=int(dof))
+                chi2, p, dof, _ = stats.chi2_contingency(table)
+                result_row.update(chi2_stat=float(chi2), chi2_p=float(p), chi2_dof=int(dof))
         result = pd.DataFrame([result_row])
         self._save(result, folder_name, f"between_model_independence_{column}.csv")
         return result
@@ -485,40 +441,35 @@ class QuestionnaireAnalyzer:
         df.to_csv(out_folder / filename, index=False)
 
     def run_folder(self, folder_name: str) -> dict[str, pd.DataFrame]:
-        """Run the full pipeline (feature engineering + all tests) for one folder."""
+        """Run the full pipeline (feature engineering + all tests) for one
+        folder, on the raw (Likert-scale) ``opinion``/``external_opinion``
+        columns. ``opinion_normalized``/``external_opinion_normalized`` are
+        still computed and saved in the processed files (see
+        ``load_and_process_file``), but are not used for statistical
+        testing: the raw scale is common and externally fixed across models
+        (unlike a subjective per-rater scale), so a model's absolute rating
+        level is itself a meaningful result rather than noise to normalize
+        away."""
         dfs = self.process_folder(folder_name)
 
-        # raw (Likert-scale) columns: chi-square categories from rounding
         self.opinion_vs_external_per_model(dfs, folder_name)
         self.between_model_correlations(dfs, folder_name, "opinion")
         self.between_model_correlations(dfs, folder_name, "external_opinion")
+
+        # chi-square treats ratings as unordered categories; kept for
+        # continuity, but see the rank-based tests below for the more
+        # appropriate treatment of ordinal Likert data.
         self.pairwise_model_independence(dfs, folder_name, "opinion")
         self.pairwise_model_independence(dfs, folder_name, "external_opinion")
         self.between_model_independence(dfs, folder_name, "opinion")
         self.between_model_independence(dfs, folder_name, "external_opinion")
 
-        # normalized (z-scored) columns: chi-square categories from quantile bins.
-        # Pearson/Spearman are invariant to z-scoring, so only chi-square
-        # results are new here; the per-model file's correlation columns are
-        # identical to the raw version's and kept only for a self-contained report.
-        bins = self.normalized_bins
-        self.opinion_vs_external_per_model(
-            dfs, folder_name,
-            column_a="opinion_normalized", column_b="external_opinion_normalized",
-            bins=bins,
-            filename="opinion_vs_external_opinion_per_model_normalized.csv",
-        )
-        self.pairwise_model_independence(dfs, folder_name, "opinion_normalized", bins=bins)
-        self.pairwise_model_independence(dfs, folder_name, "external_opinion_normalized", bins=bins)
-        self.between_model_independence(dfs, folder_name, "opinion_normalized", bins=bins)
-        self.between_model_independence(dfs, folder_name, "external_opinion_normalized", bins=bins)
-
-        # distribution-free alternatives to the binned chi-square tests above:
-        # no bin-count choice, and rank-based so ordering is respected.
-        self.pairwise_model_mannwhitney(dfs, folder_name, "opinion_normalized")
-        self.pairwise_model_mannwhitney(dfs, folder_name, "external_opinion_normalized")
-        self.kruskal_wallis(dfs, folder_name, "opinion_normalized")
-        self.kruskal_wallis(dfs, folder_name, "external_opinion_normalized")
+        # rank-based tests: respect the ordering of ordinal Likert ratings
+        # (unlike chi-square) and need no discretization.
+        self.pairwise_model_mannwhitney(dfs, folder_name, "opinion")
+        self.pairwise_model_mannwhitney(dfs, folder_name, "external_opinion")
+        self.kruskal_wallis(dfs, folder_name, "opinion")
+        self.kruskal_wallis(dfs, folder_name, "external_opinion")
 
         self.disagreement_vs_delta(dfs, folder_name)
         return dfs

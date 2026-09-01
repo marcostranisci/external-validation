@@ -58,6 +58,18 @@ model), the pipeline adds four columns:
 A zero-variance column (e.g. a model that answered the same value on every
 item) is normalized to all zeros instead of producing `NaN`/`inf`.
 
+**The statistical tests below all use the raw `opinion`/`external_opinion`
+columns, not the normalized ones.** The rating scale here (1-5 for MFT,
+1-6 for PVQ) is the same fixed scale for every model and every annotator —
+unlike a subjective per-rater anchor, there's no reason to treat one
+model's average level as a nuisance to normalize away. A model that
+systematically rates higher or lower than another is itself a real,
+reportable result, and z-scoring per model would erase exactly that by
+construction. `opinion_normalized`/`external_opinion_normalized` are kept
+in the processed files for anyone who wants to ask the narrower question
+"controlling for level and spread, does the *shape* of a model's answers
+still differ?", but that's not what's tested here.
+
 The augmented per-model files are saved to:
 
 ```
@@ -93,7 +105,22 @@ are saved under `data_analysis/mft/` and `data_analysis/pvq/` respectively.
    instead of pairwise — tests whether rating distributions depend on which
    model produced them, overall.
 
-5. **`annotator_disagreement_vs_delta.csv`**
+5. **`pairwise_model_mannwhitney_opinion.csv`** /
+   **`pairwise_model_mannwhitney_external_opinion.csv`**
+   A two-sample Mann-Whitney U test between every pair of models, with a
+   rank-biserial correlation (`rank_biserial_r`, range -1 to 1) as effect
+   size. Unlike chi-square, this works directly on the ordinal ratings
+   without rounding/binning, respecting their ordering rather than
+   treating them as unordered categories — the more appropriate test for
+   ordinal Likert data, and the one to prefer over tests 3-4 above.
+
+6. **`kruskal_wallis_opinion.csv`** / **`kruskal_wallis_external_opinion.csv`**
+   The pooled, all-models-at-once counterpart of test 5 (a Kruskal-Wallis H
+   test), with an eta-squared effect size (`eta_squared`; Cohen-style
+   benchmarks: ~0.01 small, ~0.06 medium, ~0.14 large) — the rank-based
+   alternative to test 4.
+
+7. **`annotator_disagreement_vs_delta.csv`**
    Per model: Pearson/Spearman correlation between `annotator_disagreement`
    and the delta between the model's `opinion` and the human
    `external_opinion` (both the signed delta `opinion - external_opinion`
@@ -103,78 +130,19 @@ Every test row reports `n` (valid paired observations used) and a `notes`
 column explaining why a test could not be run (e.g. `"zero variance in at
 least one variable"`, `"fewer than 3 valid paired observations"`).
 
-### Independence tests on the normalized scores
-
-Tests 1 and 3 above are repeated on the z-scored `opinion_normalized` /
-`external_opinion_normalized` columns, producing:
-
-- `opinion_vs_external_opinion_per_model_normalized.csv`
-- `pairwise_model_independence_opinion_normalized.csv` /
-  `pairwise_model_independence_external_opinion_normalized.csv`
-- `between_model_independence_opinion_normalized.csv` /
-  `between_model_independence_external_opinion_normalized.csv`
-
-Two things differ from the raw-column versions:
-
-- **Discretization.** Raw Likert ratings are integer-valued, so the
-  chi-square contingency tables are built by rounding to the nearest
-  integer. Normalized scores are continuous z-scores, so rounding would
-  mostly produce unique values; instead they are split into
-  `QuestionnaireAnalyzer.normalized_bins` (default 4) equal-frequency
-  quantile buckets before building the table.
-- **What changes vs. the raw version.** Pearson/Spearman correlation is
-  invariant to per-column z-scoring, so the `pearson_r`/`spearman_r`
-  columns in `opinion_vs_external_opinion_per_model_normalized.csv` are
-  identical to the raw file's — only the chi-square result differs, and
-  it can differ meaningfully: normalizing removes each model's own
-  mean/scale usage, so the independence tests on `opinion_normalized`/
-  `external_opinion_normalized` isolate differences in the *shape* of a
-  model's rating distribution (e.g. skew, how tightly it clusters around
-  its own average) rather than differences caused simply by one model
-  favoring different raw numbers than another.
-
-### Mann-Whitney / Kruskal-Wallis: the more appropriate test for the normalized scores
-
-Chi-square on binned quantiles is a workable approximation, but it's not
-the right tool for genuinely continuous z-scored data: it throws away
-within-bin information and its result depends on an arbitrary bin-count
-choice (`normalized_bins`, default 4). The standard, bin-free tests for
-comparing continuous/ordinal distributions between groups are:
-
-- **`pairwise_model_mannwhitney_opinion_normalized.csv`** /
-  **`pairwise_model_mannwhitney_external_opinion_normalized.csv`** — a
-  two-sample Mann-Whitney U test for every model pair, with a
-  rank-biserial correlation (`rank_biserial_r`, range -1 to 1) as effect
-  size.
-- **`kruskal_wallis_opinion_normalized.csv`** /
-  **`kruskal_wallis_external_opinion_normalized.csv`** — a Kruskal-Wallis H
-  test across all models at once, with an eta-squared effect size
-  (`eta_squared`; Cohen-style benchmarks: ~0.01 small, ~0.06 medium, ~0.14
-  large).
-
-**These substantially revise the chi-square-based conclusion.** The pooled
-chi-square test on `opinion_normalized` looked like near-total separation
-(MFT: χ²=363, p≈5e-66; median pairwise Cramér's V=0.83). Kruskal-Wallis,
-which doesn't depend on a bin-count choice, still finds a real difference
-between models but a *small* one: MFT H=20.7, p=0.002, η²=0.06; PVQ
-H=12.9, p=0.025, η²=0.03. At the pairwise level, Mann-Whitney finds 12/20
-valid MFT pairs and 6/15 valid PVQ pairs significant (p<0.05) — real, but
-far from the near-universal separation chi-square implied. For
-`external_opinion_normalized`, Kruskal-Wallis found **no** significant
-difference at all (MFT p=0.998, PVQ p=0.9998; 0/15 pairwise Mann-Whitney
-pairs significant in either questionnaire) — this actually sharpens the
-chi-square-based finding (which was already non-significant, p≈0.79-0.80)
-into a much more decisive null result.
-
-**Takeaway:** treat the chi-square/Cramér's V numbers on the normalized
-columns as an upper-bound sanity check at most, not as the effect-size
-estimate to report — use the Mann-Whitney/Kruskal-Wallis results instead.
-Models genuinely differ in the shape of their own normalized `opinion`
-(the effect survives the more conservative test), but the difference is
-small-to-medium, not the large separation the binned chi-square suggested.
-The `external_opinion_normalized` null result — annotator rating patterns
-don't detectably differ by which model produced the reply being rated —
-holds up under both the chi-square and the rank-based test alike.
+**Read tests 5-6, not 3-4, for the headline "do models differ" result.**
+Chi-square (tests 3-4) treats ratings as unordered nominal categories,
+discarding the fact that a 4 is closer to a 5 than to a 1; Mann-Whitney/
+Kruskal-Wallis use ranks and don't have that problem. On the raw scale
+both approaches agree there's a real, large difference between models:
+Kruskal-Wallis on `opinion` gives η²≈0.45-0.46 in both MFT and PVQ (a large
+effect by Cohen's benchmarks — models genuinely differ a lot in their
+absolute rating level), and on `external_opinion` gives η²≈0.11 (MFT) /
+0.14 (PVQ) (medium-to-large — annotators' absolute ratings of different
+models' replies differ too, not just the shape of the pattern). Pairwise
+Mann-Whitney: 18/20 valid MFT pairs and 12/15 valid PVQ pairs differ
+significantly on `opinion`; 5/15 (MFT) and 9/15 (PVQ) differ on
+`external_opinion`.
 
 ## Annotator-level analysis: own replies vs. model evaluations
 
