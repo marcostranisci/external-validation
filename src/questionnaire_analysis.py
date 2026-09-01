@@ -539,19 +539,21 @@ class AnnotatorSurveyAnalyzer:
         return items, own_cols, eval_cols, missing
 
     def _load(
-        self, filepath: str | Path, prefix: str
+        self, source: str | Path | pd.DataFrame, prefix: str
     ) -> tuple[pd.DataFrame, list[int], dict[int, str], dict[int, str]]:
-        filepath = Path(filepath)
-        df = pd.read_csv(filepath)
+        if isinstance(source, pd.DataFrame):
+            df, label = source, "<dataframe>"
+        else:
+            df, label = pd.read_csv(source), Path(source).name
         items, own_cols, eval_cols, missing = self._item_columns(df, prefix)
         if missing:
             self._warn(
-                f"[{filepath.name}] item number(s) {missing} have only an "
+                f"[{label}] item number(s) {missing} have only an "
                 f"'{prefix}_NN' or only an '{prefix}02_NN' column; skipped."
             )
         if not items:
             raise ValueError(
-                f"{filepath}: no '{prefix}_NN' / '{prefix}02_NN' column pairs found"
+                f"{label}: no '{prefix}_NN' / '{prefix}02_NN' column pairs found"
             )
         return df, items, own_cols, eval_cols
 
@@ -614,6 +616,137 @@ class AnnotatorSurveyAnalyzer:
             "notes": corr["notes"],
         }])
         self._save(result, f"{prefix.lower()}_overall_correlation.csv")
+        return result
+
+    def infer_model_mapping(
+        self, source: str | Path | pd.DataFrame, prefix: str,
+        model_glob: str, group_column: str = "QUESTNNR",
+    ) -> dict[str, str]:
+        """Identify which model each ``group_column`` value (e.g. a
+        ``QUESTNNR`` block) of annotators evaluated, by matching the sorted
+        multiset of ratings they gave per item against the disaggregated
+        ratings in each model survey file (order-independent, since
+        annotator order need not match between the two file formats).
+
+        Returns ``{group_value: model_file_stem}`` for groups with exactly
+        one matching file; a group with zero or multiple matches is left
+        out and a warning is logged.
+        """
+        df, items, own_cols, eval_cols = self._load(source, prefix)
+        if group_column not in df.columns:
+            raise ValueError(f"no '{group_column}' column found")
+        ordered_eval_cols = [eval_cols[i] for i in items]
+
+        def signature(rows: pd.DataFrame, cols: list[str]) -> tuple:
+            return tuple(tuple(sorted(rows[c].tolist())) for c in cols)
+
+        group_sigs = {g: signature(rows, ordered_eval_cols) for g, rows in df.groupby(group_column)}
+
+        model_sigs: dict[str, tuple] = {}
+        for model_path in sorted(Path().glob(model_glob)):
+            model_df = pd.read_csv(model_path)
+            disagg_col = _find_disaggregated_column(model_df.columns)
+            if disagg_col is None:
+                continue
+            parsed = model_df[disagg_col].apply(_parse_rating_list)
+            if parsed.isna().any():
+                continue
+            model_sigs[model_path.stem] = tuple(tuple(sorted(v)) for v in parsed)
+
+        mapping = {}
+        for group_value, sig in group_sigs.items():
+            matches = [name for name, model_sig in model_sigs.items() if model_sig == sig]
+            if len(matches) == 1:
+                mapping[group_value] = matches[0]
+            else:
+                self._warn(
+                    f"'{group_column}' value '{group_value}' matched "
+                    f"{len(matches)} model file(s) under '{model_glob}'; left unmapped."
+                )
+        return mapping
+
+    def demographic_agreement(
+        self, source: str | Path | pd.DataFrame, prefix: str,
+        demographic_columns: list[str], group_column: str = "QUESTNNR",
+        model_mapping: dict[str, str] | None = None,
+    ) -> pd.DataFrame:
+        """For each ``group_column`` value (the annotators who evaluated one
+        model), test whether annotators sharing a demographic attribute
+        agree with each other more than annotators who don't, on their
+        evaluations of that model's replies (the ``<prefix>_NN`` columns).
+
+        Agreement between two annotators is measured two ways across their
+        shared evaluation items: Pearson correlation (higher = more similar
+        *pattern* across items) and mean absolute difference, negated so
+        higher also means more agreement here (``neg_mad``; more similar
+        absolute *level*). Pairs are split into "same" vs "different" on
+        each demographic column and compared with a two-sample Mann-Whitney
+        U test. Per model this is underpowered (a 9-annotator group has 36
+        pairs total, split further into same/different), so an additional
+        ``model="ALL (pooled)"`` row pools every model's pairs together for
+        a properly-powered version of the same test."""
+        df, items, own_cols, eval_cols = self._load(source, prefix)
+        if group_column not in df.columns:
+            raise ValueError(f"no '{group_column}' column found")
+        ordered_eval_cols = [eval_cols[i] for i in items]
+        model_mapping = model_mapping or {}
+
+        def test_rows(pairs: pd.DataFrame, same: list[bool], label: dict) -> list[dict]:
+            out = []
+            for metric in ("pearson_r", "neg_mad"):
+                same_vals = pairs.loc[same, metric].dropna()
+                diff_vals = pairs.loc[[not s for s in same], metric].dropna()
+                res = _mannwhitney(
+                    pd.Series(same_vals.to_numpy()), pd.Series(diff_vals.to_numpy())
+                )
+                out.append({
+                    **label, "metric": metric,
+                    "n_same_pairs": len(same_vals), "n_diff_pairs": len(diff_vals),
+                    "median_same": float(same_vals.median()) if len(same_vals) else np.nan,
+                    "median_diff": float(diff_vals.median()) if len(diff_vals) else np.nan,
+                    "u_stat": res["u_stat"], "p": res["p"],
+                    "rank_biserial_r": res["rank_biserial_r"],
+                    "notes": res["notes"],
+                })
+            return out
+
+        rows = []
+        pooled_pairs = {col: [] for col in demographic_columns}
+        pooled_same = {col: [] for col in demographic_columns}
+        for group_value, group in df.groupby(group_column):
+            model_name = model_mapping.get(group_value, group_value)
+            idx = group.index.tolist()
+            matrix = group[ordered_eval_cols].to_numpy(dtype=float)
+            pair_records = []
+            for a, b in itertools.combinations(range(len(idx)), 2):
+                x, y = matrix[a], matrix[b]
+                r = np.corrcoef(x, y)[0, 1] if np.std(x) > 0 and np.std(y) > 0 else np.nan
+                pair_records.append({
+                    "row_a": idx[a], "row_b": idx[b],
+                    "pearson_r": r, "neg_mad": -float(np.mean(np.abs(x - y))),
+                })
+            pairs = pd.DataFrame(pair_records)
+
+            for demo_col in demographic_columns:
+                if demo_col not in group.columns:
+                    self._warn(f"demographic column '{demo_col}' not found; skipped.")
+                    continue
+                values = group[demo_col]
+                same = [values.loc[r["row_a"]] == values.loc[r["row_b"]] for r in pair_records]
+                label = {group_column: group_value, "model": model_name, "demographic": demo_col}
+                rows.extend(test_rows(pairs, same, label))
+                pooled_pairs[demo_col].append(pairs)
+                pooled_same[demo_col].extend(same)
+
+        for demo_col in demographic_columns:
+            if not pooled_pairs[demo_col]:
+                continue
+            all_pairs = pd.concat(pooled_pairs[demo_col], ignore_index=True)
+            label = {group_column: "ALL", "model": "ALL (pooled)", "demographic": demo_col}
+            rows.extend(test_rows(all_pairs, pooled_same[demo_col], label))
+
+        result = pd.DataFrame(rows)
+        self._save(result, f"{prefix.lower()}_demographic_agreement.csv")
         return result
 
     def _save(self, df: pd.DataFrame, filename: str) -> None:

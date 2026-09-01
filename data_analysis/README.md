@@ -17,6 +17,10 @@ analysis of the raw human-annotator exports in `surveys/mf_merged.csv` and
 - `run_annotator_analysis.py` — entry point that runs `AnnotatorSurveyAnalyzer`
   on `surveys/mf_merged.csv` and `surveys/pv_merged.csv` and writes
   everything under `data_analysis/annotators/`.
+- `run_annotator_demographics.py` — entry point that checks whether
+  annotators sharing a demographic (gender, continent of birth) agree more
+  with each other when evaluating a model's replies (see "Demographic
+  agreement" below).
 
 ### Re-running the analysis
 
@@ -209,6 +213,65 @@ two blocks are skipped and reported in
 `data_analysis/annotators/data_quality_warnings.log`. No such gaps were
 found in `mf_merged.csv`/`pv_merged.csv` — both files had complete,
 non-missing data for every annotator and item.
+
+## Demographic agreement: does gender/origin predict inter-annotator agreement?
+
+Each `QUESTNNR` value in the merged files identifies the group of 9
+annotators who evaluated one specific model's replies (the `<prefix>_NN`
+columns) — not the model by name, so `AnnotatorSurveyAnalyzer.infer_model_mapping`
+recovers that mapping by matching each group's sorted per-item ratings
+against the disaggregated ratings in `surveys/mft/*.csv` / `surveys/pvq/*.csv`
+(order-independent, since annotator order differs between the two file
+formats). Every `QUESTNNR` group matched exactly one model file. The
+annotator pool is stratified 3-3-3 by gender (woman/man/non-binary) and by
+continent of birth (Africa/Asia/Europe, derived from `Country of birth`)
+within every group of 9.
+
+`AnnotatorSurveyAnalyzer.demographic_agreement` asks: for a given model, do
+annotators sharing a demographic attribute agree with each other *more*
+than annotators who don't, when evaluating that model's replies? For every
+pair of annotators within a `QUESTNNR` group it computes two agreement
+metrics across their shared evaluation items — Pearson correlation
+(agreement in *pattern* across items) and negated mean absolute difference,
+`neg_mad` (agreement in absolute *level*, higher = closer) — then splits
+the pairs into "same demographic" vs "different demographic" and compares
+with a two-sample Mann-Whitney U test. Per model this is underpowered (9
+annotators → 36 pairs, split further into 9 same-gender vs 27
+different-gender, or similarly for continent), so an additional
+`model="ALL (pooled)"` row pools all 6 models' pairs (54 same vs. 162
+different) for a properly-powered version of the same test. Results:
+`data_analysis/annotators/{mf,pv}_demographic_agreement.csv`.
+
+Rerun with:
+
+```bash
+python run_annotator_demographics.py
+```
+
+**Result: no reliable evidence of gender-based in-group agreement, and only
+weak, non-replicating evidence for continent.** Pooled (the numbers to
+trust):
+
+| | Gender: pearson_r p | Gender: neg_mad p | Continent: pearson_r p | Continent: neg_mad p |
+|---|---|---|---|---|
+| MF | 0.93 | 0.74 | 0.26 | **0.031** |
+| PV | 0.91 | 0.88 | 0.79 | 0.50 |
+
+Gender is a clean null in both questionnaires, on both metrics (all
+p≥0.74). Continent reaches p=0.031 in MF on the level-agreement metric
+(`neg_mad`; same-continent pairs agree slightly more closely in absolute
+level: median -1.03 vs. -1.11) but not on the pattern metric in MF
+(p=0.26), and doesn't replicate in PV at all (p=0.50 on the same metric).
+Given 8 pooled tests were run in total (2 questionnaires × 2 demographics ×
+2 metrics) plus 24 unpowered per-model tests underneath them, a single
+p≈0.03 hit that fails to replicate across questionnaires is exactly what
+you'd expect from chance alone (≈0.4 false positives expected at α=0.05
+across the 8 pooled tests) — treat the continent result as suggestive at
+most, not as an established effect, and don't lead with the per-model
+numbers (`data_analysis/annotators/{mf,pv}_demographic_agreement.csv`
+rows other than `model="ALL (pooled)"`) as evidence on their own; they're
+kept for transparency/inspection, not for drawing conclusions from
+individually.
 
 ## Data quality notes
 
