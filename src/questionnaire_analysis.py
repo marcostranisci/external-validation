@@ -257,6 +257,34 @@ class QuestionnaireAnalyzer:
         self._save(result, folder_name, f"between_model_correlations_{column}.csv")
         return result
 
+    def pairwise_model_independence(
+        self, dfs: dict[str, pd.DataFrame], folder_name: str, column: str
+    ) -> pd.DataFrame:
+        """Chi-square test of independence between model identity and the
+        (rounded) rating distribution of ``column``, for every pair of models."""
+        rows = []
+        for model_a, model_b in itertools.combinations(sorted(dfs), 2):
+            long = pd.concat([
+                dfs[model_a][[column]].assign(model=model_a),
+                dfs[model_b][[column]].assign(model=model_b),
+            ], ignore_index=True).dropna()
+            row = {"model_a": model_a, "model_b": model_b, "column": column,
+                   "n": len(long), "chi2_stat": np.nan, "chi2_p": np.nan,
+                   "chi2_dof": np.nan, "notes": ""}
+            if len(long) < 3:
+                row["notes"] = "fewer than 3 valid observations"
+            else:
+                table = pd.crosstab(long["model"], long[column].round())
+                if table.shape[0] < 2 or table.shape[1] < 2:
+                    row["notes"] = "fewer than 2 distinct categories"
+                else:
+                    chi2, p, dof, _ = stats.chi2_contingency(table)
+                    row.update(chi2_stat=float(chi2), chi2_p=float(p), chi2_dof=int(dof))
+            rows.append(row)
+        result = pd.DataFrame(rows)
+        self._save(result, folder_name, f"pairwise_model_independence_{column}.csv")
+        return result
+
     def between_model_independence(
         self, dfs: dict[str, pd.DataFrame], folder_name: str, column: str
     ) -> pd.DataFrame:
@@ -322,6 +350,8 @@ class QuestionnaireAnalyzer:
         self.opinion_vs_external_per_model(dfs, folder_name)
         self.between_model_correlations(dfs, folder_name, "opinion")
         self.between_model_correlations(dfs, folder_name, "external_opinion")
+        self.pairwise_model_independence(dfs, folder_name, "opinion")
+        self.pairwise_model_independence(dfs, folder_name, "external_opinion")
         self.between_model_independence(dfs, folder_name, "opinion")
         self.between_model_independence(dfs, folder_name, "external_opinion")
         self.disagreement_vs_delta(dfs, folder_name)

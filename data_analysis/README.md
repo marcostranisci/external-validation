@@ -73,13 +73,19 @@ are saved under `data_analysis/mft/` and `data_analysis/pvq/` respectively.
    computed on `opinion` (resp. `external_opinion`) after aligning rows by
    `test_statement` (i.e. comparing models on the same questionnaire item).
 
-3. **`between_model_independence_opinion.csv`** /
-   **`between_model_independence_external_opinion.csv`**
-   A chi-square test of independence between model identity and the
-   (rounded) rating distribution, pooling all models — tests whether rating
-   distributions depend on which model produced them.
+3. **`pairwise_model_independence_opinion.csv`** /
+   **`pairwise_model_independence_external_opinion.csv`**
+   Chi-square test of independence between model identity and the (rounded)
+   rating distribution, for every pair of models — tests whether the two
+   models' rating distributions differ from each other.
 
-4. **`annotator_disagreement_vs_delta.csv`**
+4. **`between_model_independence_opinion.csv`** /
+   **`between_model_independence_external_opinion.csv`**
+   The same chi-square test of independence, pooling all models at once
+   instead of pairwise — tests whether rating distributions depend on which
+   model produced them, overall.
+
+5. **`annotator_disagreement_vs_delta.csv`**
    Per model: Pearson/Spearman correlation between `annotator_disagreement`
    and the delta between the model's `opinion` and the human
    `external_opinion` (both the signed delta `opinion - external_opinion`
