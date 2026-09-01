@@ -110,6 +110,56 @@ def _correlations(a: pd.Series, b: pd.Series) -> dict:
     return result
 
 
+def _mannwhitney(a: pd.Series, b: pd.Series) -> dict:
+    """Two-sample Mann-Whitney U test between two independent (unpaired)
+    groups, with a rank-biserial correlation as effect size.
+
+    Unlike a chi-square test on binned data, this works directly on
+    continuous values (no binning, no arbitrary bin-count choice) and
+    respects the ordering of ordinal/Likert data rather than treating
+    ratings as unordered categories.
+    """
+    x = pd.to_numeric(a, errors="coerce").dropna().to_numpy()
+    y = pd.to_numeric(b, errors="coerce").dropna().to_numpy()
+    result = {"n_a": len(x), "n_b": len(y), "u_stat": np.nan, "p": np.nan,
+              "rank_biserial_r": np.nan, "notes": ""}
+    if len(x) < 3 or len(y) < 3:
+        result["notes"] = "fewer than 3 valid observations in at least one group"
+        return result
+    try:
+        res = stats.mannwhitneyu(x, y, alternative="two-sided")
+    except ValueError as exc:
+        result["notes"] = str(exc)
+        return result
+    u = float(res.statistic)
+    rank_biserial = 1 - (2 * u) / (len(x) * len(y))
+    result.update(u_stat=u, p=float(res.pvalue), rank_biserial_r=float(rank_biserial))
+    return result
+
+
+def _kruskal(groups: dict[str, pd.Series]) -> dict:
+    """Kruskal-Wallis H test across k independent groups, with an
+    eta-squared effect size. Like Mann-Whitney, works on continuous or
+    ordinal values directly without binning."""
+    clean = {k: pd.to_numeric(v, errors="coerce").dropna().to_numpy() for k, v in groups.items()}
+    clean = {k: v for k, v in clean.items() if len(v) >= 3}
+    n = sum(len(v) for v in clean.values())
+    result = {"n_groups": len(clean), "n": n, "h_stat": np.nan, "p": np.nan,
+              "dof": np.nan, "eta_squared": np.nan, "notes": ""}
+    if len(clean) < 2:
+        result["notes"] = "fewer than 2 groups with at least 3 valid observations"
+        return result
+    try:
+        h, p = stats.kruskal(*clean.values())
+    except ValueError as exc:
+        result["notes"] = str(exc)
+        return result
+    k = len(clean)
+    eta_sq = (h - k + 1) / (n - k) if n > k else np.nan
+    result.update(h_stat=float(h), p=float(p), dof=k - 1, eta_squared=float(eta_sq))
+    return result
+
+
 @dataclass
 class QuestionnaireAnalyzer:
     """Loads, augments, and statistically analyzes questionnaire survey files."""
@@ -374,6 +424,30 @@ class QuestionnaireAnalyzer:
         self._save(result, folder_name, f"between_model_independence_{column}.csv")
         return result
 
+    def pairwise_model_mannwhitney(
+        self, dfs: dict[str, pd.DataFrame], folder_name: str, column: str
+    ) -> pd.DataFrame:
+        """Two-sample Mann-Whitney U test of ``column`` between every pair of
+        models. Distribution-free alternative to the binned chi-square test:
+        works directly on continuous/ordinal values, no bin-count choice."""
+        rows = []
+        for model_a, model_b in itertools.combinations(sorted(dfs), 2):
+            res = _mannwhitney(dfs[model_a][column], dfs[model_b][column])
+            rows.append({"model_a": model_a, "model_b": model_b, "column": column, **res})
+        result = pd.DataFrame(rows)
+        self._save(result, folder_name, f"pairwise_model_mannwhitney_{column}.csv")
+        return result
+
+    def kruskal_wallis(
+        self, dfs: dict[str, pd.DataFrame], folder_name: str, column: str
+    ) -> pd.DataFrame:
+        """Kruskal-Wallis H test of ``column`` across all models at once.
+        Distribution-free alternative to the pooled chi-square test."""
+        res = _kruskal({model: df[column] for model, df in dfs.items()})
+        result = pd.DataFrame([{"column": column, **res}])
+        self._save(result, folder_name, f"kruskal_wallis_{column}.csv")
+        return result
+
     def disagreement_vs_delta(
         self, dfs: dict[str, pd.DataFrame], folder_name: str
     ) -> pd.DataFrame:
@@ -438,6 +512,13 @@ class QuestionnaireAnalyzer:
         self.pairwise_model_independence(dfs, folder_name, "external_opinion_normalized", bins=bins)
         self.between_model_independence(dfs, folder_name, "opinion_normalized", bins=bins)
         self.between_model_independence(dfs, folder_name, "external_opinion_normalized", bins=bins)
+
+        # distribution-free alternatives to the binned chi-square tests above:
+        # no bin-count choice, and rank-based so ordering is respected.
+        self.pairwise_model_mannwhitney(dfs, folder_name, "opinion_normalized")
+        self.pairwise_model_mannwhitney(dfs, folder_name, "external_opinion_normalized")
+        self.kruskal_wallis(dfs, folder_name, "opinion_normalized")
+        self.kruskal_wallis(dfs, folder_name, "external_opinion_normalized")
 
         self.disagreement_vs_delta(dfs, folder_name)
         return dfs

@@ -1,0 +1,22 @@
+model_a,model_b,column,n_a,n_b,u_stat,p,rank_biserial_r,notes
+Apertus-8B-Instruct,Falcon3-7B-Instruct,opinion_normalized,40,40,769.0,0.7584181435462573,0.03874999999999995,
+Apertus-8B-Instruct,Llama-3.1-8B-Instruct,opinion_normalized,40,40,600.0,0.03673991239792408,0.25,
+Apertus-8B-Instruct,Ministral-3-8B-Instruct,opinion_normalized,40,0,,,,fewer than 3 valid observations in at least one group
+Apertus-8B-Instruct,Ministral-3-8B-Instruct-2512,opinion_normalized,40,40,886.0,0.40068205692330516,-0.10749999999999993,
+Apertus-8B-Instruct,Olmo-3-7B-Instruct,opinion_normalized,40,40,782.0,0.8631590215502674,0.022499999999999964,
+Apertus-8B-Instruct,Qwen3-8B,opinion_normalized,40,40,784.0,0.8754491630614561,0.020000000000000018,
+Falcon3-7B-Instruct,Llama-3.1-8B-Instruct,opinion_normalized,40,40,1280.0,3.2565279986002225e-07,-0.6000000000000001,
+Falcon3-7B-Instruct,Ministral-3-8B-Instruct,opinion_normalized,40,0,,,,fewer than 3 valid observations in at least one group
+Falcon3-7B-Instruct,Ministral-3-8B-Instruct-2512,opinion_normalized,40,40,583.0,0.030712469234057682,0.27125,
+Falcon3-7B-Instruct,Olmo-3-7B-Instruct,opinion_normalized,40,40,761.0,0.7002103318858277,0.04874999999999996,
+Falcon3-7B-Instruct,Qwen3-8B,opinion_normalized,40,40,312.0,5.439333073333542e-07,0.61,
+Llama-3.1-8B-Instruct,Ministral-3-8B-Instruct,opinion_normalized,40,0,,,,fewer than 3 valid observations in at least one group
+Llama-3.1-8B-Instruct,Ministral-3-8B-Instruct-2512,opinion_normalized,40,40,680.0,0.2159827910587513,0.15000000000000002,
+Llama-3.1-8B-Instruct,Olmo-3-7B-Instruct,opinion_normalized,40,40,760.0,0.681895629385451,0.050000000000000044,
+Llama-3.1-8B-Instruct,Qwen3-8B,opinion_normalized,40,40,320.0,2.9906934884997735e-07,0.6,
+Ministral-3-8B-Instruct,Ministral-3-8B-Instruct-2512,opinion_normalized,0,40,,,,fewer than 3 valid observations in at least one group
+Ministral-3-8B-Instruct,Olmo-3-7B-Instruct,opinion_normalized,0,40,,,,fewer than 3 valid observations in at least one group
+Ministral-3-8B-Instruct,Qwen3-8B,opinion_normalized,0,40,,,,fewer than 3 valid observations in at least one group
+Ministral-3-8B-Instruct-2512,Olmo-3-7B-Instruct,opinion_normalized,40,40,877.0,0.45563113696430635,-0.09624999999999995,
+Ministral-3-8B-Instruct-2512,Qwen3-8B,opinion_normalized,40,40,514.0,0.004272650146767114,0.35750000000000004,
+Olmo-3-7B-Instruct,Qwen3-8B,opinion_normalized,40,40,839.0,0.699419881913917,-0.04875000000000007,

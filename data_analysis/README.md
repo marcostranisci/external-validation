@@ -133,6 +133,49 @@ Two things differ from the raw-column versions:
   its own average) rather than differences caused simply by one model
   favoring different raw numbers than another.
 
+### Mann-Whitney / Kruskal-Wallis: the more appropriate test for the normalized scores
+
+Chi-square on binned quantiles is a workable approximation, but it's not
+the right tool for genuinely continuous z-scored data: it throws away
+within-bin information and its result depends on an arbitrary bin-count
+choice (`normalized_bins`, default 4). The standard, bin-free tests for
+comparing continuous/ordinal distributions between groups are:
+
+- **`pairwise_model_mannwhitney_opinion_normalized.csv`** /
+  **`pairwise_model_mannwhitney_external_opinion_normalized.csv`** — a
+  two-sample Mann-Whitney U test for every model pair, with a
+  rank-biserial correlation (`rank_biserial_r`, range -1 to 1) as effect
+  size.
+- **`kruskal_wallis_opinion_normalized.csv`** /
+  **`kruskal_wallis_external_opinion_normalized.csv`** — a Kruskal-Wallis H
+  test across all models at once, with an eta-squared effect size
+  (`eta_squared`; Cohen-style benchmarks: ~0.01 small, ~0.06 medium, ~0.14
+  large).
+
+**These substantially revise the chi-square-based conclusion.** The pooled
+chi-square test on `opinion_normalized` looked like near-total separation
+(MFT: χ²=363, p≈5e-66; median pairwise Cramér's V=0.83). Kruskal-Wallis,
+which doesn't depend on a bin-count choice, still finds a real difference
+between models but a *small* one: MFT H=20.7, p=0.002, η²=0.06; PVQ
+H=12.9, p=0.025, η²=0.03. At the pairwise level, Mann-Whitney finds 12/20
+valid MFT pairs and 6/15 valid PVQ pairs significant (p<0.05) — real, but
+far from the near-universal separation chi-square implied. For
+`external_opinion_normalized`, Kruskal-Wallis found **no** significant
+difference at all (MFT p=0.998, PVQ p=0.9998; 0/15 pairwise Mann-Whitney
+pairs significant in either questionnaire) — this actually sharpens the
+chi-square-based finding (which was already non-significant, p≈0.79-0.80)
+into a much more decisive null result.
+
+**Takeaway:** treat the chi-square/Cramér's V numbers on the normalized
+columns as an upper-bound sanity check at most, not as the effect-size
+estimate to report — use the Mann-Whitney/Kruskal-Wallis results instead.
+Models genuinely differ in the shape of their own normalized `opinion`
+(the effect survives the more conservative test), but the difference is
+small-to-medium, not the large separation the binned chi-square suggested.
+The `external_opinion_normalized` null result — annotator rating patterns
+don't detectably differ by which model produced the reply being rated —
+holds up under both the chi-square and the rank-based test alike.
+
 ## Annotator-level analysis: own replies vs. model evaluations
 
 `surveys/mf_merged.csv` and `surveys/pv_merged.csv` are a different shape of
