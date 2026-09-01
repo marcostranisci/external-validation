@@ -95,6 +95,36 @@ Every test row reports `n` (valid paired observations used) and a `notes`
 column explaining why a test could not be run (e.g. `"zero variance in at
 least one variable"`, `"fewer than 3 valid paired observations"`).
 
+### Independence tests on the normalized scores
+
+Tests 1 and 3 above are repeated on the z-scored `opinion_normalized` /
+`external_opinion_normalized` columns, producing:
+
+- `opinion_vs_external_opinion_per_model_normalized.csv`
+- `pairwise_model_independence_opinion_normalized.csv` /
+  `pairwise_model_independence_external_opinion_normalized.csv`
+- `between_model_independence_opinion_normalized.csv` /
+  `between_model_independence_external_opinion_normalized.csv`
+
+Two things differ from the raw-column versions:
+
+- **Discretization.** Raw Likert ratings are integer-valued, so the
+  chi-square contingency tables are built by rounding to the nearest
+  integer. Normalized scores are continuous z-scores, so rounding would
+  mostly produce unique values; instead they are split into
+  `QuestionnaireAnalyzer.normalized_bins` (default 4) equal-frequency
+  quantile buckets before building the table.
+- **What changes vs. the raw version.** Pearson/Spearman correlation is
+  invariant to per-column z-scoring, so the `pearson_r`/`spearman_r`
+  columns in `opinion_vs_external_opinion_per_model_normalized.csv` are
+  identical to the raw file's — only the chi-square result differs, and
+  it can differ meaningfully: normalizing removes each model's own
+  mean/scale usage, so the independence tests on `opinion_normalized`/
+  `external_opinion_normalized` isolate differences in the *shape* of a
+  model's rating distribution (e.g. skew, how tightly it clusters around
+  its own average) rather than differences caused simply by one model
+  favoring different raw numbers than another.
+
 ## Data quality notes
 
 See `data_analysis/data_quality_warnings.log` for issues detected while

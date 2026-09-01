@@ -1,0 +1,22 @@
+model_a,model_b,column,n,chi2_stat,chi2_p,chi2_dof,notes
+Apertus-8B-Instruct,Falcon3-7B-Instruct,external_opinion_normalized,72,2.263501891984864,0.5195490113369088,3.0,
+Apertus-8B-Instruct,Llama-3.1-8B-Instruct,external_opinion_normalized,72,1.3762838468720822,0.7111032234094299,3.0,
+Apertus-8B-Instruct,Ministral-3-8B-Instruct,external_opinion_normalized,72,2.170838861860534,0.5377150220602596,3.0,
+Apertus-8B-Instruct,Ministral-3-8B-Instruct-2512,external_opinion_normalized,36,,,,fewer than 2 distinct categories
+Apertus-8B-Instruct,Olmo-3-7B-Instruct,external_opinion_normalized,72,7.3482369024164695,0.06158883282685659,3.0,
+Apertus-8B-Instruct,Qwen3-8B,external_opinion_normalized,72,5.675266597867218,0.12852354992646675,3.0,
+Falcon3-7B-Instruct,Llama-3.1-8B-Instruct,external_opinion_normalized,72,2.9825077399380806,0.39433000896504644,3.0,
+Falcon3-7B-Instruct,Ministral-3-8B-Instruct,external_opinion_normalized,72,3.8222222222222224,0.2813118731665859,3.0,
+Falcon3-7B-Instruct,Ministral-3-8B-Instruct-2512,external_opinion_normalized,36,,,,fewer than 2 distinct categories
+Falcon3-7B-Instruct,Olmo-3-7B-Instruct,external_opinion_normalized,72,5.3058520426941485,0.150723111334121,3.0,
+Falcon3-7B-Instruct,Qwen3-8B,external_opinion_normalized,72,0.5614551083591331,0.9051967969664536,3.0,
+Llama-3.1-8B-Instruct,Ministral-3-8B-Instruct,external_opinion_normalized,72,2.810966810966811,0.42169776520700397,3.0,
+Llama-3.1-8B-Instruct,Ministral-3-8B-Instruct-2512,external_opinion_normalized,36,,,,fewer than 2 distinct categories
+Llama-3.1-8B-Instruct,Olmo-3-7B-Instruct,external_opinion_normalized,72,0.7547299621603027,0.860261490852198,3.0,
+Llama-3.1-8B-Instruct,Qwen3-8B,external_opinion_normalized,72,1.4222222222222223,0.7003340860897578,3.0,
+Ministral-3-8B-Instruct,Ministral-3-8B-Instruct-2512,external_opinion_normalized,36,,,,fewer than 2 distinct categories
+Ministral-3-8B-Instruct,Olmo-3-7B-Instruct,external_opinion_normalized,72,13.590849673202614,0.00351844209727948,3.0,
+Ministral-3-8B-Instruct,Qwen3-8B,external_opinion_normalized,72,8.671345029239767,0.033995239093959545,3.0,
+Ministral-3-8B-Instruct-2512,Olmo-3-7B-Instruct,external_opinion_normalized,36,,,,fewer than 2 distinct categories
+Ministral-3-8B-Instruct-2512,Qwen3-8B,external_opinion_normalized,36,,,,fewer than 2 distinct categories
+Olmo-3-7B-Instruct,Qwen3-8B,external_opinion_normalized,72,1.1614551083591331,0.7622630226464538,3.0,
