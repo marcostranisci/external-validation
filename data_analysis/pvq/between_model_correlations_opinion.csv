@@ -1,0 +1,22 @@
+model_a,model_b,column,n,pearson_r,pearson_p,spearman_r,spearman_p,notes
+Apertus-8B-Instruct,Falcon3-7B-Instruct,opinion,40,0.2347103697327786,0.1448899942324636,0.23261921410983338,0.14860920966643135,
+Apertus-8B-Instruct,Llama-3.1-8B-Instruct,opinion,40,,,,,zero variance in at least one variable
+Apertus-8B-Instruct,Ministral-3-8B-Instruct,opinion,0,,,,,fewer than 3 valid paired observations
+Apertus-8B-Instruct,Ministral-3-8B-Instruct-2512,opinion,40,0.6061621278839079,3.392720802460015e-05,0.45314342657770323,0.0033213600829391887,
+Apertus-8B-Instruct,Olmo-3-7B-Instruct,opinion,40,0.4307700499080844,0.005523267652748605,0.3608313373929383,0.02217257231907568,
+Apertus-8B-Instruct,Qwen3-8B,opinion,40,0.5401668254437332,0.00032101208770504675,0.3633554820428776,0.021189782591381403,
+Falcon3-7B-Instruct,Llama-3.1-8B-Instruct,opinion,40,,,,,zero variance in at least one variable
+Falcon3-7B-Instruct,Ministral-3-8B-Instruct,opinion,0,,,,,fewer than 3 valid paired observations
+Falcon3-7B-Instruct,Ministral-3-8B-Instruct-2512,opinion,40,0.26251811649212065,0.101733377285135,0.21990851687005628,0.17273155224538667,
+Falcon3-7B-Instruct,Olmo-3-7B-Instruct,opinion,40,0.17504626641235846,0.27998534927622887,0.1340693305945655,0.4094997785448233,
+Falcon3-7B-Instruct,Qwen3-8B,opinion,40,0.2949979601845848,0.06461215125504854,0.35634851547924895,0.024011742068791257,
+Llama-3.1-8B-Instruct,Ministral-3-8B-Instruct,opinion,0,,,,,fewer than 3 valid paired observations
+Llama-3.1-8B-Instruct,Ministral-3-8B-Instruct-2512,opinion,40,,,,,zero variance in at least one variable
+Llama-3.1-8B-Instruct,Olmo-3-7B-Instruct,opinion,40,,,,,zero variance in at least one variable
+Llama-3.1-8B-Instruct,Qwen3-8B,opinion,40,,,,,zero variance in at least one variable
+Ministral-3-8B-Instruct,Ministral-3-8B-Instruct-2512,opinion,0,,,,,fewer than 3 valid paired observations
+Ministral-3-8B-Instruct,Olmo-3-7B-Instruct,opinion,0,,,,,fewer than 3 valid paired observations
+Ministral-3-8B-Instruct,Qwen3-8B,opinion,0,,,,,fewer than 3 valid paired observations
+Ministral-3-8B-Instruct-2512,Olmo-3-7B-Instruct,opinion,40,0.4992960339775983,0.0010386896488094534,0.4445611271508968,0.0040529910227127906,
+Ministral-3-8B-Instruct-2512,Qwen3-8B,opinion,40,0.44612248188774917,0.003910292580908212,0.26397556390523574,0.09977834353624222,
+Olmo-3-7B-Instruct,Qwen3-8B,opinion,40,0.13781872838674247,0.39640459146027307,0.05289638499809002,0.7458133330862782,
