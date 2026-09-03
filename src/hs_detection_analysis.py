@@ -37,6 +37,17 @@ from scipy import stats
 from src.questionnaire_analysis import _correlations, _kruskal, _mannwhitney  # noqa: F401 (reuse)
 
 
+def _benjamini_hochberg(pvalues: pd.Series) -> pd.Series:
+    """Benjamini-Hochberg FDR-adjusted p-values, leaving NaN entries as NaN
+    and correcting only across the valid p-values (one hypothesis family)."""
+    valid = pvalues.dropna()
+    adjusted = pd.Series(np.nan, index=pvalues.index)
+    if len(valid) == 0:
+        return adjusted
+    adjusted.loc[valid.index] = stats.false_discovery_control(valid.to_numpy(), method="bh")
+    return adjusted
+
+
 def _recall(predictions: list[dict]) -> tuple[float, int, int]:
     """Recall on the positive (hate speech, label 1) class.
 
@@ -144,7 +155,9 @@ class HateSpeechSteeringAnalyzer:
         Wilcoxon signed-rank test on those 6 per-model deltas (note: n=6 is
         a small sample, so treat the p-value as indicative, not
         confirmatory — the mean/mean-abs delta and how consistent the sign
-        is across models are more informative for ranking items)."""
+        is across models are more informative for ranking items).
+        ``wilcoxon_p_fdr_bh`` Benjamini-Hochberg-corrects across all items'
+        p-values (one hypothesis family: 76 tests, one per item)."""
         zero_shot = table.loc[table["condition"] == "zero_shot", ["model", "recall"]] \
             .rename(columns={"recall": "zero_shot_recall"})
         merged = table[table["condition"].isin(["mft", "pvq"])].merge(zero_shot, on="model")
@@ -175,6 +188,7 @@ class HateSpeechSteeringAnalyzer:
                     row["notes"] = str(exc)
             rows.append(row)
         result = pd.DataFrame(rows).sort_values("mean_abs_delta", ascending=False)
+        result["wilcoxon_p_fdr_bh"] = _benjamini_hochberg(result["wilcoxon_p"])
         self._save(result, "item_level_steering_effect.csv")
         return result
 

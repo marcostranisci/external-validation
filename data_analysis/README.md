@@ -315,11 +315,16 @@ questions:
    `item_level_effect` takes the 6 models' per-item deltas and reports
    their mean, mean absolute value (the item's overall "how much does it
    move recall, either way" score), how many models it pushed up vs. down,
-   and a one-sample Wilcoxon signed-rank test on those 6 deltas — treat
-   that p-value as indicative only (n=6 caps the smallest possible p at
-   1/32≈0.031, reached whenever all 6 models move the same direction).
-   Saved to `item_level_steering_effect.csv`, sorted by mean absolute
-   delta.
+   and a one-sample Wilcoxon signed-rank test on those 6 deltas
+   (`wilcoxon_p`), plus a Benjamini-Hochberg FDR correction across all 76
+   of them (`wilcoxon_p_fdr_bh`, one hypothesis family). n=6 caps the
+   smallest achievable `wilcoxon_p` at 1/32≈0.031 (reached whenever all 6
+   models move the same direction) — **after BH correction, 0 of 76 items
+   reach `wilcoxon_p_fdr_bh` < 0.05** (the smallest corrected value is
+   0.198). So no single item's effect is individually confirmed at a
+   corrected significance level; the per-item numbers below are
+   descriptive ranking/pattern-spotting, not confirmed findings. Saved to
+   `item_level_steering_effect.csv`, sorted by mean absolute delta.
 
 The full per-item recall table (one row per model × condition × item) is
 in `recall_by_model_condition_item.csv`.
@@ -351,8 +356,11 @@ simply "steering always helps" or tied to how good the model already was
 zero-shot (the two worst zero-shot models, Olmo and Falcon, go opposite
 ways).
 
-**Which items steer the most.** Two different questions here give two
-different answers:
+**Which items steer the most.** None of this survives Benjamini-Hochberg
+correction (0/76 items at `wilcoxon_p_fdr_bh` < 0.05) — read it as a
+descriptive pattern to investigate further with more models/items, not a
+confirmed result. Two different questions here give two different
+answers:
 
 - *Largest effect regardless of direction* (top of
   `item_level_steering_effect.csv` by `mean_abs_delta`, ≈0.10-0.15): these
