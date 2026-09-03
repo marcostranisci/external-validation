@@ -110,6 +110,56 @@ def _correlations(a: pd.Series, b: pd.Series) -> dict:
     return result
 
 
+def _mannwhitney(a: pd.Series, b: pd.Series) -> dict:
+    """Two-sample Mann-Whitney U test between two independent (unpaired)
+    groups, with a rank-biserial correlation as effect size.
+
+    Unlike a chi-square test on binned data, this works directly on
+    continuous values (no binning, no arbitrary bin-count choice) and
+    respects the ordering of ordinal/Likert data rather than treating
+    ratings as unordered categories.
+    """
+    x = pd.to_numeric(a, errors="coerce").dropna().to_numpy()
+    y = pd.to_numeric(b, errors="coerce").dropna().to_numpy()
+    result = {"n_a": len(x), "n_b": len(y), "u_stat": np.nan, "p": np.nan,
+              "rank_biserial_r": np.nan, "notes": ""}
+    if len(x) < 3 or len(y) < 3:
+        result["notes"] = "fewer than 3 valid observations in at least one group"
+        return result
+    try:
+        res = stats.mannwhitneyu(x, y, alternative="two-sided")
+    except ValueError as exc:
+        result["notes"] = str(exc)
+        return result
+    u = float(res.statistic)
+    rank_biserial = 1 - (2 * u) / (len(x) * len(y))
+    result.update(u_stat=u, p=float(res.pvalue), rank_biserial_r=float(rank_biserial))
+    return result
+
+
+def _kruskal(groups: dict[str, pd.Series]) -> dict:
+    """Kruskal-Wallis H test across k independent groups, with an
+    eta-squared effect size. Like Mann-Whitney, works on continuous or
+    ordinal values directly without binning."""
+    clean = {k: pd.to_numeric(v, errors="coerce").dropna().to_numpy() for k, v in groups.items()}
+    clean = {k: v for k, v in clean.items() if len(v) >= 3}
+    n = sum(len(v) for v in clean.values())
+    result = {"n_groups": len(clean), "n": n, "h_stat": np.nan, "p": np.nan,
+              "dof": np.nan, "eta_squared": np.nan, "notes": ""}
+    if len(clean) < 2:
+        result["notes"] = "fewer than 2 groups with at least 3 valid observations"
+        return result
+    try:
+        h, p = stats.kruskal(*clean.values())
+    except ValueError as exc:
+        result["notes"] = str(exc)
+        return result
+    k = len(clean)
+    eta_sq = (h - k + 1) / (n - k) if n > k else np.nan
+    result.update(h_stat=float(h), p=float(p), dof=k - 1, eta_squared=float(eta_sq))
+    return result
+
+
 @dataclass
 class QuestionnaireAnalyzer:
     """Loads, augments, and statistically analyzes questionnaire survey files."""
@@ -117,9 +167,6 @@ class QuestionnaireAnalyzer:
     surveys_dir: str | Path = "surveys"
     output_dir: str | Path = "data_analysis"
     warnings: list[str] = field(default_factory=list)
-    #: number of equal-frequency quantile buckets used to discretize
-    #: continuous z-scored (``*_normalized``) columns for chi-square tests
-    normalized_bins: int = 4
 
     def __post_init__(self) -> None:
         self.surveys_dir = Path(self.surveys_dir)
@@ -206,23 +253,10 @@ class QuestionnaireAnalyzer:
         return _correlations(a, b)
 
     @staticmethod
-    def _discretize(series: pd.Series, bins: int | None) -> pd.Series | None:
-        """Bucket a numeric series into categories for a chi-square test.
-
-        ``bins=None`` rounds to the nearest integer (fits raw Likert-scale
-        ratings). ``bins=k`` cuts the series into ``k`` equal-frequency
-        quantile buckets instead (fits continuous z-scored/normalized data,
-        where rounding would mostly yield unique values).
-        """
-        if bins is None:
-            return series.round()
-        try:
-            return pd.qcut(series, q=bins, duplicates="drop")
-        except (ValueError, IndexError):
-            return None
-
-    @classmethod
-    def _chi2_independence(cls, a: pd.Series, b: pd.Series, bins: int | None = None) -> dict:
+    def _chi2_independence(a: pd.Series, b: pd.Series) -> dict:
+        """Chi-square test on integer-rounded values. Intended for raw
+        Likert-scale ratings only; use ``pairwise_model_mannwhitney``/
+        ``kruskal_wallis`` for continuous values instead."""
         mask = a.notna() & b.notna()
         a, b = a[mask], b[mask]
         result = {"n": int(mask.sum()), "chi2_stat": np.nan, "chi2_p": np.nan,
@@ -230,11 +264,7 @@ class QuestionnaireAnalyzer:
         if mask.sum() < 3:
             result["notes"] = "fewer than 3 valid paired observations"
             return result
-        cat_a, cat_b = cls._discretize(a, bins), cls._discretize(b, bins)
-        if cat_a is None or cat_b is None:
-            result["notes"] = "could not bin values into categories"
-            return result
-        table = pd.crosstab(cat_a, cat_b)
+        table = pd.crosstab(a.round(), b.round())
         if table.shape[0] < 2 or table.shape[1] < 2:
             result["notes"] = "fewer than 2 distinct categories on one axis"
             return result
@@ -251,23 +281,15 @@ class QuestionnaireAnalyzer:
         folder_name: str,
         column_a: str = "opinion",
         column_b: str = "external_opinion",
-        bins: int | None = None,
         filename: str | None = None,
     ) -> pd.DataFrame:
         """Independence + correlation tests between ``column_a`` and ``column_b``,
-        run separately for each model.
-
-        ``bins`` is passed to the chi-square test's discretization step: leave
-        it ``None`` for raw Likert-scale columns (rounded to the nearest
-        integer) or set it to a bucket count for continuous/normalized
-        columns (quantile-binned instead). Note that Pearson/Spearman
-        correlations are invariant to z-score normalization, so running this
-        on ``*_normalized`` columns changes only the chi-square result.
-        """
+        run separately for each model. Intended for raw Likert-scale columns
+        (the chi-square step rounds values to the nearest integer)."""
         rows = []
         for model, df in dfs.items():
             corr = self._correlations(df[column_a], df[column_b])
-            chi2 = self._chi2_independence(df[column_a], df[column_b], bins=bins)
+            chi2 = self._chi2_independence(df[column_a], df[column_b])
             rows.append({
                 "model": model,
                 "n": corr["n"],
@@ -307,14 +329,10 @@ class QuestionnaireAnalyzer:
 
     def pairwise_model_independence(
         self, dfs: dict[str, pd.DataFrame], folder_name: str, column: str,
-        bins: int | None = None,
     ) -> pd.DataFrame:
         """Chi-square test of independence between model identity and the
-        rating distribution of ``column``, for every pair of models.
-
-        ``bins=None`` rounds ``column`` to the nearest integer (raw
-        Likert-scale columns); pass a bucket count to quantile-bin it
-        instead (for continuous/normalized columns)."""
+        (integer-rounded) rating distribution of ``column``, for every pair
+        of models. Intended for raw Likert-scale columns."""
         rows = []
         for model_a, model_b in itertools.combinations(sorted(dfs), 2):
             long = pd.concat([
@@ -327,16 +345,12 @@ class QuestionnaireAnalyzer:
             if len(long) < 3:
                 row["notes"] = "fewer than 3 valid observations"
             else:
-                categories = self._discretize(long[column], bins)
-                if categories is None:
-                    row["notes"] = "could not bin values into categories"
+                table = pd.crosstab(long["model"], long[column].round())
+                if table.shape[0] < 2 or table.shape[1] < 2:
+                    row["notes"] = "fewer than 2 distinct categories"
                 else:
-                    table = pd.crosstab(long["model"], categories)
-                    if table.shape[0] < 2 or table.shape[1] < 2:
-                        row["notes"] = "fewer than 2 distinct categories"
-                    else:
-                        chi2, p, dof, _ = stats.chi2_contingency(table)
-                        row.update(chi2_stat=float(chi2), chi2_p=float(p), chi2_dof=int(dof))
+                    chi2, p, dof, _ = stats.chi2_contingency(table)
+                    row.update(chi2_stat=float(chi2), chi2_p=float(p), chi2_dof=int(dof))
             rows.append(row)
         result = pd.DataFrame(rows)
         self._save(result, folder_name, f"pairwise_model_independence_{column}.csv")
@@ -344,14 +358,10 @@ class QuestionnaireAnalyzer:
 
     def between_model_independence(
         self, dfs: dict[str, pd.DataFrame], folder_name: str, column: str,
-        bins: int | None = None,
     ) -> pd.DataFrame:
         """Chi-square test of independence between model identity and the
-        rating distribution of ``column``, across all models.
-
-        ``bins=None`` rounds ``column`` to the nearest integer (raw
-        Likert-scale columns); pass a bucket count to quantile-bin it
-        instead (for continuous/normalized columns)."""
+        (integer-rounded) rating distribution of ``column``, across all
+        models. Intended for raw Likert-scale columns."""
         long = pd.concat(
             [df[["model", column]] for df in dfs.values()], ignore_index=True
         ).dropna()
@@ -360,18 +370,38 @@ class QuestionnaireAnalyzer:
         if long["model"].nunique() < 2:
             result_row["notes"] = "fewer than 2 models with data"
         else:
-            categories = self._discretize(long[column], bins)
-            if categories is None:
-                result_row["notes"] = "could not bin values into categories"
+            table = pd.crosstab(long["model"], long[column].round())
+            if table.shape[0] < 2 or table.shape[1] < 2:
+                result_row["notes"] = "fewer than 2 distinct categories"
             else:
-                table = pd.crosstab(long["model"], categories)
-                if table.shape[0] < 2 or table.shape[1] < 2:
-                    result_row["notes"] = "fewer than 2 distinct categories"
-                else:
-                    chi2, p, dof, _ = stats.chi2_contingency(table)
-                    result_row.update(chi2_stat=float(chi2), chi2_p=float(p), chi2_dof=int(dof))
+                chi2, p, dof, _ = stats.chi2_contingency(table)
+                result_row.update(chi2_stat=float(chi2), chi2_p=float(p), chi2_dof=int(dof))
         result = pd.DataFrame([result_row])
         self._save(result, folder_name, f"between_model_independence_{column}.csv")
+        return result
+
+    def pairwise_model_mannwhitney(
+        self, dfs: dict[str, pd.DataFrame], folder_name: str, column: str
+    ) -> pd.DataFrame:
+        """Two-sample Mann-Whitney U test of ``column`` between every pair of
+        models. Distribution-free alternative to the binned chi-square test:
+        works directly on continuous/ordinal values, no bin-count choice."""
+        rows = []
+        for model_a, model_b in itertools.combinations(sorted(dfs), 2):
+            res = _mannwhitney(dfs[model_a][column], dfs[model_b][column])
+            rows.append({"model_a": model_a, "model_b": model_b, "column": column, **res})
+        result = pd.DataFrame(rows)
+        self._save(result, folder_name, f"pairwise_model_mannwhitney_{column}.csv")
+        return result
+
+    def kruskal_wallis(
+        self, dfs: dict[str, pd.DataFrame], folder_name: str, column: str
+    ) -> pd.DataFrame:
+        """Kruskal-Wallis H test of ``column`` across all models at once.
+        Distribution-free alternative to the pooled chi-square test."""
+        res = _kruskal({model: df[column] for model, df in dfs.items()})
+        result = pd.DataFrame([{"column": column, **res}])
+        self._save(result, folder_name, f"kruskal_wallis_{column}.csv")
         return result
 
     def disagreement_vs_delta(
@@ -411,33 +441,35 @@ class QuestionnaireAnalyzer:
         df.to_csv(out_folder / filename, index=False)
 
     def run_folder(self, folder_name: str) -> dict[str, pd.DataFrame]:
-        """Run the full pipeline (feature engineering + all tests) for one folder."""
+        """Run the full pipeline (feature engineering + all tests) for one
+        folder, on the raw (Likert-scale) ``opinion``/``external_opinion``
+        columns. ``opinion_normalized``/``external_opinion_normalized`` are
+        still computed and saved in the processed files (see
+        ``load_and_process_file``), but are not used for statistical
+        testing: the raw scale is common and externally fixed across models
+        (unlike a subjective per-rater scale), so a model's absolute rating
+        level is itself a meaningful result rather than noise to normalize
+        away."""
         dfs = self.process_folder(folder_name)
 
-        # raw (Likert-scale) columns: chi-square categories from rounding
         self.opinion_vs_external_per_model(dfs, folder_name)
         self.between_model_correlations(dfs, folder_name, "opinion")
         self.between_model_correlations(dfs, folder_name, "external_opinion")
+
+        # chi-square treats ratings as unordered categories; kept for
+        # continuity, but see the rank-based tests below for the more
+        # appropriate treatment of ordinal Likert data.
         self.pairwise_model_independence(dfs, folder_name, "opinion")
         self.pairwise_model_independence(dfs, folder_name, "external_opinion")
         self.between_model_independence(dfs, folder_name, "opinion")
         self.between_model_independence(dfs, folder_name, "external_opinion")
 
-        # normalized (z-scored) columns: chi-square categories from quantile bins.
-        # Pearson/Spearman are invariant to z-scoring, so only chi-square
-        # results are new here; the per-model file's correlation columns are
-        # identical to the raw version's and kept only for a self-contained report.
-        bins = self.normalized_bins
-        self.opinion_vs_external_per_model(
-            dfs, folder_name,
-            column_a="opinion_normalized", column_b="external_opinion_normalized",
-            bins=bins,
-            filename="opinion_vs_external_opinion_per_model_normalized.csv",
-        )
-        self.pairwise_model_independence(dfs, folder_name, "opinion_normalized", bins=bins)
-        self.pairwise_model_independence(dfs, folder_name, "external_opinion_normalized", bins=bins)
-        self.between_model_independence(dfs, folder_name, "opinion_normalized", bins=bins)
-        self.between_model_independence(dfs, folder_name, "external_opinion_normalized", bins=bins)
+        # rank-based tests: respect the ordering of ordinal Likert ratings
+        # (unlike chi-square) and need no discretization.
+        self.pairwise_model_mannwhitney(dfs, folder_name, "opinion")
+        self.pairwise_model_mannwhitney(dfs, folder_name, "external_opinion")
+        self.kruskal_wallis(dfs, folder_name, "opinion")
+        self.kruskal_wallis(dfs, folder_name, "external_opinion")
 
         self.disagreement_vs_delta(dfs, folder_name)
         return dfs
@@ -507,19 +539,21 @@ class AnnotatorSurveyAnalyzer:
         return items, own_cols, eval_cols, missing
 
     def _load(
-        self, filepath: str | Path, prefix: str
+        self, source: str | Path | pd.DataFrame, prefix: str
     ) -> tuple[pd.DataFrame, list[int], dict[int, str], dict[int, str]]:
-        filepath = Path(filepath)
-        df = pd.read_csv(filepath)
+        if isinstance(source, pd.DataFrame):
+            df, label = source, "<dataframe>"
+        else:
+            df, label = pd.read_csv(source), Path(source).name
         items, own_cols, eval_cols, missing = self._item_columns(df, prefix)
         if missing:
             self._warn(
-                f"[{filepath.name}] item number(s) {missing} have only an "
+                f"[{label}] item number(s) {missing} have only an "
                 f"'{prefix}_NN' or only an '{prefix}02_NN' column; skipped."
             )
         if not items:
             raise ValueError(
-                f"{filepath}: no '{prefix}_NN' / '{prefix}02_NN' column pairs found"
+                f"{label}: no '{prefix}_NN' / '{prefix}02_NN' column pairs found"
             )
         return df, items, own_cols, eval_cols
 
@@ -582,6 +616,137 @@ class AnnotatorSurveyAnalyzer:
             "notes": corr["notes"],
         }])
         self._save(result, f"{prefix.lower()}_overall_correlation.csv")
+        return result
+
+    def infer_model_mapping(
+        self, source: str | Path | pd.DataFrame, prefix: str,
+        model_glob: str, group_column: str = "QUESTNNR",
+    ) -> dict[str, str]:
+        """Identify which model each ``group_column`` value (e.g. a
+        ``QUESTNNR`` block) of annotators evaluated, by matching the sorted
+        multiset of ratings they gave per item against the disaggregated
+        ratings in each model survey file (order-independent, since
+        annotator order need not match between the two file formats).
+
+        Returns ``{group_value: model_file_stem}`` for groups with exactly
+        one matching file; a group with zero or multiple matches is left
+        out and a warning is logged.
+        """
+        df, items, own_cols, eval_cols = self._load(source, prefix)
+        if group_column not in df.columns:
+            raise ValueError(f"no '{group_column}' column found")
+        ordered_eval_cols = [eval_cols[i] for i in items]
+
+        def signature(rows: pd.DataFrame, cols: list[str]) -> tuple:
+            return tuple(tuple(sorted(rows[c].tolist())) for c in cols)
+
+        group_sigs = {g: signature(rows, ordered_eval_cols) for g, rows in df.groupby(group_column)}
+
+        model_sigs: dict[str, tuple] = {}
+        for model_path in sorted(Path().glob(model_glob)):
+            model_df = pd.read_csv(model_path)
+            disagg_col = _find_disaggregated_column(model_df.columns)
+            if disagg_col is None:
+                continue
+            parsed = model_df[disagg_col].apply(_parse_rating_list)
+            if parsed.isna().any():
+                continue
+            model_sigs[model_path.stem] = tuple(tuple(sorted(v)) for v in parsed)
+
+        mapping = {}
+        for group_value, sig in group_sigs.items():
+            matches = [name for name, model_sig in model_sigs.items() if model_sig == sig]
+            if len(matches) == 1:
+                mapping[group_value] = matches[0]
+            else:
+                self._warn(
+                    f"'{group_column}' value '{group_value}' matched "
+                    f"{len(matches)} model file(s) under '{model_glob}'; left unmapped."
+                )
+        return mapping
+
+    def demographic_agreement(
+        self, source: str | Path | pd.DataFrame, prefix: str,
+        demographic_columns: list[str], group_column: str = "QUESTNNR",
+        model_mapping: dict[str, str] | None = None,
+    ) -> pd.DataFrame:
+        """For each ``group_column`` value (the annotators who evaluated one
+        model), test whether annotators sharing a demographic attribute
+        agree with each other more than annotators who don't, on their
+        evaluations of that model's replies (the ``<prefix>_NN`` columns).
+
+        Agreement between two annotators is measured two ways across their
+        shared evaluation items: Pearson correlation (higher = more similar
+        *pattern* across items) and mean absolute difference, negated so
+        higher also means more agreement here (``neg_mad``; more similar
+        absolute *level*). Pairs are split into "same" vs "different" on
+        each demographic column and compared with a two-sample Mann-Whitney
+        U test. Per model this is underpowered (a 9-annotator group has 36
+        pairs total, split further into same/different), so an additional
+        ``model="ALL (pooled)"`` row pools every model's pairs together for
+        a properly-powered version of the same test."""
+        df, items, own_cols, eval_cols = self._load(source, prefix)
+        if group_column not in df.columns:
+            raise ValueError(f"no '{group_column}' column found")
+        ordered_eval_cols = [eval_cols[i] for i in items]
+        model_mapping = model_mapping or {}
+
+        def test_rows(pairs: pd.DataFrame, same: list[bool], label: dict) -> list[dict]:
+            out = []
+            for metric in ("pearson_r", "neg_mad"):
+                same_vals = pairs.loc[same, metric].dropna()
+                diff_vals = pairs.loc[[not s for s in same], metric].dropna()
+                res = _mannwhitney(
+                    pd.Series(same_vals.to_numpy()), pd.Series(diff_vals.to_numpy())
+                )
+                out.append({
+                    **label, "metric": metric,
+                    "n_same_pairs": len(same_vals), "n_diff_pairs": len(diff_vals),
+                    "median_same": float(same_vals.median()) if len(same_vals) else np.nan,
+                    "median_diff": float(diff_vals.median()) if len(diff_vals) else np.nan,
+                    "u_stat": res["u_stat"], "p": res["p"],
+                    "rank_biserial_r": res["rank_biserial_r"],
+                    "notes": res["notes"],
+                })
+            return out
+
+        rows = []
+        pooled_pairs = {col: [] for col in demographic_columns}
+        pooled_same = {col: [] for col in demographic_columns}
+        for group_value, group in df.groupby(group_column):
+            model_name = model_mapping.get(group_value, group_value)
+            idx = group.index.tolist()
+            matrix = group[ordered_eval_cols].to_numpy(dtype=float)
+            pair_records = []
+            for a, b in itertools.combinations(range(len(idx)), 2):
+                x, y = matrix[a], matrix[b]
+                r = np.corrcoef(x, y)[0, 1] if np.std(x) > 0 and np.std(y) > 0 else np.nan
+                pair_records.append({
+                    "row_a": idx[a], "row_b": idx[b],
+                    "pearson_r": r, "neg_mad": -float(np.mean(np.abs(x - y))),
+                })
+            pairs = pd.DataFrame(pair_records)
+
+            for demo_col in demographic_columns:
+                if demo_col not in group.columns:
+                    self._warn(f"demographic column '{demo_col}' not found; skipped.")
+                    continue
+                values = group[demo_col]
+                same = [values.loc[r["row_a"]] == values.loc[r["row_b"]] for r in pair_records]
+                label = {group_column: group_value, "model": model_name, "demographic": demo_col}
+                rows.extend(test_rows(pairs, same, label))
+                pooled_pairs[demo_col].append(pairs)
+                pooled_same[demo_col].extend(same)
+
+        for demo_col in demographic_columns:
+            if not pooled_pairs[demo_col]:
+                continue
+            all_pairs = pd.concat(pooled_pairs[demo_col], ignore_index=True)
+            label = {group_column: "ALL", "model": "ALL (pooled)", "demographic": demo_col}
+            rows.extend(test_rows(all_pairs, pooled_same[demo_col], label))
+
+        result = pd.DataFrame(rows)
+        self._save(result, f"{prefix.lower()}_demographic_agreement.csv")
         return result
 
     def _save(self, df: pd.DataFrame, filename: str) -> None:

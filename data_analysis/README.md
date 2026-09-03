@@ -17,6 +17,10 @@ analysis of the raw human-annotator exports in `surveys/mf_merged.csv` and
 - `run_annotator_analysis.py` — entry point that runs `AnnotatorSurveyAnalyzer`
   on `surveys/mf_merged.csv` and `surveys/pv_merged.csv` and writes
   everything under `data_analysis/annotators/`.
+- `run_annotator_demographics.py` — entry point that checks whether
+  annotators sharing a demographic (gender, continent of birth) agree more
+  with each other when evaluating a model's replies (see "Demographic
+  agreement" below).
 
 ### Re-running the analysis
 
@@ -58,6 +62,18 @@ model), the pipeline adds four columns:
 A zero-variance column (e.g. a model that answered the same value on every
 item) is normalized to all zeros instead of producing `NaN`/`inf`.
 
+**The statistical tests below all use the raw `opinion`/`external_opinion`
+columns, not the normalized ones.** The rating scale here (1-5 for MFT,
+1-6 for PVQ) is the same fixed scale for every model and every annotator —
+unlike a subjective per-rater anchor, there's no reason to treat one
+model's average level as a nuisance to normalize away. A model that
+systematically rates higher or lower than another is itself a real,
+reportable result, and z-scoring per model would erase exactly that by
+construction. `opinion_normalized`/`external_opinion_normalized` are kept
+in the processed files for anyone who wants to ask the narrower question
+"controlling for level and spread, does the *shape* of a model's answers
+still differ?", but that's not what's tested here.
+
 The augmented per-model files are saved to:
 
 ```
@@ -93,7 +109,22 @@ are saved under `data_analysis/mft/` and `data_analysis/pvq/` respectively.
    instead of pairwise — tests whether rating distributions depend on which
    model produced them, overall.
 
-5. **`annotator_disagreement_vs_delta.csv`**
+5. **`pairwise_model_mannwhitney_opinion.csv`** /
+   **`pairwise_model_mannwhitney_external_opinion.csv`**
+   A two-sample Mann-Whitney U test between every pair of models, with a
+   rank-biserial correlation (`rank_biserial_r`, range -1 to 1) as effect
+   size. Unlike chi-square, this works directly on the ordinal ratings
+   without rounding/binning, respecting their ordering rather than
+   treating them as unordered categories — the more appropriate test for
+   ordinal Likert data, and the one to prefer over tests 3-4 above.
+
+6. **`kruskal_wallis_opinion.csv`** / **`kruskal_wallis_external_opinion.csv`**
+   The pooled, all-models-at-once counterpart of test 5 (a Kruskal-Wallis H
+   test), with an eta-squared effect size (`eta_squared`; Cohen-style
+   benchmarks: ~0.01 small, ~0.06 medium, ~0.14 large) — the rank-based
+   alternative to test 4.
+
+7. **`annotator_disagreement_vs_delta.csv`**
    Per model: Pearson/Spearman correlation between `annotator_disagreement`
    and the delta between the model's `opinion` and the human
    `external_opinion` (both the signed delta `opinion - external_opinion`
@@ -103,35 +134,19 @@ Every test row reports `n` (valid paired observations used) and a `notes`
 column explaining why a test could not be run (e.g. `"zero variance in at
 least one variable"`, `"fewer than 3 valid paired observations"`).
 
-### Independence tests on the normalized scores
-
-Tests 1 and 3 above are repeated on the z-scored `opinion_normalized` /
-`external_opinion_normalized` columns, producing:
-
-- `opinion_vs_external_opinion_per_model_normalized.csv`
-- `pairwise_model_independence_opinion_normalized.csv` /
-  `pairwise_model_independence_external_opinion_normalized.csv`
-- `between_model_independence_opinion_normalized.csv` /
-  `between_model_independence_external_opinion_normalized.csv`
-
-Two things differ from the raw-column versions:
-
-- **Discretization.** Raw Likert ratings are integer-valued, so the
-  chi-square contingency tables are built by rounding to the nearest
-  integer. Normalized scores are continuous z-scores, so rounding would
-  mostly produce unique values; instead they are split into
-  `QuestionnaireAnalyzer.normalized_bins` (default 4) equal-frequency
-  quantile buckets before building the table.
-- **What changes vs. the raw version.** Pearson/Spearman correlation is
-  invariant to per-column z-scoring, so the `pearson_r`/`spearman_r`
-  columns in `opinion_vs_external_opinion_per_model_normalized.csv` are
-  identical to the raw file's — only the chi-square result differs, and
-  it can differ meaningfully: normalizing removes each model's own
-  mean/scale usage, so the independence tests on `opinion_normalized`/
-  `external_opinion_normalized` isolate differences in the *shape* of a
-  model's rating distribution (e.g. skew, how tightly it clusters around
-  its own average) rather than differences caused simply by one model
-  favoring different raw numbers than another.
+**Read tests 5-6, not 3-4, for the headline "do models differ" result.**
+Chi-square (tests 3-4) treats ratings as unordered nominal categories,
+discarding the fact that a 4 is closer to a 5 than to a 1; Mann-Whitney/
+Kruskal-Wallis use ranks and don't have that problem. On the raw scale
+both approaches agree there's a real, large difference between models:
+Kruskal-Wallis on `opinion` gives η²≈0.45-0.46 in both MFT and PVQ (a large
+effect by Cohen's benchmarks — models genuinely differ a lot in their
+absolute rating level), and on `external_opinion` gives η²≈0.11 (MFT) /
+0.14 (PVQ) (medium-to-large — annotators' absolute ratings of different
+models' replies differ too, not just the shape of the pattern). Pairwise
+Mann-Whitney: 18/20 valid MFT pairs and 12/15 valid PVQ pairs differ
+significantly on `opinion`; 5/15 (MFT) and 9/15 (PVQ) differ on
+`external_opinion`.
 
 ## Annotator-level analysis: own replies vs. model evaluations
 
@@ -198,6 +213,65 @@ two blocks are skipped and reported in
 `data_analysis/annotators/data_quality_warnings.log`. No such gaps were
 found in `mf_merged.csv`/`pv_merged.csv` — both files had complete,
 non-missing data for every annotator and item.
+
+## Demographic agreement: does gender/origin predict inter-annotator agreement?
+
+Each `QUESTNNR` value in the merged files identifies the group of 9
+annotators who evaluated one specific model's replies (the `<prefix>_NN`
+columns) — not the model by name, so `AnnotatorSurveyAnalyzer.infer_model_mapping`
+recovers that mapping by matching each group's sorted per-item ratings
+against the disaggregated ratings in `surveys/mft/*.csv` / `surveys/pvq/*.csv`
+(order-independent, since annotator order differs between the two file
+formats). Every `QUESTNNR` group matched exactly one model file. The
+annotator pool is stratified 3-3-3 by gender (woman/man/non-binary) and by
+continent of birth (Africa/Asia/Europe, derived from `Country of birth`)
+within every group of 9.
+
+`AnnotatorSurveyAnalyzer.demographic_agreement` asks: for a given model, do
+annotators sharing a demographic attribute agree with each other *more*
+than annotators who don't, when evaluating that model's replies? For every
+pair of annotators within a `QUESTNNR` group it computes two agreement
+metrics across their shared evaluation items — Pearson correlation
+(agreement in *pattern* across items) and negated mean absolute difference,
+`neg_mad` (agreement in absolute *level*, higher = closer) — then splits
+the pairs into "same demographic" vs "different demographic" and compares
+with a two-sample Mann-Whitney U test. Per model this is underpowered (9
+annotators → 36 pairs, split further into 9 same-gender vs 27
+different-gender, or similarly for continent), so an additional
+`model="ALL (pooled)"` row pools all 6 models' pairs (54 same vs. 162
+different) for a properly-powered version of the same test. Results:
+`data_analysis/annotators/{mf,pv}_demographic_agreement.csv`.
+
+Rerun with:
+
+```bash
+python run_annotator_demographics.py
+```
+
+**Result: no reliable evidence of gender-based in-group agreement, and only
+weak, non-replicating evidence for continent.** Pooled (the numbers to
+trust):
+
+| | Gender: pearson_r p | Gender: neg_mad p | Continent: pearson_r p | Continent: neg_mad p |
+|---|---|---|---|---|
+| MF | 0.93 | 0.74 | 0.26 | **0.031** |
+| PV | 0.91 | 0.88 | 0.79 | 0.50 |
+
+Gender is a clean null in both questionnaires, on both metrics (all
+p≥0.74). Continent reaches p=0.031 in MF on the level-agreement metric
+(`neg_mad`; same-continent pairs agree slightly more closely in absolute
+level: median -1.03 vs. -1.11) but not on the pattern metric in MF
+(p=0.26), and doesn't replicate in PV at all (p=0.50 on the same metric).
+Given 8 pooled tests were run in total (2 questionnaires × 2 demographics ×
+2 metrics) plus 24 unpowered per-model tests underneath them, a single
+p≈0.03 hit that fails to replicate across questionnaires is exactly what
+you'd expect from chance alone (≈0.4 false positives expected at α=0.05
+across the 8 pooled tests) — treat the continent result as suggestive at
+most, not as an established effect, and don't lead with the per-model
+numbers (`data_analysis/annotators/{mf,pv}_demographic_agreement.csv`
+rows other than `model="ALL (pooled)"`) as evidence on their own; they're
+kept for transparency/inspection, not for drawing conclusions from
+individually.
 
 ## Data quality notes
 
