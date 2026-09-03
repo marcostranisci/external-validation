@@ -48,6 +48,24 @@ def _benjamini_hochberg(pvalues: pd.Series) -> pd.Series:
     return adjusted
 
 
+#: Schwartz's 10 basic values, as numbered in the PVQ item mapping (1-10).
+SCHWARTZ_PVQ_VALUES = {
+    1: "Universalism", 2: "Benevolence", 3: "Tradition", 4: "Conformity",
+    5: "Security", 6: "Power", 7: "Achievement", 8: "Hedonism",
+    9: "Stimulation", 10: "Self-Direction",
+}
+
+
+def _mcnemar_exact(b: int, c: int) -> float:
+    """Exact (binomial) McNemar test p-value on the discordant pair counts
+    ``b`` (correct under zero-shot, wrong under steering) and ``c`` (the
+    reverse). Appropriate here since per-item discordant counts can be
+    small (out of 250 positive-class messages)."""
+    if b + c == 0:
+        return 1.0
+    return float(stats.binomtest(min(b, c), b + c, 0.5, alternative="two-sided").pvalue)
+
+
 def _recall(predictions: list[dict]) -> tuple[float, int, int]:
     """Recall on the positive (hate speech, label 1) class.
 
@@ -229,6 +247,104 @@ class HateSpeechSteeringAnalyzer:
         return {"kruskal": kruskal_df, "pairwise": pairwise_df}
 
     # ------------------------------------------------------------------
+    # Which items significantly change recall, for each model individually?
+    # ------------------------------------------------------------------
+    def item_significance_per_model(
+        self, pvq_mapping_path: str | Path | None = None
+    ) -> pd.DataFrame:
+        """For each model and each questionnaire item, test via an exact
+        (binomial) McNemar test whether steering by that model's own reply
+        to this item significantly changes recall relative to zero-shot —
+        using the 250 actual-positive messages, paired by message id
+        between the zero-shot and steered runs (so this needs the raw
+        per-message predictions, not the aggregate recall table).
+
+        McNemar compares the discordant pairs: ``b`` = messages correct
+        zero-shot but wrong after steering (a recall loss), ``c`` = wrong
+        zero-shot but correct after steering (a recall gain). p-values are
+        Benjamini-Hochberg corrected *within each model's own family* of
+        76 items (36 MFT + 40 PVQ) — this is a per-model question, so each
+        model gets its own correction rather than pooling all 456 tests.
+
+        If ``pvq_mapping_path`` is given (a CSV with ``test_statement`` and
+        ``pvq_value`` columns, Schwartz PVQ values numbered 1-10), PVQ
+        items are labeled with their Schwartz value name.
+        """
+        pvq_map: dict[str, int] = {}
+        if pvq_mapping_path is not None:
+            map_df = pd.read_csv(pvq_mapping_path)
+            pvq_map = dict(zip(map_df["test_statement"], map_df["pvq_value"]))
+
+        rows = []
+        for model, model_data in self._data["models"].items():
+            zero_shot_by_id = {p["id"]: p["answer"] for p in model_data["zero_shot"]}
+            for condition in ("mft", "pvq"):
+                for item in model_data[condition]:
+                    positives = [p for p in item["predictions"] if int(p["dataset_label"]) == 1]
+                    a = b = c = d = 0
+                    for p in positives:
+                        zs_correct = str(zero_shot_by_id[p["id"]]) == "1"
+                        st_correct = str(p["answer"]) == "1"
+                        if zs_correct and st_correct:
+                            a += 1
+                        elif zs_correct and not st_correct:
+                            b += 1
+                        elif not zs_correct and st_correct:
+                            c += 1
+                        else:
+                            d += 1
+                    n_pos = a + b + c + d
+                    delta_recall = (c - b) / n_pos if n_pos else np.nan
+                    direction = "increase" if c > b else ("decrease" if b > c else "no_change")
+                    pvq_value = pvq_map.get(item["test_statement"]) if condition == "pvq" else None
+                    rows.append({
+                        "model": model, "condition": condition, "belief_id": item["belief_id"],
+                        "test_statement": item["test_statement"], "foundation": item.get("foundation"),
+                        "pvq_value": pvq_value,
+                        "pvq_value_label": SCHWARTZ_PVQ_VALUES.get(pvq_value),
+                        "n_positive": n_pos, "n_lost": b, "n_gained": c,
+                        "delta_recall": delta_recall, "direction": direction,
+                        "mcnemar_p": _mcnemar_exact(b, c),
+                    })
+        result = pd.DataFrame(rows)
+        result["mcnemar_p_fdr_bh"] = result.groupby("model")["mcnemar_p"].transform(_benjamini_hochberg)
+        result["significant_fdr_05"] = result["mcnemar_p_fdr_bh"] < 0.05
+        result = result.sort_values(["model", "mcnemar_p_fdr_bh"])
+        self._save(result, "item_significance_per_model.csv")
+        return result
+
+    def pvq_value_patterns(self, item_significance: pd.DataFrame) -> pd.DataFrame:
+        """Summarize how the (per-model-significant) recall shift breaks
+        down by Schwartz PVQ value, both per model and pooled across all 6
+        (``model="ALL"``). Only meaningful for PVQ items — MFT items have
+        no PVQ value and are excluded."""
+        pvq_rows = item_significance[item_significance["condition"] == "pvq"].copy()
+
+        def summarize(group: pd.DataFrame) -> pd.Series:
+            sig = group[group["significant_fdr_05"]]
+            return pd.Series({
+                "n_items": len(group),
+                "n_significant": len(sig),
+                "n_significant_increase": int((sig["direction"] == "increase").sum()),
+                "n_significant_decrease": int((sig["direction"] == "decrease").sum()),
+                "mean_delta_recall": group["delta_recall"].mean(),
+            })
+
+        per_model = (
+            pvq_rows.groupby(["model", "pvq_value_label"], dropna=False)
+            .apply(summarize, include_groups=False).reset_index()
+        )
+        pooled = (
+            pvq_rows.groupby("pvq_value_label", dropna=False)
+            .apply(summarize, include_groups=False).reset_index()
+        )
+        pooled.insert(0, "model", "ALL")
+        result = pd.concat([per_model, pooled], ignore_index=True) \
+            .sort_values(["model", "n_significant"], ascending=[True, False])
+        self._save(result, "pvq_value_patterns.csv")
+        return result
+
+    # ------------------------------------------------------------------
     # Orchestration
     # ------------------------------------------------------------------
     def _save(self, df: pd.DataFrame, filename: str) -> None:
@@ -236,10 +352,16 @@ class HateSpeechSteeringAnalyzer:
         out_folder.mkdir(parents=True, exist_ok=True)
         df.to_csv(out_folder / filename, index=False)
 
-    def run_all(self) -> dict[str, pd.DataFrame]:
+    def run_all(self, pvq_mapping_path: str | Path | None = None) -> dict[str, pd.DataFrame]:
         table = self.build_recall_table()
         self._save(table, "recall_by_model_condition_item.csv")
         per_model = self.steering_effect_per_model(table)
         by_item = self.item_level_effect(table)
         between = self.between_model_steering_effect(table)
-        return {"recall_table": table, "per_model": per_model, "by_item": by_item, **between}
+        item_significance = self.item_significance_per_model(pvq_mapping_path)
+        pvq_patterns = self.pvq_value_patterns(item_significance)
+        return {
+            "recall_table": table, "per_model": per_model, "by_item": by_item,
+            "item_significance": item_significance, "pvq_patterns": pvq_patterns,
+            **between,
+        }

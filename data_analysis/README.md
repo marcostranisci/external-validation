@@ -326,8 +326,63 @@ questions:
    descriptive ranking/pattern-spotting, not confirmed findings. Saved to
    `item_level_steering_effect.csv`, sorted by mean absolute delta.
 
+4. **Which items significantly change recall, for each model
+   individually?** Test 3's n=6 (one data point per model) is too
+   underpowered to ever survive correction. This test instead uses the
+   250 positive-class messages themselves as the paired sample: for a
+   given model and item, compare each message's zero-shot vs. steered
+   correctness with an exact (binomial) **McNemar test** — the standard
+   test for paired binary outcomes — on the discordant pairs (`n_lost` =
+   correct zero-shot, wrong after steering; `n_gained` = the reverse).
+   p-values are Benjamini-Hochberg corrected *within each model's own*
+   76-item family (a per-model question, so each model gets its own
+   correction rather than pooling all 456 tests). If
+   `pvq_mapping_path` is given (a CSV with `test_statement`/`pvq_value`
+   columns; `hs_detection/pvq_items_mapping.csv` here, values 1-10 per
+   Schwartz's Portrait Values Questionnaire), PVQ items are also labeled
+   with their Schwartz value name. Saved to
+   `item_significance_per_model.csv`.
+5. **Pattern check: does the effect cluster by Schwartz PVQ value?**
+   `pvq_value_patterns` aggregates test 4's PVQ-item results by Schwartz
+   value, per model and pooled (`model="ALL"`): item count, how many are
+   significant, in which direction, and the mean delta. Saved to
+   `pvq_value_patterns.csv`.
+
 The full per-item recall table (one row per model × condition × item) is
 in `recall_by_model_condition_item.csv`.
+
+**Item significance results.** Unlike test 3, this test has real power —
+most items turn out significant per model: Ministral 74/76, Falcon 56/76,
+Llama 51/76, Olmo 46/76, Qwen 45/76, Apertus 23/76 (lowest, consistent
+with its near-zero average effect from test 1). The *direction* sharpens
+the earlier picture a lot: for Falcon, Llama, Ministral, and Qwen,
+essentially every significant item is an **increase** (53/56, 51/51,
+74/74, 45/45) — steering isn't just helpful on average for these models,
+it's almost never harmful item-by-item. Olmo is the mirror image: most of
+its significant items (35/46) are **decreases**. Apertus is genuinely
+mixed (13 decreases, 10 increases) rather than simply "unaffected" —
+test 1's near-zero average was masking real, opposite-signed, item-level
+effects that roughly cancel out.
+
+**PVQ value pattern.** Pooling all 6 models, every Schwartz value has a
+net *positive* mean delta (steering helps) **except Universalism
+(-0.048) and Benevolence (-0.044)** — the two values in Schwartz's
+"self-transcendence" quadrant (concern for others' welfare broadly).
+Security, Achievement, and Stimulation show the largest positive average
+shifts (+0.05 to +0.06). This isn't purely one outlier model: Olmo's
+Universalism (-0.39) and Benevolence (-0.32) deltas are far larger in
+magnitude than anything else in the table and dominate the pooled
+average, but Apertus *also* shows Universalism/Benevolence as its most
+negative values (-0.032 / -0.061, its only significant items in either
+category are decreases), and Falcon's Universalism delta (-0.027) is its
+only negative value across all 10 Schwartz categories. Llama, Ministral,
+and Qwen, by contrast, show Universalism/Benevolence as clearly positive,
+in line with their general "steering helps" pattern. So: 2 of 6 models
+(Apertus, Olmo) are consistently hurt specifically by
+universalism/benevolence content, a 3rd (Falcon) leans that way for
+Universalism only, and the other 3 show no such exception — a real,
+if partial, pattern worth investigating further rather than a
+description of all 6 models.
 
 Rerun with:
 
