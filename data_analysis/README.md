@@ -21,6 +21,12 @@ analysis of the raw human-annotator exports in `surveys/mf_merged.csv` and
   annotators sharing a demographic (gender, continent of birth) agree more
   with each other when evaluating a model's replies (see "Demographic
   agreement" below).
+- `src/hs_detection_analysis.py` — `HateSpeechSteeringAnalyzer` class (does
+  questionnaire-belief steering shift hate-speech recall?).
+- `run_hs_detection_analysis.py` — entry point that runs it on
+  `hs_detection/implicit_hate_all_models.json` and writes everything under
+  `data_analysis/hs_detection/` (see "Belief-steered hate-speech detection"
+  below).
 
 ### Re-running the analysis
 
@@ -28,6 +34,8 @@ analysis of the raw human-annotator exports in `surveys/mf_merged.csv` and
 pip install -r requirements.txt   # pandas, numpy, scipy already included
 python run_questionnaire_analysis.py
 python run_annotator_analysis.py
+python run_annotator_demographics.py
+python run_hs_detection_analysis.py
 ```
 
 ### Reusing the class on a new folder/dataset
@@ -272,6 +280,73 @@ numbers (`data_analysis/annotators/{mf,pv}_demographic_agreement.csv`
 rows other than `model="ALL (pooled)"`) as evidence on their own; they're
 kept for transparency/inspection, not for drawing conclusions from
 individually.
+
+## Belief-steered hate-speech detection
+
+`hs_detection/implicit_hate_all_models.json` holds hate-speech
+classifications of the same 500 messages (balanced 250 hate / 250 not) for
+each of the 6 models, under three conditions: `zero_shot` (one run, no
+questionnaire context), and `mft`/`pvq` (one run per questionnaire item —
+36 MFT, 40 PVQ — each steered by *that same model's own* free-text reply to
+that item; the file's metadata records this as `"prediction_setup":
+"paired_by_model"` — there is no cross-model steering condition in this
+file, i.e. Model A is never steered by Model B's replies).
+
+`HateSpeechSteeringAnalyzer` (`src/hs_detection_analysis.py`) asks two
+questions:
+
+1. **Does steering shift recall, within each model?** For each model,
+   recall (TP / 250 actual-positive messages) is computed for `zero_shot`
+   and for every one of the 76 belief-steered runs (36 MFT + 40 PVQ). A
+   one-sample Wilcoxon signed-rank test on
+   `steered_recall - zero_shot_recall` (per model, separately for MFT,
+   PVQ, and combined) tests whether steering shifts recall in a
+   consistent direction. Saved to `steering_effect_per_model.csv`.
+2. **Does the size/direction of that shift differ between models?** ("own
+   vs. other models", reinterpreted as comparing models' own-steering
+   effects to each other, since there's no cross-steering condition to
+   compare directly — see above.) The per-item delta
+   (`steered_recall - that model's own zero_shot_recall`) is compared
+   across all 6 models with a pooled Kruskal-Wallis test and pairwise
+   Mann-Whitney U tests, separately for MFT, PVQ, and combined. Saved to
+   `between_model_steering_kruskal.csv` /
+   `between_model_steering_pairwise_mannwhitney.csv`. The full per-item
+   recall table is in `recall_by_model_condition_item.csv`.
+
+Rerun with:
+
+```bash
+python run_hs_detection_analysis.py
+```
+
+**Results.** Zero-shot recall varies a lot by model to start with: Llama
+0.896, Apertus 0.856, Ministral 0.856, Qwen 0.716, Olmo 0.628, Falcon 0.62.
+Steering (combined MFT+PVQ) significantly shifts recall for 5 of 6 models:
+
+| model | zero-shot recall | mean steered recall | delta | p (Wilcoxon) |
+|---|---|---|---|---|
+| Ministral-3-8B-Instruct-2512 | 0.856 | 0.946 | **+0.090** | 3.5e-14 |
+| Falcon3-7B-Instruct | 0.620 | 0.691 | **+0.071** | 4.0e-11 |
+| Qwen3-8B | 0.716 | 0.767 | **+0.051** | 2.6e-12 |
+| Llama-3.1-8B-Instruct | 0.896 | 0.936 | **+0.040** | 1.3e-13 |
+| Apertus-8B-Instruct | 0.856 | 0.853 | -0.003 | 0.63 (n.s.) |
+| Olmo-3-7B-Instruct | 0.628 | 0.532 | **-0.096** | 1.3e-5 |
+
+Four models get a real recall *boost* from being shown their own
+questionnaire beliefs before classifying (Ministral most, then Falcon,
+Qwen, Llama); one (Olmo) gets significantly *worse*, by about the same
+magnitude as Ministral's gain; Apertus is unaffected. The direction isn't
+simply "steering always helps" or tied to how good the model already was
+zero-shot (the two worst zero-shot models, Olmo and Falcon, go opposite
+ways).
+
+The between-model comparison confirms this isn't noise: pooled
+Kruskal-Wallis on the per-item delta gives η²≈0.47-0.52 (MFT/PVQ/combined
+alike) — a large effect, models clearly differ in how steering affects
+them — and all 15 pairwise Mann-Whitney comparisons between models are
+significant (p≤0.021 in every case), meaning every model's steering
+response is statistically distinguishable from every other model's, not
+just the two extremes (Ministral vs. Olmo, p=6e-23) from each other.
 
 ## Data quality notes
 
