@@ -2,9 +2,13 @@
 
 This folder contains the output of the reusable analysis pipeline for the
 moral-questionnaire survey results in `surveys/mft` (Moral Foundations
-Theory) and `surveys/pvq` (Portrait Values Questionnaire), plus a second
+Theory) and `surveys/pvq` (Portrait Values Questionnaire), a second
 analysis of the raw human-annotator exports in `surveys/mf_merged.csv` and
-`surveys/pv_merged.csv` (see "Annotator-level analysis" below).
+`surveys/pv_merged.csv` (see "Annotator-level analysis" below), and a
+third analysis of belief-steered hate-speech detection (see "Belief-steered
+hate-speech detection" below). **See `SUMMARY.md` for the cross-experiment
+findings write-up** — this file documents methodology, output files, and
+per-test results in detail.
 
 ## Code
 
