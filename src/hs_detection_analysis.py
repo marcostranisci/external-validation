@@ -77,7 +77,8 @@ class HateSpeechSteeringAnalyzer:
             recall, tp, n_pos = _recall(model_data["zero_shot"])
             rows.append({
                 "model": model, "condition": "zero_shot", "belief_id": np.nan,
-                "test_statement": None, "recall": recall, "tp": tp, "n_positive": n_pos,
+                "test_statement": None, "foundation": None,
+                "recall": recall, "tp": tp, "n_positive": n_pos,
             })
             for condition in ("mft", "pvq"):
                 for item in model_data[condition]:
@@ -86,6 +87,7 @@ class HateSpeechSteeringAnalyzer:
                         "model": model, "condition": condition,
                         "belief_id": item["belief_id"],
                         "test_statement": item["test_statement"],
+                        "foundation": item.get("foundation"),
                         "recall": recall, "tp": tp, "n_positive": n_pos,
                     })
         return pd.DataFrame(rows)
@@ -126,6 +128,54 @@ class HateSpeechSteeringAnalyzer:
                 rows.append(row)
         result = pd.DataFrame(rows)
         self._save(result, "steering_effect_per_model.csv")
+        return result
+
+    # ------------------------------------------------------------------
+    # Which items steer recall the most?
+    # ------------------------------------------------------------------
+    def item_level_effect(self, table: pd.DataFrame) -> pd.DataFrame:
+        """Per questionnaire item: across the 6 models, how much does being
+        steered by *that model's own* reply to this item shift recall away
+        from that model's zero-shot baseline?
+
+        For each item this reports the delta's mean, mean absolute value
+        (the item's overall "how much does it move recall, either way"
+        score), std, min/max across the 6 models, and a one-sample
+        Wilcoxon signed-rank test on those 6 per-model deltas (note: n=6 is
+        a small sample, so treat the p-value as indicative, not
+        confirmatory — the mean/mean-abs delta and how consistent the sign
+        is across models are more informative for ranking items)."""
+        zero_shot = table.loc[table["condition"] == "zero_shot", ["model", "recall"]] \
+            .rename(columns={"recall": "zero_shot_recall"})
+        merged = table[table["condition"].isin(["mft", "pvq"])].merge(zero_shot, on="model")
+        merged["delta"] = merged["recall"] - merged["zero_shot_recall"]
+
+        rows = []
+        key_cols = ["condition", "belief_id", "test_statement", "foundation"]
+        for keys, group in merged.groupby(key_cols, dropna=False):
+            condition, belief_id, test_statement, foundation = keys
+            deltas = group["delta"].dropna()
+            row = {
+                "condition": condition, "belief_id": belief_id,
+                "test_statement": test_statement, "foundation": foundation,
+                "n_models": len(deltas),
+                "mean_delta": deltas.mean(), "mean_abs_delta": deltas.abs().mean(),
+                "std_delta": deltas.std(ddof=0),
+                "min_delta": deltas.min(), "max_delta": deltas.max(),
+                "n_positive": int((deltas > 0).sum()), "n_negative": int((deltas < 0).sum()),
+                "wilcoxon_stat": np.nan, "wilcoxon_p": np.nan, "notes": "",
+            }
+            if len(deltas) < 5 or (deltas == 0).all():
+                row["notes"] = "fewer than 5 non-trivial deltas"
+            else:
+                try:
+                    stat, p = stats.wilcoxon(deltas)
+                    row["wilcoxon_stat"], row["wilcoxon_p"] = float(stat), float(p)
+                except ValueError as exc:
+                    row["notes"] = str(exc)
+            rows.append(row)
+        result = pd.DataFrame(rows).sort_values("mean_abs_delta", ascending=False)
+        self._save(result, "item_level_steering_effect.csv")
         return result
 
     # ------------------------------------------------------------------
@@ -176,5 +226,6 @@ class HateSpeechSteeringAnalyzer:
         table = self.build_recall_table()
         self._save(table, "recall_by_model_condition_item.csv")
         per_model = self.steering_effect_per_model(table)
+        by_item = self.item_level_effect(table)
         between = self.between_model_steering_effect(table)
-        return {"recall_table": table, "per_model": per_model, **between}
+        return {"recall_table": table, "per_model": per_model, "by_item": by_item, **between}

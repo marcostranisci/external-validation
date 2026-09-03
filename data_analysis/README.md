@@ -310,8 +310,19 @@ questions:
    across all 6 models with a pooled Kruskal-Wallis test and pairwise
    Mann-Whitney U tests, separately for MFT, PVQ, and combined. Saved to
    `between_model_steering_kruskal.csv` /
-   `between_model_steering_pairwise_mannwhitney.csv`. The full per-item
-   recall table is in `recall_by_model_condition_item.csv`.
+   `between_model_steering_pairwise_mannwhitney.csv`.
+3. **Which items steer recall the most?** For each of the 76 items,
+   `item_level_effect` takes the 6 models' per-item deltas and reports
+   their mean, mean absolute value (the item's overall "how much does it
+   move recall, either way" score), how many models it pushed up vs. down,
+   and a one-sample Wilcoxon signed-rank test on those 6 deltas — treat
+   that p-value as indicative only (n=6 caps the smallest possible p at
+   1/32≈0.031, reached whenever all 6 models move the same direction).
+   Saved to `item_level_steering_effect.csv`, sorted by mean absolute
+   delta.
+
+The full per-item recall table (one row per model × condition × item) is
+in `recall_by_model_condition_item.csv`.
 
 Rerun with:
 
@@ -339,6 +350,35 @@ magnitude as Ministral's gain; Apertus is unaffected. The direction isn't
 simply "steering always helps" or tied to how good the model already was
 zero-shot (the two worst zero-shot models, Olmo and Falcon, go opposite
 ways).
+
+**Which items steer the most.** Two different questions here give two
+different answers:
+
+- *Largest effect regardless of direction* (top of
+  `item_level_steering_effect.csv` by `mean_abs_delta`, ≈0.10-0.15): these
+  are almost all PVQ items about care/fairness/equality/universalism
+  content ("protect the weak", "equal opportunities for everyone", "help
+  the people around him", "forgive people who hurt him"). But they have a
+  *mixed* sign across models (typically 3 of 6 models up, 3 down) — a big
+  effect whose direction is model-specific, not a property of the item
+  alone.
+- *Most reliably one-directional* (`n_positive == 6` or `n_negative == 6`
+  in that file, i.e. every model moved the same way): 12 items, **all 12
+  positive** — no item pushed recall down for every model. These cluster
+  thematically around proportionality/authority/tradition/achievement
+  content ("people who are more hard-working should end up with more
+  money", "we all need to learn from our elders", "traditions serve a
+  valuable function", "being successful/impressing others", "having a
+  stable government") — moderate magnitude (+0.05 to +0.09) but consistent
+  across every model.
+
+Consistent with that split, averaging `mean_delta` by MFT foundation shows
+every foundation nudges recall up on average, but by very different
+amounts: proportionality (+0.052), loyalty (+0.050), and equality (+0.048)
+move it the most; authority (+0.034) is in between; care (+0.017) and
+purity (+0.007) are close to no effect on average. Given each foundation
+only has 6 items and each item only has 6 model-level data points, treat
+this foundation-level pattern as suggestive rather than conclusive.
 
 The between-model comparison confirms this isn't noise: pooled
 Kruskal-Wallis on the per-item delta gives η²≈0.47-0.52 (MFT/PVQ/combined
