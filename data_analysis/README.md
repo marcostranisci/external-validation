@@ -342,11 +342,13 @@ questions:
    Schwartz's Portrait Values Questionnaire), PVQ items are also labeled
    with their Schwartz value name. Saved to
    `item_significance_per_model.csv`.
-5. **Pattern check: does the effect cluster by Schwartz PVQ value?**
-   `pvq_value_patterns` aggregates test 4's PVQ-item results by Schwartz
-   value, per model and pooled (`model="ALL"`): item count, how many are
-   significant, in which direction, and the mean delta. Saved to
-   `pvq_value_patterns.csv`.
+5. **Pattern check: does the effect cluster by Schwartz PVQ value, or by
+   Moral Foundation?** `pvq_value_patterns` / `mft_foundation_patterns`
+   (sharing one `_category_patterns` implementation) aggregate test 4's
+   PVQ/MFT results by Schwartz value or Moral Foundation respectively, per
+   model and pooled (`model="ALL"`): item count, how many are significant,
+   in which direction, and the mean delta. Saved to `pvq_value_patterns.csv`
+   / `mft_foundation_patterns.csv`.
 
 The full per-item recall table (one row per model × condition × item) is
 in `recall_by_model_condition_item.csv`.
@@ -383,6 +385,25 @@ universalism/benevolence content, a 3rd (Falcon) leans that way for
 Universalism only, and the other 3 show no such exception — a real,
 if partial, pattern worth investigating further rather than a
 description of all 6 models.
+
+**MFT foundation pattern — converges with the PVQ result.** Pooled: every
+foundation has a net positive mean delta, but **care (+0.017) and purity
+(+0.007) are far behind the other four** (proportionality +0.052, loyalty
++0.050, equality +0.048, authority +0.034), and have the fewest
+significant items too (care 11/36, purity 15/36, vs. 25-31/36 for the
+other four). This is the same split as the PVQ result, in the same two
+models: **care is negative for Apertus (-0.041) and Olmo (-0.022)**, and
+**purity is negative for Apertus (-0.031) and Olmo (-0.069)** — the only
+negative cells in either model's foundation row. `care` is MFT's closest
+analogue to PVQ's Universalism/Benevolence (concern for others' welfare),
+so this is an independent replication, from a completely different
+questionnaire, of the same finding: **Apertus and Olmo are specifically
+resistant to (or actively hurt by) "care for others" moral content as
+steering context, while the other four models are helped by it just like
+everything else.** For the other four models, care/purity aren't
+negative, but they're still consistently their two *weakest* foundations
+(smallest positive delta of the six) — so the pattern holds directionally
+even where it doesn't flip to a net negative.
 
 Rerun with:
 

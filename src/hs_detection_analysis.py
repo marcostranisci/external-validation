@@ -313,36 +313,55 @@ class HateSpeechSteeringAnalyzer:
         self._save(result, "item_significance_per_model.csv")
         return result
 
-    def pvq_value_patterns(self, item_significance: pd.DataFrame) -> pd.DataFrame:
-        """Summarize how the (per-model-significant) recall shift breaks
-        down by Schwartz PVQ value, both per model and pooled across all 6
-        (``model="ALL"``). Only meaningful for PVQ items — MFT items have
-        no PVQ value and are excluded."""
-        pvq_rows = item_significance[item_significance["condition"] == "pvq"].copy()
+    @staticmethod
+    def _summarize_by_category(group: pd.DataFrame) -> pd.Series:
+        sig = group[group["significant_fdr_05"]]
+        return pd.Series({
+            "n_items": len(group),
+            "n_significant": len(sig),
+            "n_significant_increase": int((sig["direction"] == "increase").sum()),
+            "n_significant_decrease": int((sig["direction"] == "decrease").sum()),
+            "mean_delta_recall": group["delta_recall"].mean(),
+        })
 
-        def summarize(group: pd.DataFrame) -> pd.Series:
-            sig = group[group["significant_fdr_05"]]
-            return pd.Series({
-                "n_items": len(group),
-                "n_significant": len(sig),
-                "n_significant_increase": int((sig["direction"] == "increase").sum()),
-                "n_significant_decrease": int((sig["direction"] == "decrease").sum()),
-                "mean_delta_recall": group["delta_recall"].mean(),
-            })
-
+    def _category_patterns(
+        self, item_significance: pd.DataFrame, condition: str,
+        category_column: str, filename: str,
+    ) -> pd.DataFrame:
+        """Shared implementation for ``pvq_value_patterns``/
+        ``mft_foundation_patterns``: summarize the (per-model-significant)
+        recall shift by ``category_column``, per model and pooled across
+        all 6 (``model="ALL"``)."""
+        rows = item_significance[item_significance["condition"] == condition].copy()
         per_model = (
-            pvq_rows.groupby(["model", "pvq_value_label"], dropna=False)
-            .apply(summarize, include_groups=False).reset_index()
+            rows.groupby(["model", category_column], dropna=False)
+            .apply(self._summarize_by_category, include_groups=False).reset_index()
         )
         pooled = (
-            pvq_rows.groupby("pvq_value_label", dropna=False)
-            .apply(summarize, include_groups=False).reset_index()
+            rows.groupby(category_column, dropna=False)
+            .apply(self._summarize_by_category, include_groups=False).reset_index()
         )
         pooled.insert(0, "model", "ALL")
         result = pd.concat([per_model, pooled], ignore_index=True) \
             .sort_values(["model", "n_significant"], ascending=[True, False])
-        self._save(result, "pvq_value_patterns.csv")
+        self._save(result, filename)
         return result
+
+    def pvq_value_patterns(self, item_significance: pd.DataFrame) -> pd.DataFrame:
+        """Summarize how the recall shift breaks down by Schwartz PVQ
+        value. Only meaningful for PVQ items — MFT items have no PVQ value
+        and are excluded."""
+        return self._category_patterns(
+            item_significance, "pvq", "pvq_value_label", "pvq_value_patterns.csv"
+        )
+
+    def mft_foundation_patterns(self, item_significance: pd.DataFrame) -> pd.DataFrame:
+        """Summarize how the recall shift breaks down by Moral Foundation.
+        Only meaningful for MFT items — PVQ items have no foundation and
+        are excluded."""
+        return self._category_patterns(
+            item_significance, "mft", "foundation", "mft_foundation_patterns.csv"
+        )
 
     # ------------------------------------------------------------------
     # Orchestration
@@ -360,8 +379,10 @@ class HateSpeechSteeringAnalyzer:
         between = self.between_model_steering_effect(table)
         item_significance = self.item_significance_per_model(pvq_mapping_path)
         pvq_patterns = self.pvq_value_patterns(item_significance)
+        foundation_patterns = self.mft_foundation_patterns(item_significance)
         return {
             "recall_table": table, "per_model": per_model, "by_item": by_item,
             "item_significance": item_significance, "pvq_patterns": pvq_patterns,
+            "foundation_patterns": foundation_patterns,
             **between,
         }
