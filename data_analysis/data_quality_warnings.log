@@ -1,3 +1,1 @@
-[Ministral-3-8B-Instruct-2512] no '*_disaggregated' column found; 'annotator_disagreement' and 'external_opinion' set to NaN.
-[Ministral-3-8B-Instruct-2512] no '*_disaggregated' column found; 'annotator_disagreement' and 'external_opinion' set to NaN.
-[Ministral-3-8B-Instruct] 'opinion' had 40 non-numeric value(s); coerced to NaN.
+No data quality issues detected.
