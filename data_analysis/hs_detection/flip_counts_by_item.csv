@@ -1,0 +1,457 @@
+model,condition,belief_id,test_statement,foundation,pvq_value,pvq_value_label,n_messages,n_flips,flip_rate,n_flips_to_hate,n_flips_to_not_hate
+Apertus-8B-Instruct,mft,0,I admire people who keep their virginity until marriage.,purity,,,500,88,0.176,4,84
+Apertus-8B-Instruct,pvq,32,Forgiving people who have hurt him is important to him. He tries to see what is good in them and not to hold a grudge.,,2.0,Benevolence,500,76,0.152,4,72
+Apertus-8B-Instruct,pvq,2,He thinks it is important that every person in the world be treated equally. He believes everyone should have equal opportunities in life.,,1.0,Universalism,500,66,0.132,4,62
+Apertus-8B-Instruct,mft,17,It pains me when I see someone ignoring the needs of another human being.,care,,,500,59,0.118,10,49
+Apertus-8B-Instruct,pvq,19,Religious belief is important to him. He tries hard to do what his religion requires.,,3.0,Tradition,500,57,0.114,2,55
+Apertus-8B-Instruct,mft,6,"Everyone should defend their country, if called upon.",loyalty,,,500,56,0.112,3,53
+Apertus-8B-Instruct,pvq,28,"He wants everyone to be treated justly, even people he doesn’t know. It is important to him to protect the weak in society.",,1.0,Universalism,500,56,0.112,6,50
+Apertus-8B-Instruct,mft,18,I get upset when some people have a lot more money than others in my country.,equality,,,500,53,0.106,18,35
+Apertus-8B-Instruct,mft,10,I believe it would be ideal if everyone in society wound up with roughly the same amount of money.,equality,,,500,52,0.104,40,12
+Apertus-8B-Instruct,mft,31,The world would be a better place if everyone made the same amount of money.,equality,,,500,52,0.104,37,15
+Apertus-8B-Instruct,mft,11,People should try to use natural medicines rather than chemically identical human-made ones.,purity,,,500,51,0.102,25,26
+Apertus-8B-Instruct,mft,27,"When people work together toward a common goal, they should share the rewards equally, even if some worked harder on it.",equality,,,500,50,0.1,44,6
+Apertus-8B-Instruct,pvq,18,He strongly believes that people should care for nature.,,1.0,Universalism,500,50,0.1,13,37
+Apertus-8B-Instruct,mft,22,"If I found out that an acquaintance had an unusual but harmless sexual fetish, I would feel uneasy about them.",purity,,,500,48,0.096,18,30
+Apertus-8B-Instruct,pvq,39,It is important to him to adapt to nature and to fit into it. He believes that people should not change nature.,,1.0,Universalism,500,48,0.096,21,27
+Apertus-8B-Instruct,mft,7,I think people who are more hard-working should end up with more money.,proportionality,,,500,47,0.094,39,8
+Apertus-8B-Instruct,mft,13,Everyone should try to comfort people who are going through something hard.,care,,,500,47,0.094,16,31
+Apertus-8B-Instruct,pvq,13,It is very important to him that his country be safe. He thinks the state must be on watch against threats from within and without.,,5.0,Security,500,47,0.094,4,43
+Apertus-8B-Instruct,mft,19,I believe that compassion for those who are suffering is one of the most cru# cial virtues.,care,,,500,46,0.092,6,40
+Apertus-8B-Instruct,mft,28,Everyone should feel proud when a person in their community wins in an international competition.,loyalty,,,500,46,0.092,25,21
+Apertus-8B-Instruct,pvq,38,He always wants to be the one who makes the decisions. He likes to be the leader.,,6.0,Power,500,46,0.092,38,8
+Apertus-8B-Instruct,mft,34,The effort a worker puts into a job ought to be reflected in the size of a raise they receive.,proportionality,,,500,45,0.09,37,8
+Apertus-8B-Instruct,mft,25,I believe the strength of a sports team comes from the loyalty of its members to each other.,loyalty,,,500,44,0.088,35,9
+Apertus-8B-Instruct,mft,33,Our society would have fewer problems if people had the same income.,equality,,,500,44,0.088,26,18
+Apertus-8B-Instruct,mft,1,I think people should be rewarded in proportion to what they contribute.,proportionality,,,500,43,0.086,34,9
+Apertus-8B-Instruct,mft,20,I think it is important for societies to cherish their traditional values.,authority,,,500,43,0.086,16,27
+Apertus-8B-Instruct,pvq,11,It’s very important to him to help the people around him. He wants to care for their well-being.,,2.0,Benevolence,500,43,0.086,7,36
+Apertus-8B-Instruct,pvq,22,He believes all the world’s people should live in harmony. Promoting peace among all groups in the world is important to him.,,1.0,Universalism,500,43,0.086,24,19
+Apertus-8B-Instruct,mft,3,"I think the human body should be treated like a temple, housing something sacred within.",purity,,,500,42,0.084,19,23
+Apertus-8B-Instruct,mft,16,It upsets me when people have no loyalty to their country.,loyalty,,,500,42,0.084,9,33
+Apertus-8B-Instruct,mft,4,"In a fair society, those who work hard should live with higher standards of living.",proportionality,,,500,41,0.082,35,6
+Apertus-8B-Instruct,mft,23,I am empathetic toward those people who have suffered in their lives.,care,,,500,41,0.082,12,29
+Apertus-8B-Instruct,pvq,30,He tries hard to avoid getting sick. Staying healthy is very important to him.,,5.0,Security,500,41,0.082,31,10
+Apertus-8B-Instruct,mft,14,I think having a strong leader is good for society.,authority,,,500,40,0.08,13,27
+Apertus-8B-Instruct,mft,26,We all need to learn from our elders.,authority,,,500,40,0.08,23,17
+Apertus-8B-Instruct,mft,29,I think children should be taught to be loyal to their country.,loyalty,,,500,40,0.08,18,22
+Apertus-8B-Instruct,pvq,24,He thinks it is best to do things in traditional ways. It is important to him to keep up the customs he has learned.,,3.0,Tradition,500,40,0.08,29,11
+Apertus-8B-Instruct,mft,24,It upsets me when people use foul language like it is nothing.,purity,,,500,39,0.078,12,27
+Apertus-8B-Instruct,pvq,0,Thinking up new ideas and being creative is important to him. He likes to do things in his own original way.,,10.0,Self-Direction,500,39,0.078,29,10
+Apertus-8B-Instruct,pvq,6,"He believes that people should do what they’re told. He thinks people should follow rules at all times, even when no one is watching.",,4.0,Conformity,500,39,0.078,21,18
+Apertus-8B-Instruct,pvq,8,He thinks it’s important not to ask for more than what you have. He believes that people should be satisfied with what they have.,,3.0,Tradition,500,39,0.078,21,18
+Apertus-8B-Instruct,pvq,17,It is important to him to be loyal to his friends. He wants to devote himself to people close to him.,,2.0,Benevolence,500,39,0.078,8,31
+Apertus-8B-Instruct,pvq,20,It is important to him that things be organized and clean. He really does not like things to be a mess.,,5.0,Security,500,39,0.078,30,9
+Apertus-8B-Instruct,pvq,29,He likes surprises. It is important to him to have an exciting life.,,9.0,Stimulation,500,39,0.078,36,3
+Apertus-8B-Instruct,mft,35,I believe that one of the most important values to teach children is to have respect for authority.,authority,,,500,38,0.076,11,27
+Apertus-8B-Instruct,pvq,5,He thinks it is important to do lots of different things in life. He always looks for new things to try.,,9.0,Stimulation,500,38,0.076,31,7
+Apertus-8B-Instruct,pvq,9,He seeks every chance he can to have fun. It is important to him to do things that give him pleasure.,,8.0,Hedonism,500,38,0.076,30,8
+Apertus-8B-Instruct,pvq,36,He really wants to enjoy life. Having a good time is very important to him.,,8.0,Hedonism,500,38,0.076,26,12
+Apertus-8B-Instruct,mft,30,I feel that most traditions serve a valuable function in keeping society orderly.,authority,,,500,37,0.074,21,16
+Apertus-8B-Instruct,mft,32,Everyone should love their own community.,loyalty,,,500,37,0.074,20,17
+Apertus-8B-Instruct,pvq,1,It is important to him to be rich. He wants to have a lot of money and expensive things.,,6.0,Power,500,37,0.074,24,13
+Apertus-8B-Instruct,mft,2,I think obedience to parents is an important virtue.,authority,,,500,36,0.072,13,23
+Apertus-8B-Instruct,pvq,3,It’s very important to him to show his abilities. He wants people to admire what he does.,,7.0,Achievement,500,36,0.072,22,14
+Apertus-8B-Instruct,pvq,16,It is important to him to be in charge and tell others what to do. He wants people to do what he says.,,6.0,Power,500,36,0.072,25,11
+Apertus-8B-Instruct,pvq,23,He thinks it is important to be ambitious. He wants to show how capable he is.,,7.0,Achievement,500,36,0.072,23,13
+Apertus-8B-Instruct,mft,9,I feel good when I see cheaters get caught and punished.,proportionality,,,500,35,0.07,21,14
+Apertus-8B-Instruct,mft,15,It makes me happy when people are recognized on their merits.,proportionality,,,500,35,0.07,23,12
+Apertus-8B-Instruct,mft,21,We should all care for people who are in emotional pain.,care,,,500,35,0.07,11,24
+Apertus-8B-Instruct,pvq,31,Getting ahead in life is important to him. He strives to do better than others.,,7.0,Achievement,500,35,0.07,24,11
+Apertus-8B-Instruct,mft,12,Caring for people who have suffered is an important virtue,care,,,500,34,0.068,12,22
+Apertus-8B-Instruct,pvq,12,Being very successful is important to him. He likes to impress other people.,,7.0,Achievement,500,34,0.068,19,15
+Apertus-8B-Instruct,pvq,15,It is important to him to always behave properly. He wants to avoid doing anything people would say is wrong.,,4.0,Conformity,500,34,0.068,28,6
+Apertus-8B-Instruct,pvq,25,Enjoying life’s pleasures is important to him. He likes to spoil himself.,,8.0,Hedonism,500,34,0.068,27,7
+Apertus-8B-Instruct,pvq,37,It is important to him to be humble and modest. He tries not to draw attention to himself.,,3.0,Tradition,500,34,0.068,22,12
+Apertus-8B-Instruct,pvq,4,It is important to him to live in secure surroundings. He avoids anything that might endanger his safety.,,5.0,Security,500,33,0.066,19,14
+Apertus-8B-Instruct,pvq,14,He likes to take risks. He is always looking for adventures.,,9.0,Stimulation,500,33,0.066,27,6
+Apertus-8B-Instruct,mft,5,I believe chastity is an important virtue.,purity,,,500,32,0.064,22,10
+Apertus-8B-Instruct,mft,8,I believe that everyone should be given the same quantity of resources in life.,equality,,,500,32,0.064,26,6
+Apertus-8B-Instruct,pvq,27,He believes he should always show respect to his parents and to older people. It is important to him to be obedient.,,4.0,Conformity,500,32,0.064,18,14
+Apertus-8B-Instruct,pvq,34,Having a stable government is important to him. He is concerned that the social order be protected.,,5.0,Security,500,32,0.064,22,10
+Apertus-8B-Instruct,pvq,21,He thinks it’s important to be interested in things. He likes to be curious and to try to understand all sorts of things.,,10.0,Self-Direction,500,31,0.062,22,9
+Apertus-8B-Instruct,pvq,7,"It is important to him to listen to people who are different from him. Even when he disagrees with them, he still wants to understand them.",,1.0,Universalism,500,30,0.06,21,9
+Apertus-8B-Instruct,pvq,10,It is important to him to make his own decisions about what he does. He likes to be free to plan and to choose his activities for himself.,,10.0,Self-Direction,500,30,0.06,17,13
+Apertus-8B-Instruct,pvq,26,It is important to him to respond to the needs of others. He tries to support those he knows.,,2.0,Benevolence,500,30,0.06,13,17
+Apertus-8B-Instruct,pvq,33,It is important to him to be independent. He likes to rely on himself.,,10.0,Self-Direction,500,30,0.06,16,14
+Apertus-8B-Instruct,pvq,35,It is important to him to be polite to other people all the time. He tries never to disturb or irritate others.,,4.0,Conformity,500,26,0.052,14,12
+Falcon3-7B-Instruct,mft,27,"When people work together toward a common goal, they should share the rewards equally, even if some worked harder on it.",equality,,,500,78,0.156,78,0
+Falcon3-7B-Instruct,pvq,12,Being very successful is important to him. He likes to impress other people.,,7.0,Achievement,500,75,0.15,75,0
+Falcon3-7B-Instruct,pvq,38,He always wants to be the one who makes the decisions. He likes to be the leader.,,6.0,Power,500,74,0.148,73,1
+Falcon3-7B-Instruct,pvq,0,Thinking up new ideas and being creative is important to him. He likes to do things in his own original way.,,10.0,Self-Direction,500,73,0.146,72,1
+Falcon3-7B-Instruct,mft,34,The effort a worker puts into a job ought to be reflected in the size of a raise they receive.,proportionality,,,500,70,0.14,70,0
+Falcon3-7B-Instruct,pvq,14,He likes to take risks. He is always looking for adventures.,,9.0,Stimulation,500,70,0.14,70,0
+Falcon3-7B-Instruct,pvq,29,He likes surprises. It is important to him to have an exciting life.,,9.0,Stimulation,500,67,0.134,66,1
+Falcon3-7B-Instruct,pvq,4,It is important to him to live in secure surroundings. He avoids anything that might endanger his safety.,,5.0,Security,500,63,0.126,61,2
+Falcon3-7B-Instruct,pvq,1,It is important to him to be rich. He wants to have a lot of money and expensive things.,,6.0,Power,500,62,0.124,62,0
+Falcon3-7B-Instruct,pvq,28,"He wants everyone to be treated justly, even people he doesn’t know. It is important to him to protect the weak in society.",,1.0,Universalism,500,62,0.124,10,52
+Falcon3-7B-Instruct,pvq,13,It is very important to him that his country be safe. He thinks the state must be on watch against threats from within and without.,,5.0,Security,500,60,0.12,58,2
+Falcon3-7B-Instruct,mft,33,Our society would have fewer problems if people had the same income.,equality,,,500,59,0.118,59,0
+Falcon3-7B-Instruct,pvq,7,"It is important to him to listen to people who are different from him. Even when he disagrees with them, he still wants to understand them.",,1.0,Universalism,500,59,0.118,11,48
+Falcon3-7B-Instruct,pvq,10,It is important to him to make his own decisions about what he does. He likes to be free to plan and to choose his activities for himself.,,10.0,Self-Direction,500,58,0.116,56,2
+Falcon3-7B-Instruct,mft,25,I believe the strength of a sports team comes from the loyalty of its members to each other.,loyalty,,,500,57,0.114,55,2
+Falcon3-7B-Instruct,mft,7,I think people who are more hard-working should end up with more money.,proportionality,,,500,56,0.112,56,0
+Falcon3-7B-Instruct,pvq,23,He thinks it is important to be ambitious. He wants to show how capable he is.,,7.0,Achievement,500,55,0.11,54,1
+Falcon3-7B-Instruct,mft,11,People should try to use natural medicines rather than chemically identical human-made ones.,purity,,,500,53,0.106,52,1
+Falcon3-7B-Instruct,pvq,31,Getting ahead in life is important to him. He strives to do better than others.,,7.0,Achievement,500,53,0.106,50,3
+Falcon3-7B-Instruct,mft,22,"If I found out that an acquaintance had an unusual but harmless sexual fetish, I would feel uneasy about them.",purity,,,500,51,0.102,12,39
+Falcon3-7B-Instruct,pvq,6,"He believes that people should do what they’re told. He thinks people should follow rules at all times, even when no one is watching.",,4.0,Conformity,500,50,0.1,46,4
+Falcon3-7B-Instruct,mft,8,I believe that everyone should be given the same quantity of resources in life.,equality,,,500,49,0.098,48,1
+Falcon3-7B-Instruct,mft,28,Everyone should feel proud when a person in their community wins in an international competition.,loyalty,,,500,49,0.098,47,2
+Falcon3-7B-Instruct,pvq,24,He thinks it is best to do things in traditional ways. It is important to him to keep up the customs he has learned.,,3.0,Tradition,500,49,0.098,47,2
+Falcon3-7B-Instruct,pvq,25,Enjoying life’s pleasures is important to him. He likes to spoil himself.,,8.0,Hedonism,500,49,0.098,48,1
+Falcon3-7B-Instruct,pvq,5,He thinks it is important to do lots of different things in life. He always looks for new things to try.,,9.0,Stimulation,500,48,0.096,46,2
+Falcon3-7B-Instruct,mft,31,The world would be a better place if everyone made the same amount of money.,equality,,,500,47,0.094,45,2
+Falcon3-7B-Instruct,pvq,2,He thinks it is important that every person in the world be treated equally. He believes everyone should have equal opportunities in life.,,1.0,Universalism,500,47,0.094,13,34
+Falcon3-7B-Instruct,pvq,20,It is important to him that things be organized and clean. He really does not like things to be a mess.,,5.0,Security,500,47,0.094,45,2
+Falcon3-7B-Instruct,pvq,22,He believes all the world’s people should live in harmony. Promoting peace among all groups in the world is important to him.,,1.0,Universalism,500,46,0.092,16,30
+Falcon3-7B-Instruct,mft,1,I think people should be rewarded in proportion to what they contribute.,proportionality,,,500,45,0.09,43,2
+Falcon3-7B-Instruct,mft,14,I think having a strong leader is good for society.,authority,,,500,45,0.09,43,2
+Falcon3-7B-Instruct,mft,23,I am empathetic toward those people who have suffered in their lives.,care,,,500,45,0.09,20,25
+Falcon3-7B-Instruct,pvq,30,He tries hard to avoid getting sick. Staying healthy is very important to him.,,5.0,Security,500,45,0.09,44,1
+Falcon3-7B-Instruct,mft,4,"In a fair society, those who work hard should live with higher standards of living.",proportionality,,,500,44,0.088,42,2
+Falcon3-7B-Instruct,mft,21,We should all care for people who are in emotional pain.,care,,,500,44,0.088,14,30
+Falcon3-7B-Instruct,mft,12,Caring for people who have suffered is an important virtue,care,,,500,43,0.086,22,21
+Falcon3-7B-Instruct,mft,18,I get upset when some people have a lot more money than others in my country.,equality,,,500,43,0.086,43,0
+Falcon3-7B-Instruct,pvq,9,He seeks every chance he can to have fun. It is important to him to do things that give him pleasure.,,8.0,Hedonism,500,43,0.086,30,13
+Falcon3-7B-Instruct,pvq,21,He thinks it’s important to be interested in things. He likes to be curious and to try to understand all sorts of things.,,10.0,Self-Direction,500,43,0.086,33,10
+Falcon3-7B-Instruct,pvq,33,It is important to him to be independent. He likes to rely on himself.,,10.0,Self-Direction,500,43,0.086,37,6
+Falcon3-7B-Instruct,mft,13,Everyone should try to comfort people who are going through something hard.,care,,,500,42,0.084,26,16
+Falcon3-7B-Instruct,pvq,8,He thinks it’s important not to ask for more than what you have. He believes that people should be satisfied with what they have.,,3.0,Tradition,500,42,0.084,38,4
+Falcon3-7B-Instruct,pvq,26,It is important to him to respond to the needs of others. He tries to support those he knows.,,2.0,Benevolence,500,41,0.082,22,19
+Falcon3-7B-Instruct,pvq,34,Having a stable government is important to him. He is concerned that the social order be protected.,,5.0,Security,500,41,0.082,36,5
+Falcon3-7B-Instruct,mft,26,We all need to learn from our elders.,authority,,,500,40,0.08,35,5
+Falcon3-7B-Instruct,pvq,36,He really wants to enjoy life. Having a good time is very important to him.,,8.0,Hedonism,500,40,0.08,33,7
+Falcon3-7B-Instruct,mft,10,I believe it would be ideal if everyone in society wound up with roughly the same amount of money.,equality,,,500,39,0.078,35,4
+Falcon3-7B-Instruct,mft,30,I feel that most traditions serve a valuable function in keeping society orderly.,authority,,,500,39,0.078,33,6
+Falcon3-7B-Instruct,mft,35,I believe that one of the most important values to teach children is to have respect for authority.,authority,,,500,39,0.078,36,3
+Falcon3-7B-Instruct,pvq,3,It’s very important to him to show his abilities. He wants people to admire what he does.,,7.0,Achievement,500,39,0.078,36,3
+Falcon3-7B-Instruct,pvq,15,It is important to him to always behave properly. He wants to avoid doing anything people would say is wrong.,,4.0,Conformity,500,39,0.078,24,15
+Falcon3-7B-Instruct,mft,5,I believe chastity is an important virtue.,purity,,,500,38,0.076,22,16
+Falcon3-7B-Instruct,mft,15,It makes me happy when people are recognized on their merits.,proportionality,,,500,38,0.076,32,6
+Falcon3-7B-Instruct,mft,19,I believe that compassion for those who are suffering is one of the most cru# cial virtues.,care,,,500,38,0.076,25,13
+Falcon3-7B-Instruct,mft,24,It upsets me when people use foul language like it is nothing.,purity,,,500,38,0.076,34,4
+Falcon3-7B-Instruct,mft,29,I think children should be taught to be loyal to their country.,loyalty,,,500,38,0.076,31,7
+Falcon3-7B-Instruct,mft,32,Everyone should love their own community.,loyalty,,,500,38,0.076,33,5
+Falcon3-7B-Instruct,pvq,16,It is important to him to be in charge and tell others what to do. He wants people to do what he says.,,6.0,Power,500,38,0.076,34,4
+Falcon3-7B-Instruct,pvq,37,It is important to him to be humble and modest. He tries not to draw attention to himself.,,3.0,Tradition,500,38,0.076,31,7
+Falcon3-7B-Instruct,pvq,39,It is important to him to adapt to nature and to fit into it. He believes that people should not change nature.,,1.0,Universalism,500,38,0.076,30,8
+Falcon3-7B-Instruct,mft,0,I admire people who keep their virginity until marriage.,purity,,,500,37,0.074,24,13
+Falcon3-7B-Instruct,mft,2,I think obedience to parents is an important virtue.,authority,,,500,37,0.074,30,7
+Falcon3-7B-Instruct,pvq,11,It’s very important to him to help the people around him. He wants to care for their well-being.,,2.0,Benevolence,500,37,0.074,20,17
+Falcon3-7B-Instruct,pvq,18,He strongly believes that people should care for nature.,,1.0,Universalism,500,37,0.074,29,8
+Falcon3-7B-Instruct,mft,3,"I think the human body should be treated like a temple, housing something sacred within.",purity,,,500,36,0.072,22,14
+Falcon3-7B-Instruct,mft,6,"Everyone should defend their country, if called upon.",loyalty,,,500,36,0.072,29,7
+Falcon3-7B-Instruct,mft,16,It upsets me when people have no loyalty to their country.,loyalty,,,500,36,0.072,32,4
+Falcon3-7B-Instruct,pvq,35,It is important to him to be polite to other people all the time. He tries never to disturb or irritate others.,,4.0,Conformity,500,36,0.072,28,8
+Falcon3-7B-Instruct,pvq,17,It is important to him to be loyal to his friends. He wants to devote himself to people close to him.,,2.0,Benevolence,500,35,0.07,31,4
+Falcon3-7B-Instruct,pvq,32,Forgiving people who have hurt him is important to him. He tries to see what is good in them and not to hold a grudge.,,2.0,Benevolence,500,35,0.07,20,15
+Falcon3-7B-Instruct,mft,9,I feel good when I see cheaters get caught and punished.,proportionality,,,500,34,0.068,21,13
+Falcon3-7B-Instruct,mft,20,I think it is important for societies to cherish their traditional values.,authority,,,500,34,0.068,24,10
+Falcon3-7B-Instruct,pvq,19,Religious belief is important to him. He tries hard to do what his religion requires.,,3.0,Tradition,500,34,0.068,29,5
+Falcon3-7B-Instruct,mft,17,It pains me when I see someone ignoring the needs of another human being.,care,,,500,33,0.066,25,8
+Falcon3-7B-Instruct,pvq,27,He believes he should always show respect to his parents and to older people. It is important to him to be obedient.,,4.0,Conformity,500,32,0.064,25,7
+Llama-3.1-8B-Instruct,mft,26,We all need to learn from our elders.,authority,,,500,73,0.146,73,0
+Llama-3.1-8B-Instruct,pvq,25,Enjoying life’s pleasures is important to him. He likes to spoil himself.,,8.0,Hedonism,500,66,0.132,66,0
+Llama-3.1-8B-Instruct,pvq,18,He strongly believes that people should care for nature.,,1.0,Universalism,500,62,0.124,62,0
+Llama-3.1-8B-Instruct,mft,15,It makes me happy when people are recognized on their merits.,proportionality,,,500,60,0.12,60,0
+Llama-3.1-8B-Instruct,mft,7,I think people who are more hard-working should end up with more money.,proportionality,,,500,56,0.112,56,0
+Llama-3.1-8B-Instruct,mft,34,The effort a worker puts into a job ought to be reflected in the size of a raise they receive.,proportionality,,,500,55,0.11,53,2
+Llama-3.1-8B-Instruct,pvq,21,He thinks it’s important to be interested in things. He likes to be curious and to try to understand all sorts of things.,,10.0,Self-Direction,500,55,0.11,55,0
+Llama-3.1-8B-Instruct,pvq,8,He thinks it’s important not to ask for more than what you have. He believes that people should be satisfied with what they have.,,3.0,Tradition,500,54,0.108,52,2
+Llama-3.1-8B-Instruct,pvq,24,He thinks it is best to do things in traditional ways. It is important to him to keep up the customs he has learned.,,3.0,Tradition,500,54,0.108,54,0
+Llama-3.1-8B-Instruct,pvq,3,It’s very important to him to show his abilities. He wants people to admire what he does.,,7.0,Achievement,500,53,0.106,52,1
+Llama-3.1-8B-Instruct,mft,27,"When people work together toward a common goal, they should share the rewards equally, even if some worked harder on it.",equality,,,500,52,0.104,52,0
+Llama-3.1-8B-Instruct,pvq,36,He really wants to enjoy life. Having a good time is very important to him.,,8.0,Hedonism,500,52,0.104,51,1
+Llama-3.1-8B-Instruct,pvq,39,It is important to him to adapt to nature and to fit into it. He believes that people should not change nature.,,1.0,Universalism,500,52,0.104,52,0
+Llama-3.1-8B-Instruct,mft,33,Our society would have fewer problems if people had the same income.,equality,,,500,51,0.102,51,0
+Llama-3.1-8B-Instruct,mft,8,I believe that everyone should be given the same quantity of resources in life.,equality,,,500,50,0.1,48,2
+Llama-3.1-8B-Instruct,mft,31,The world would be a better place if everyone made the same amount of money.,equality,,,500,50,0.1,49,1
+Llama-3.1-8B-Instruct,pvq,22,He believes all the world’s people should live in harmony. Promoting peace among all groups in the world is important to him.,,1.0,Universalism,500,50,0.1,50,0
+Llama-3.1-8B-Instruct,mft,11,People should try to use natural medicines rather than chemically identical human-made ones.,purity,,,500,49,0.098,46,3
+Llama-3.1-8B-Instruct,pvq,32,Forgiving people who have hurt him is important to him. He tries to see what is good in them and not to hold a grudge.,,2.0,Benevolence,500,49,0.098,49,0
+Llama-3.1-8B-Instruct,mft,4,"In a fair society, those who work hard should live with higher standards of living.",proportionality,,,500,48,0.096,48,0
+Llama-3.1-8B-Instruct,mft,10,I believe it would be ideal if everyone in society wound up with roughly the same amount of money.,equality,,,500,48,0.096,48,0
+Llama-3.1-8B-Instruct,mft,25,I believe the strength of a sports team comes from the loyalty of its members to each other.,loyalty,,,500,47,0.094,46,1
+Llama-3.1-8B-Instruct,pvq,5,He thinks it is important to do lots of different things in life. He always looks for new things to try.,,9.0,Stimulation,500,47,0.094,47,0
+Llama-3.1-8B-Instruct,pvq,23,He thinks it is important to be ambitious. He wants to show how capable he is.,,7.0,Achievement,500,47,0.094,47,0
+Llama-3.1-8B-Instruct,mft,30,I feel that most traditions serve a valuable function in keeping society orderly.,authority,,,500,45,0.09,45,0
+Llama-3.1-8B-Instruct,mft,17,It pains me when I see someone ignoring the needs of another human being.,care,,,500,44,0.088,43,1
+Llama-3.1-8B-Instruct,pvq,13,It is very important to him that his country be safe. He thinks the state must be on watch against threats from within and without.,,5.0,Security,500,44,0.088,43,1
+Llama-3.1-8B-Instruct,pvq,14,He likes to take risks. He is always looking for adventures.,,9.0,Stimulation,500,43,0.086,41,2
+Llama-3.1-8B-Instruct,pvq,4,It is important to him to live in secure surroundings. He avoids anything that might endanger his safety.,,5.0,Security,500,42,0.084,41,1
+Llama-3.1-8B-Instruct,pvq,9,He seeks every chance he can to have fun. It is important to him to do things that give him pleasure.,,8.0,Hedonism,500,42,0.084,38,4
+Llama-3.1-8B-Instruct,pvq,31,Getting ahead in life is important to him. He strives to do better than others.,,7.0,Achievement,500,42,0.084,41,1
+Llama-3.1-8B-Instruct,pvq,35,It is important to him to be polite to other people all the time. He tries never to disturb or irritate others.,,4.0,Conformity,500,41,0.082,40,1
+Llama-3.1-8B-Instruct,pvq,30,He tries hard to avoid getting sick. Staying healthy is very important to him.,,5.0,Security,500,40,0.08,40,0
+Llama-3.1-8B-Instruct,pvq,34,Having a stable government is important to him. He is concerned that the social order be protected.,,5.0,Security,500,39,0.078,39,0
+Llama-3.1-8B-Instruct,mft,12,Caring for people who have suffered is an important virtue,care,,,500,38,0.076,36,2
+Llama-3.1-8B-Instruct,mft,21,We should all care for people who are in emotional pain.,care,,,500,38,0.076,22,16
+Llama-3.1-8B-Instruct,mft,32,Everyone should love their own community.,loyalty,,,500,38,0.076,38,0
+Llama-3.1-8B-Instruct,mft,2,I think obedience to parents is an important virtue.,authority,,,500,37,0.074,33,4
+Llama-3.1-8B-Instruct,mft,18,I get upset when some people have a lot more money than others in my country.,equality,,,500,37,0.074,35,2
+Llama-3.1-8B-Instruct,pvq,20,It is important to him that things be organized and clean. He really does not like things to be a mess.,,5.0,Security,500,37,0.074,35,2
+Llama-3.1-8B-Instruct,mft,14,I think having a strong leader is good for society.,authority,,,500,36,0.072,35,1
+Llama-3.1-8B-Instruct,mft,0,I admire people who keep their virginity until marriage.,purity,,,500,35,0.07,28,7
+Llama-3.1-8B-Instruct,pvq,29,He likes surprises. It is important to him to have an exciting life.,,9.0,Stimulation,500,35,0.07,35,0
+Llama-3.1-8B-Instruct,mft,28,Everyone should feel proud when a person in their community wins in an international competition.,loyalty,,,500,34,0.068,26,8
+Llama-3.1-8B-Instruct,pvq,0,Thinking up new ideas and being creative is important to him. He likes to do things in his own original way.,,10.0,Self-Direction,500,34,0.068,32,2
+Llama-3.1-8B-Instruct,pvq,2,He thinks it is important that every person in the world be treated equally. He believes everyone should have equal opportunities in life.,,1.0,Universalism,500,34,0.068,32,2
+Llama-3.1-8B-Instruct,pvq,27,He believes he should always show respect to his parents and to older people. It is important to him to be obedient.,,4.0,Conformity,500,34,0.068,34,0
+Llama-3.1-8B-Instruct,pvq,33,It is important to him to be independent. He likes to rely on himself.,,10.0,Self-Direction,500,34,0.068,34,0
+Llama-3.1-8B-Instruct,mft,3,"I think the human body should be treated like a temple, housing something sacred within.",purity,,,500,33,0.066,28,5
+Llama-3.1-8B-Instruct,mft,19,I believe that compassion for those who are suffering is one of the most cru# cial virtues.,care,,,500,33,0.066,23,10
+Llama-3.1-8B-Instruct,mft,20,I think it is important for societies to cherish their traditional values.,authority,,,500,33,0.066,31,2
+Llama-3.1-8B-Instruct,mft,22,"If I found out that an acquaintance had an unusual but harmless sexual fetish, I would feel uneasy about them.",purity,,,500,32,0.064,23,9
+Llama-3.1-8B-Instruct,mft,29,I think children should be taught to be loyal to their country.,loyalty,,,500,32,0.064,23,9
+Llama-3.1-8B-Instruct,pvq,10,It is important to him to make his own decisions about what he does. He likes to be free to plan and to choose his activities for himself.,,10.0,Self-Direction,500,32,0.064,32,0
+Llama-3.1-8B-Instruct,pvq,37,It is important to him to be humble and modest. He tries not to draw attention to himself.,,3.0,Tradition,500,32,0.064,28,4
+Llama-3.1-8B-Instruct,mft,1,I think people should be rewarded in proportion to what they contribute.,proportionality,,,500,31,0.062,29,2
+Llama-3.1-8B-Instruct,mft,6,"Everyone should defend their country, if called upon.",loyalty,,,500,31,0.062,27,4
+Llama-3.1-8B-Instruct,mft,9,I feel good when I see cheaters get caught and punished.,proportionality,,,500,31,0.062,25,6
+Llama-3.1-8B-Instruct,mft,13,Everyone should try to comfort people who are going through something hard.,care,,,500,31,0.062,28,3
+Llama-3.1-8B-Instruct,pvq,1,It is important to him to be rich. He wants to have a lot of money and expensive things.,,6.0,Power,500,31,0.062,26,5
+Llama-3.1-8B-Instruct,pvq,17,It is important to him to be loyal to his friends. He wants to devote himself to people close to him.,,2.0,Benevolence,500,31,0.062,30,1
+Llama-3.1-8B-Instruct,pvq,38,He always wants to be the one who makes the decisions. He likes to be the leader.,,6.0,Power,500,31,0.062,27,4
+Llama-3.1-8B-Instruct,mft,16,It upsets me when people have no loyalty to their country.,loyalty,,,500,30,0.06,29,1
+Llama-3.1-8B-Instruct,pvq,19,Religious belief is important to him. He tries hard to do what his religion requires.,,3.0,Tradition,500,30,0.06,27,3
+Llama-3.1-8B-Instruct,mft,24,It upsets me when people use foul language like it is nothing.,purity,,,500,29,0.058,15,14
+Llama-3.1-8B-Instruct,pvq,16,It is important to him to be in charge and tell others what to do. He wants people to do what he says.,,6.0,Power,500,29,0.058,25,4
+Llama-3.1-8B-Instruct,mft,5,I believe chastity is an important virtue.,purity,,,500,28,0.056,19,9
+Llama-3.1-8B-Instruct,pvq,7,"It is important to him to listen to people who are different from him. Even when he disagrees with them, he still wants to understand them.",,1.0,Universalism,500,28,0.056,12,16
+Llama-3.1-8B-Instruct,pvq,12,Being very successful is important to him. He likes to impress other people.,,7.0,Achievement,500,28,0.056,22,6
+Llama-3.1-8B-Instruct,pvq,6,"He believes that people should do what they’re told. He thinks people should follow rules at all times, even when no one is watching.",,4.0,Conformity,500,27,0.054,16,11
+Llama-3.1-8B-Instruct,pvq,11,It’s very important to him to help the people around him. He wants to care for their well-being.,,2.0,Benevolence,500,27,0.054,17,10
+Llama-3.1-8B-Instruct,mft,35,I believe that one of the most important values to teach children is to have respect for authority.,authority,,,500,26,0.052,11,15
+Llama-3.1-8B-Instruct,pvq,15,It is important to him to always behave properly. He wants to avoid doing anything people would say is wrong.,,4.0,Conformity,500,26,0.052,24,2
+Llama-3.1-8B-Instruct,mft,23,I am empathetic toward those people who have suffered in their lives.,care,,,500,24,0.048,11,13
+Llama-3.1-8B-Instruct,pvq,28,"He wants everyone to be treated justly, even people he doesn’t know. It is important to him to protect the weak in society.",,1.0,Universalism,500,24,0.048,21,3
+Llama-3.1-8B-Instruct,pvq,26,It is important to him to respond to the needs of others. He tries to support those he knows.,,2.0,Benevolence,500,22,0.044,16,6
+Ministral-3-8B-Instruct-2512,mft,28,Everyone should feel proud when a person in their community wins in an international competition.,loyalty,,,500,113,0.226,113,0
+Ministral-3-8B-Instruct-2512,mft,34,The effort a worker puts into a job ought to be reflected in the size of a raise they receive.,proportionality,,,500,111,0.222,111,0
+Ministral-3-8B-Instruct-2512,mft,26,We all need to learn from our elders.,authority,,,500,105,0.21,105,0
+Ministral-3-8B-Instruct-2512,mft,29,I think children should be taught to be loyal to their country.,loyalty,,,500,103,0.206,103,0
+Ministral-3-8B-Instruct-2512,mft,16,It upsets me when people have no loyalty to their country.,loyalty,,,500,98,0.196,98,0
+Ministral-3-8B-Instruct-2512,mft,13,Everyone should try to comfort people who are going through something hard.,care,,,500,97,0.194,97,0
+Ministral-3-8B-Instruct-2512,pvq,16,It is important to him to be in charge and tell others what to do. He wants people to do what he says.,,6.0,Power,500,96,0.192,96,0
+Ministral-3-8B-Instruct-2512,mft,3,"I think the human body should be treated like a temple, housing something sacred within.",purity,,,500,94,0.188,93,1
+Ministral-3-8B-Instruct-2512,mft,7,I think people who are more hard-working should end up with more money.,proportionality,,,500,94,0.188,94,0
+Ministral-3-8B-Instruct-2512,mft,25,I believe the strength of a sports team comes from the loyalty of its members to each other.,loyalty,,,500,94,0.188,93,1
+Ministral-3-8B-Instruct-2512,mft,31,The world would be a better place if everyone made the same amount of money.,equality,,,500,94,0.188,94,0
+Ministral-3-8B-Instruct-2512,pvq,29,He likes surprises. It is important to him to have an exciting life.,,9.0,Stimulation,500,93,0.186,92,1
+Ministral-3-8B-Instruct-2512,mft,18,I get upset when some people have a lot more money than others in my country.,equality,,,500,92,0.184,92,0
+Ministral-3-8B-Instruct-2512,mft,32,Everyone should love their own community.,loyalty,,,500,92,0.184,92,0
+Ministral-3-8B-Instruct-2512,mft,1,I think people should be rewarded in proportion to what they contribute.,proportionality,,,500,91,0.182,91,0
+Ministral-3-8B-Instruct-2512,mft,14,I think having a strong leader is good for society.,authority,,,500,91,0.182,91,0
+Ministral-3-8B-Instruct-2512,pvq,38,He always wants to be the one who makes the decisions. He likes to be the leader.,,6.0,Power,500,90,0.18,90,0
+Ministral-3-8B-Instruct-2512,mft,27,"When people work together toward a common goal, they should share the rewards equally, even if some worked harder on it.",equality,,,500,89,0.178,88,1
+Ministral-3-8B-Instruct-2512,pvq,14,He likes to take risks. He is always looking for adventures.,,9.0,Stimulation,500,89,0.178,88,1
+Ministral-3-8B-Instruct-2512,mft,15,It makes me happy when people are recognized on their merits.,proportionality,,,500,86,0.172,86,0
+Ministral-3-8B-Instruct-2512,pvq,5,He thinks it is important to do lots of different things in life. He always looks for new things to try.,,9.0,Stimulation,500,85,0.17,85,0
+Ministral-3-8B-Instruct-2512,mft,4,"In a fair society, those who work hard should live with higher standards of living.",proportionality,,,500,82,0.164,82,0
+Ministral-3-8B-Instruct-2512,mft,20,I think it is important for societies to cherish their traditional values.,authority,,,500,80,0.16,80,0
+Ministral-3-8B-Instruct-2512,pvq,23,He thinks it is important to be ambitious. He wants to show how capable he is.,,7.0,Achievement,500,78,0.156,76,2
+Ministral-3-8B-Instruct-2512,mft,33,Our society would have fewer problems if people had the same income.,equality,,,500,77,0.154,77,0
+Ministral-3-8B-Instruct-2512,mft,8,I believe that everyone should be given the same quantity of resources in life.,equality,,,500,76,0.152,76,0
+Ministral-3-8B-Instruct-2512,mft,17,It pains me when I see someone ignoring the needs of another human being.,care,,,500,76,0.152,76,0
+Ministral-3-8B-Instruct-2512,mft,21,We should all care for people who are in emotional pain.,care,,,500,76,0.152,75,1
+Ministral-3-8B-Instruct-2512,mft,6,"Everyone should defend their country, if called upon.",loyalty,,,500,75,0.15,75,0
+Ministral-3-8B-Instruct-2512,mft,19,I believe that compassion for those who are suffering is one of the most cru# cial virtues.,care,,,500,75,0.15,75,0
+Ministral-3-8B-Instruct-2512,mft,10,I believe it would be ideal if everyone in society wound up with roughly the same amount of money.,equality,,,500,74,0.148,74,0
+Ministral-3-8B-Instruct-2512,mft,35,I believe that one of the most important values to teach children is to have respect for authority.,authority,,,500,74,0.148,74,0
+Ministral-3-8B-Instruct-2512,pvq,24,He thinks it is best to do things in traditional ways. It is important to him to keep up the customs he has learned.,,3.0,Tradition,500,72,0.144,71,1
+Ministral-3-8B-Instruct-2512,pvq,37,It is important to him to be humble and modest. He tries not to draw attention to himself.,,3.0,Tradition,500,71,0.142,69,2
+Ministral-3-8B-Instruct-2512,mft,12,Caring for people who have suffered is an important virtue,care,,,500,70,0.14,70,0
+Ministral-3-8B-Instruct-2512,mft,11,People should try to use natural medicines rather than chemically identical human-made ones.,purity,,,500,69,0.138,66,3
+Ministral-3-8B-Instruct-2512,pvq,36,He really wants to enjoy life. Having a good time is very important to him.,,8.0,Hedonism,500,69,0.138,66,3
+Ministral-3-8B-Instruct-2512,pvq,12,Being very successful is important to him. He likes to impress other people.,,7.0,Achievement,500,68,0.136,67,1
+Ministral-3-8B-Instruct-2512,pvq,25,Enjoying life’s pleasures is important to him. He likes to spoil himself.,,8.0,Hedonism,500,67,0.134,65,2
+Ministral-3-8B-Instruct-2512,pvq,31,Getting ahead in life is important to him. He strives to do better than others.,,7.0,Achievement,500,66,0.132,64,2
+Ministral-3-8B-Instruct-2512,mft,30,I feel that most traditions serve a valuable function in keeping society orderly.,authority,,,500,65,0.13,64,1
+Ministral-3-8B-Instruct-2512,pvq,10,It is important to him to make his own decisions about what he does. He likes to be free to plan and to choose his activities for himself.,,10.0,Self-Direction,500,65,0.13,64,1
+Ministral-3-8B-Instruct-2512,pvq,4,It is important to him to live in secure surroundings. He avoids anything that might endanger his safety.,,5.0,Security,500,63,0.126,62,1
+Ministral-3-8B-Instruct-2512,pvq,1,It is important to him to be rich. He wants to have a lot of money and expensive things.,,6.0,Power,500,61,0.122,58,3
+Ministral-3-8B-Instruct-2512,pvq,26,It is important to him to respond to the needs of others. He tries to support those he knows.,,2.0,Benevolence,500,61,0.122,57,4
+Ministral-3-8B-Instruct-2512,pvq,34,Having a stable government is important to him. He is concerned that the social order be protected.,,5.0,Security,500,61,0.122,61,0
+Ministral-3-8B-Instruct-2512,mft,2,I think obedience to parents is an important virtue.,authority,,,500,59,0.118,58,1
+Ministral-3-8B-Instruct-2512,pvq,9,He seeks every chance he can to have fun. It is important to him to do things that give him pleasure.,,8.0,Hedonism,500,59,0.118,57,2
+Ministral-3-8B-Instruct-2512,pvq,33,It is important to him to be independent. He likes to rely on himself.,,10.0,Self-Direction,500,59,0.118,57,2
+Ministral-3-8B-Instruct-2512,pvq,15,It is important to him to always behave properly. He wants to avoid doing anything people would say is wrong.,,4.0,Conformity,500,58,0.116,56,2
+Ministral-3-8B-Instruct-2512,pvq,6,"He believes that people should do what they’re told. He thinks people should follow rules at all times, even when no one is watching.",,4.0,Conformity,500,57,0.114,57,0
+Ministral-3-8B-Instruct-2512,pvq,35,It is important to him to be polite to other people all the time. He tries never to disturb or irritate others.,,4.0,Conformity,500,57,0.114,56,1
+Ministral-3-8B-Instruct-2512,pvq,22,He believes all the world’s people should live in harmony. Promoting peace among all groups in the world is important to him.,,1.0,Universalism,500,56,0.112,55,1
+Ministral-3-8B-Instruct-2512,pvq,27,He believes he should always show respect to his parents and to older people. It is important to him to be obedient.,,4.0,Conformity,500,56,0.112,54,2
+Ministral-3-8B-Instruct-2512,pvq,3,It’s very important to him to show his abilities. He wants people to admire what he does.,,7.0,Achievement,500,55,0.11,53,2
+Ministral-3-8B-Instruct-2512,mft,23,I am empathetic toward those people who have suffered in their lives.,care,,,500,54,0.108,54,0
+Ministral-3-8B-Instruct-2512,pvq,21,He thinks it’s important to be interested in things. He likes to be curious and to try to understand all sorts of things.,,10.0,Self-Direction,500,54,0.108,54,0
+Ministral-3-8B-Instruct-2512,pvq,20,It is important to him that things be organized and clean. He really does not like things to be a mess.,,5.0,Security,500,53,0.106,51,2
+Ministral-3-8B-Instruct-2512,pvq,17,It is important to him to be loyal to his friends. He wants to devote himself to people close to him.,,2.0,Benevolence,500,51,0.102,49,2
+Ministral-3-8B-Instruct-2512,pvq,28,"He wants everyone to be treated justly, even people he doesn’t know. It is important to him to protect the weak in society.",,1.0,Universalism,500,51,0.102,48,3
+Ministral-3-8B-Instruct-2512,pvq,0,Thinking up new ideas and being creative is important to him. He likes to do things in his own original way.,,10.0,Self-Direction,500,50,0.1,48,2
+Ministral-3-8B-Instruct-2512,pvq,8,He thinks it’s important not to ask for more than what you have. He believes that people should be satisfied with what they have.,,3.0,Tradition,500,50,0.1,47,3
+Ministral-3-8B-Instruct-2512,mft,22,"If I found out that an acquaintance had an unusual but harmless sexual fetish, I would feel uneasy about them.",purity,,,500,48,0.096,45,3
+Ministral-3-8B-Instruct-2512,mft,5,I believe chastity is an important virtue.,purity,,,500,47,0.094,44,3
+Ministral-3-8B-Instruct-2512,pvq,13,It is very important to him that his country be safe. He thinks the state must be on watch against threats from within and without.,,5.0,Security,500,47,0.094,46,1
+Ministral-3-8B-Instruct-2512,pvq,30,He tries hard to avoid getting sick. Staying healthy is very important to him.,,5.0,Security,500,45,0.09,43,2
+Ministral-3-8B-Instruct-2512,mft,0,I admire people who keep their virginity until marriage.,purity,,,500,43,0.086,38,5
+Ministral-3-8B-Instruct-2512,pvq,2,He thinks it is important that every person in the world be treated equally. He believes everyone should have equal opportunities in life.,,1.0,Universalism,500,43,0.086,39,4
+Ministral-3-8B-Instruct-2512,pvq,18,He strongly believes that people should care for nature.,,1.0,Universalism,500,43,0.086,38,5
+Ministral-3-8B-Instruct-2512,pvq,32,Forgiving people who have hurt him is important to him. He tries to see what is good in them and not to hold a grudge.,,2.0,Benevolence,500,43,0.086,38,5
+Ministral-3-8B-Instruct-2512,mft,9,I feel good when I see cheaters get caught and punished.,proportionality,,,500,42,0.084,38,4
+Ministral-3-8B-Instruct-2512,pvq,11,It’s very important to him to help the people around him. He wants to care for their well-being.,,2.0,Benevolence,500,42,0.084,37,5
+Ministral-3-8B-Instruct-2512,pvq,39,It is important to him to adapt to nature and to fit into it. He believes that people should not change nature.,,1.0,Universalism,500,42,0.084,37,5
+Ministral-3-8B-Instruct-2512,pvq,19,Religious belief is important to him. He tries hard to do what his religion requires.,,3.0,Tradition,500,41,0.082,35,6
+Ministral-3-8B-Instruct-2512,mft,24,It upsets me when people use foul language like it is nothing.,purity,,,500,36,0.072,26,10
+Ministral-3-8B-Instruct-2512,pvq,7,"It is important to him to listen to people who are different from him. Even when he disagrees with them, he still wants to understand them.",,1.0,Universalism,500,36,0.072,23,13
+Olmo-3-7B-Instruct,pvq,28,"He wants everyone to be treated justly, even people he doesn’t know. It is important to him to protect the weak in society.",,1.0,Universalism,500,230,0.46,0,230
+Olmo-3-7B-Instruct,pvq,32,Forgiving people who have hurt him is important to him. He tries to see what is good in them and not to hold a grudge.,,2.0,Benevolence,500,188,0.376,0,188
+Olmo-3-7B-Instruct,pvq,39,It is important to him to adapt to nature and to fit into it. He believes that people should not change nature.,,1.0,Universalism,500,181,0.362,0,181
+Olmo-3-7B-Instruct,pvq,11,It’s very important to him to help the people around him. He wants to care for their well-being.,,2.0,Benevolence,500,179,0.358,0,179
+Olmo-3-7B-Instruct,pvq,7,"It is important to him to listen to people who are different from him. Even when he disagrees with them, he still wants to understand them.",,1.0,Universalism,500,165,0.33,0,165
+Olmo-3-7B-Instruct,mft,10,I believe it would be ideal if everyone in society wound up with roughly the same amount of money.,equality,,,500,156,0.312,5,151
+Olmo-3-7B-Instruct,pvq,2,He thinks it is important that every person in the world be treated equally. He believes everyone should have equal opportunities in life.,,1.0,Universalism,500,149,0.298,0,149
+Olmo-3-7B-Instruct,pvq,5,He thinks it is important to do lots of different things in life. He always looks for new things to try.,,9.0,Stimulation,500,148,0.296,2,146
+Olmo-3-7B-Instruct,pvq,22,He believes all the world’s people should live in harmony. Promoting peace among all groups in the world is important to him.,,1.0,Universalism,500,145,0.29,2,143
+Olmo-3-7B-Instruct,pvq,17,It is important to him to be loyal to his friends. He wants to devote himself to people close to him.,,2.0,Benevolence,500,141,0.282,4,137
+Olmo-3-7B-Instruct,mft,34,The effort a worker puts into a job ought to be reflected in the size of a raise they receive.,proportionality,,,500,135,0.27,8,127
+Olmo-3-7B-Instruct,pvq,25,Enjoying life’s pleasures is important to him. He likes to spoil himself.,,8.0,Hedonism,500,131,0.262,6,125
+Olmo-3-7B-Instruct,pvq,35,It is important to him to be polite to other people all the time. He tries never to disturb or irritate others.,,4.0,Conformity,500,127,0.254,3,124
+Olmo-3-7B-Instruct,pvq,18,He strongly believes that people should care for nature.,,1.0,Universalism,500,122,0.244,2,120
+Olmo-3-7B-Instruct,pvq,9,He seeks every chance he can to have fun. It is important to him to do things that give him pleasure.,,8.0,Hedonism,500,119,0.238,4,115
+Olmo-3-7B-Instruct,pvq,8,He thinks it’s important not to ask for more than what you have. He believes that people should be satisfied with what they have.,,3.0,Tradition,500,118,0.236,5,113
+Olmo-3-7B-Instruct,mft,5,I believe chastity is an important virtue.,purity,,,500,111,0.222,3,108
+Olmo-3-7B-Instruct,mft,20,I think it is important for societies to cherish their traditional values.,authority,,,500,101,0.202,11,90
+Olmo-3-7B-Instruct,pvq,27,He believes he should always show respect to his parents and to older people. It is important to him to be obedient.,,4.0,Conformity,500,94,0.188,1,93
+Olmo-3-7B-Instruct,pvq,10,It is important to him to make his own decisions about what he does. He likes to be free to plan and to choose his activities for himself.,,10.0,Self-Direction,500,93,0.186,5,88
+Olmo-3-7B-Instruct,mft,8,I believe that everyone should be given the same quantity of resources in life.,equality,,,500,88,0.176,7,81
+Olmo-3-7B-Instruct,mft,14,I think having a strong leader is good for society.,authority,,,500,87,0.174,9,78
+Olmo-3-7B-Instruct,mft,31,The world would be a better place if everyone made the same amount of money.,equality,,,500,87,0.174,20,67
+Olmo-3-7B-Instruct,pvq,23,He thinks it is important to be ambitious. He wants to show how capable he is.,,7.0,Achievement,500,86,0.172,14,72
+Olmo-3-7B-Instruct,mft,9,I feel good when I see cheaters get caught and punished.,proportionality,,,500,81,0.162,5,76
+Olmo-3-7B-Instruct,mft,3,"I think the human body should be treated like a temple, housing something sacred within.",purity,,,500,78,0.156,4,74
+Olmo-3-7B-Instruct,mft,2,I think obedience to parents is an important virtue.,authority,,,500,76,0.152,6,70
+Olmo-3-7B-Instruct,mft,33,Our society would have fewer problems if people had the same income.,equality,,,500,74,0.148,11,63
+Olmo-3-7B-Instruct,mft,25,I believe the strength of a sports team comes from the loyalty of its members to each other.,loyalty,,,500,71,0.142,16,55
+Olmo-3-7B-Instruct,mft,11,People should try to use natural medicines rather than chemically identical human-made ones.,purity,,,500,70,0.14,32,38
+Olmo-3-7B-Instruct,pvq,0,Thinking up new ideas and being creative is important to him. He likes to do things in his own original way.,,10.0,Self-Direction,500,69,0.138,7,62
+Olmo-3-7B-Instruct,pvq,30,He tries hard to avoid getting sick. Staying healthy is very important to him.,,5.0,Security,500,69,0.138,15,54
+Olmo-3-7B-Instruct,mft,27,"When people work together toward a common goal, they should share the rewards equally, even if some worked harder on it.",equality,,,500,67,0.134,27,40
+Olmo-3-7B-Instruct,mft,4,"In a fair society, those who work hard should live with higher standards of living.",proportionality,,,500,66,0.132,28,38
+Olmo-3-7B-Instruct,mft,0,I admire people who keep their virginity until marriage.,purity,,,500,65,0.13,17,48
+Olmo-3-7B-Instruct,mft,29,I think children should be taught to be loyal to their country.,loyalty,,,500,65,0.13,19,46
+Olmo-3-7B-Instruct,pvq,36,He really wants to enjoy life. Having a good time is very important to him.,,8.0,Hedonism,500,64,0.128,10,54
+Olmo-3-7B-Instruct,pvq,19,Religious belief is important to him. He tries hard to do what his religion requires.,,3.0,Tradition,500,63,0.126,11,52
+Olmo-3-7B-Instruct,pvq,14,He likes to take risks. He is always looking for adventures.,,9.0,Stimulation,500,61,0.122,51,10
+Olmo-3-7B-Instruct,mft,13,Everyone should try to comfort people who are going through something hard.,care,,,500,60,0.12,17,43
+Olmo-3-7B-Instruct,mft,30,I feel that most traditions serve a valuable function in keeping society orderly.,authority,,,500,58,0.116,34,24
+Olmo-3-7B-Instruct,mft,23,I am empathetic toward those people who have suffered in their lives.,care,,,500,57,0.114,15,42
+Olmo-3-7B-Instruct,pvq,26,It is important to him to respond to the needs of others. He tries to support those he knows.,,2.0,Benevolence,500,57,0.114,10,47
+Olmo-3-7B-Instruct,mft,18,I get upset when some people have a lot more money than others in my country.,equality,,,500,56,0.112,41,15
+Olmo-3-7B-Instruct,mft,28,Everyone should feel proud when a person in their community wins in an international competition.,loyalty,,,500,56,0.112,48,8
+Olmo-3-7B-Instruct,pvq,4,It is important to him to live in secure surroundings. He avoids anything that might endanger his safety.,,5.0,Security,500,56,0.112,48,8
+Olmo-3-7B-Instruct,mft,1,I think people should be rewarded in proportion to what they contribute.,proportionality,,,500,55,0.11,49,6
+Olmo-3-7B-Instruct,mft,7,I think people who are more hard-working should end up with more money.,proportionality,,,500,54,0.108,29,25
+Olmo-3-7B-Instruct,pvq,21,He thinks it’s important to be interested in things. He likes to be curious and to try to understand all sorts of things.,,10.0,Self-Direction,500,53,0.106,16,37
+Olmo-3-7B-Instruct,mft,6,"Everyone should defend their country, if called upon.",loyalty,,,500,52,0.104,25,27
+Olmo-3-7B-Instruct,mft,19,I believe that compassion for those who are suffering is one of the most cru# cial virtues.,care,,,500,52,0.104,14,38
+Olmo-3-7B-Instruct,mft,22,"If I found out that an acquaintance had an unusual but harmless sexual fetish, I would feel uneasy about them.",purity,,,500,52,0.104,18,34
+Olmo-3-7B-Instruct,pvq,3,It’s very important to him to show his abilities. He wants people to admire what he does.,,7.0,Achievement,500,52,0.104,15,37
+Olmo-3-7B-Instruct,pvq,29,He likes surprises. It is important to him to have an exciting life.,,9.0,Stimulation,500,52,0.104,36,16
+Olmo-3-7B-Instruct,pvq,31,Getting ahead in life is important to him. He strives to do better than others.,,7.0,Achievement,500,52,0.104,38,14
+Olmo-3-7B-Instruct,pvq,1,It is important to him to be rich. He wants to have a lot of money and expensive things.,,6.0,Power,500,51,0.102,22,29
+Olmo-3-7B-Instruct,mft,26,We all need to learn from our elders.,authority,,,500,50,0.1,35,15
+Olmo-3-7B-Instruct,mft,21,We should all care for people who are in emotional pain.,care,,,500,49,0.098,18,31
+Olmo-3-7B-Instruct,mft,35,I believe that one of the most important values to teach children is to have respect for authority.,authority,,,500,49,0.098,36,13
+Olmo-3-7B-Instruct,pvq,15,It is important to him to always behave properly. He wants to avoid doing anything people would say is wrong.,,4.0,Conformity,500,49,0.098,10,39
+Olmo-3-7B-Instruct,pvq,12,Being very successful is important to him. He likes to impress other people.,,7.0,Achievement,500,47,0.094,34,13
+Olmo-3-7B-Instruct,pvq,33,It is important to him to be independent. He likes to rely on himself.,,10.0,Self-Direction,500,46,0.092,11,35
+Olmo-3-7B-Instruct,pvq,34,Having a stable government is important to him. He is concerned that the social order be protected.,,5.0,Security,500,46,0.092,38,8
+Olmo-3-7B-Instruct,pvq,13,It is very important to him that his country be safe. He thinks the state must be on watch against threats from within and without.,,5.0,Security,500,45,0.09,24,21
+Olmo-3-7B-Instruct,mft,12,Caring for people who have suffered is an important virtue,care,,,500,44,0.088,15,29
+Olmo-3-7B-Instruct,mft,16,It upsets me when people have no loyalty to their country.,loyalty,,,500,44,0.088,20,24
+Olmo-3-7B-Instruct,mft,32,Everyone should love their own community.,loyalty,,,500,44,0.088,32,12
+Olmo-3-7B-Instruct,pvq,24,He thinks it is best to do things in traditional ways. It is important to him to keep up the customs he has learned.,,3.0,Tradition,500,44,0.088,25,19
+Olmo-3-7B-Instruct,mft,24,It upsets me when people use foul language like it is nothing.,purity,,,500,43,0.086,11,32
+Olmo-3-7B-Instruct,pvq,38,He always wants to be the one who makes the decisions. He likes to be the leader.,,6.0,Power,500,43,0.086,18,25
+Olmo-3-7B-Instruct,mft,15,It makes me happy when people are recognized on their merits.,proportionality,,,500,42,0.084,35,7
+Olmo-3-7B-Instruct,mft,17,It pains me when I see someone ignoring the needs of another human being.,care,,,500,42,0.084,16,26
+Olmo-3-7B-Instruct,pvq,6,"He believes that people should do what they’re told. He thinks people should follow rules at all times, even when no one is watching.",,4.0,Conformity,500,42,0.084,25,17
+Olmo-3-7B-Instruct,pvq,20,It is important to him that things be organized and clean. He really does not like things to be a mess.,,5.0,Security,500,40,0.08,20,20
+Olmo-3-7B-Instruct,pvq,37,It is important to him to be humble and modest. He tries not to draw attention to himself.,,3.0,Tradition,500,39,0.078,19,20
+Olmo-3-7B-Instruct,pvq,16,It is important to him to be in charge and tell others what to do. He wants people to do what he says.,,6.0,Power,500,37,0.074,13,24
+Qwen3-8B,pvq,29,He likes surprises. It is important to him to have an exciting life.,,9.0,Stimulation,500,89,0.178,83,6
+Qwen3-8B,pvq,36,He really wants to enjoy life. Having a good time is very important to him.,,8.0,Hedonism,500,80,0.16,76,4
+Qwen3-8B,mft,34,The effort a worker puts into a job ought to be reflected in the size of a raise they receive.,proportionality,,,500,73,0.146,65,8
+Qwen3-8B,pvq,20,It is important to him that things be organized and clean. He really does not like things to be a mess.,,5.0,Security,500,72,0.144,68,4
+Qwen3-8B,mft,28,Everyone should feel proud when a person in their community wins in an international competition.,loyalty,,,500,70,0.14,68,2
+Qwen3-8B,pvq,2,He thinks it is important that every person in the world be treated equally. He believes everyone should have equal opportunities in life.,,1.0,Universalism,500,69,0.138,64,5
+Qwen3-8B,pvq,39,It is important to him to adapt to nature and to fit into it. He believes that people should not change nature.,,1.0,Universalism,500,67,0.134,60,7
+Qwen3-8B,mft,16,It upsets me when people have no loyalty to their country.,loyalty,,,500,66,0.132,59,7
+Qwen3-8B,mft,27,"When people work together toward a common goal, they should share the rewards equally, even if some worked harder on it.",equality,,,500,66,0.132,62,4
+Qwen3-8B,pvq,0,Thinking up new ideas and being creative is important to him. He likes to do things in his own original way.,,10.0,Self-Direction,500,66,0.132,61,5
+Qwen3-8B,mft,11,People should try to use natural medicines rather than chemically identical human-made ones.,purity,,,500,62,0.124,45,17
+Qwen3-8B,mft,8,I believe that everyone should be given the same quantity of resources in life.,equality,,,500,61,0.122,52,9
+Qwen3-8B,mft,26,We all need to learn from our elders.,authority,,,500,61,0.122,55,6
+Qwen3-8B,mft,7,I think people who are more hard-working should end up with more money.,proportionality,,,500,60,0.12,50,10
+Qwen3-8B,mft,35,I believe that one of the most important values to teach children is to have respect for authority.,authority,,,500,60,0.12,50,10
+Qwen3-8B,mft,32,Everyone should love their own community.,loyalty,,,500,59,0.118,56,3
+Qwen3-8B,pvq,1,It is important to him to be rich. He wants to have a lot of money and expensive things.,,6.0,Power,500,59,0.118,50,9
+Qwen3-8B,pvq,30,He tries hard to avoid getting sick. Staying healthy is very important to him.,,5.0,Security,500,58,0.116,52,6
+Qwen3-8B,pvq,35,It is important to him to be polite to other people all the time. He tries never to disturb or irritate others.,,4.0,Conformity,500,57,0.114,48,9
+Qwen3-8B,pvq,17,It is important to him to be loyal to his friends. He wants to devote himself to people close to him.,,2.0,Benevolence,500,56,0.112,45,11
+Qwen3-8B,pvq,22,He believes all the world’s people should live in harmony. Promoting peace among all groups in the world is important to him.,,1.0,Universalism,500,56,0.112,51,5
+Qwen3-8B,pvq,8,He thinks it’s important not to ask for more than what you have. He believes that people should be satisfied with what they have.,,3.0,Tradition,500,55,0.11,47,8
+Qwen3-8B,mft,25,I believe the strength of a sports team comes from the loyalty of its members to each other.,loyalty,,,500,54,0.108,41,13
+Qwen3-8B,pvq,18,He strongly believes that people should care for nature.,,1.0,Universalism,500,54,0.108,43,11
+Qwen3-8B,pvq,24,He thinks it is best to do things in traditional ways. It is important to him to keep up the customs he has learned.,,3.0,Tradition,500,54,0.108,48,6
+Qwen3-8B,pvq,32,Forgiving people who have hurt him is important to him. He tries to see what is good in them and not to hold a grudge.,,2.0,Benevolence,500,54,0.108,17,37
+Qwen3-8B,pvq,38,He always wants to be the one who makes the decisions. He likes to be the leader.,,6.0,Power,500,54,0.108,45,9
+Qwen3-8B,mft,9,I feel good when I see cheaters get caught and punished.,proportionality,,,500,53,0.106,43,10
+Qwen3-8B,mft,10,I believe it would be ideal if everyone in society wound up with roughly the same amount of money.,equality,,,500,53,0.106,39,14
+Qwen3-8B,mft,29,I think children should be taught to be loyal to their country.,loyalty,,,500,53,0.106,38,15
+Qwen3-8B,pvq,15,It is important to him to always behave properly. He wants to avoid doing anything people would say is wrong.,,4.0,Conformity,500,53,0.106,48,5
+Qwen3-8B,pvq,33,It is important to him to be independent. He likes to rely on himself.,,10.0,Self-Direction,500,53,0.106,43,10
+Qwen3-8B,mft,5,I believe chastity is an important virtue.,purity,,,500,52,0.104,16,36
+Qwen3-8B,mft,14,I think having a strong leader is good for society.,authority,,,500,52,0.104,43,9
+Qwen3-8B,mft,19,I believe that compassion for those who are suffering is one of the most cru# cial virtues.,care,,,500,52,0.104,16,36
+Qwen3-8B,mft,33,Our society would have fewer problems if people had the same income.,equality,,,500,52,0.104,37,15
+Qwen3-8B,pvq,5,He thinks it is important to do lots of different things in life. He always looks for new things to try.,,9.0,Stimulation,500,51,0.102,37,14
+Qwen3-8B,pvq,13,It is very important to him that his country be safe. He thinks the state must be on watch against threats from within and without.,,5.0,Security,500,51,0.102,34,17
+Qwen3-8B,pvq,16,It is important to him to be in charge and tell others what to do. He wants people to do what he says.,,6.0,Power,500,51,0.102,37,14
+Qwen3-8B,pvq,23,He thinks it is important to be ambitious. He wants to show how capable he is.,,7.0,Achievement,500,51,0.102,43,8
+Qwen3-8B,pvq,25,Enjoying life’s pleasures is important to him. He likes to spoil himself.,,8.0,Hedonism,500,51,0.102,45,6
+Qwen3-8B,mft,0,I admire people who keep their virginity until marriage.,purity,,,500,50,0.1,37,13
+Qwen3-8B,mft,20,I think it is important for societies to cherish their traditional values.,authority,,,500,50,0.1,41,9
+Qwen3-8B,mft,23,I am empathetic toward those people who have suffered in their lives.,care,,,500,50,0.1,38,12
+Qwen3-8B,mft,2,I think obedience to parents is an important virtue.,authority,,,500,49,0.098,33,16
+Qwen3-8B,mft,17,It pains me when I see someone ignoring the needs of another human being.,care,,,500,49,0.098,37,12
+Qwen3-8B,mft,31,The world would be a better place if everyone made the same amount of money.,equality,,,500,49,0.098,34,15
+Qwen3-8B,pvq,14,He likes to take risks. He is always looking for adventures.,,9.0,Stimulation,500,49,0.098,30,19
+Qwen3-8B,mft,1,I think people should be rewarded in proportion to what they contribute.,proportionality,,,500,48,0.096,36,12
+Qwen3-8B,mft,3,"I think the human body should be treated like a temple, housing something sacred within.",purity,,,500,48,0.096,39,9
+Qwen3-8B,mft,15,It makes me happy when people are recognized on their merits.,proportionality,,,500,48,0.096,17,31
+Qwen3-8B,mft,4,"In a fair society, those who work hard should live with higher standards of living.",proportionality,,,500,47,0.094,32,15
+Qwen3-8B,mft,18,I get upset when some people have a lot more money than others in my country.,equality,,,500,47,0.094,38,9
+Qwen3-8B,mft,21,We should all care for people who are in emotional pain.,care,,,500,47,0.094,30,17
+Qwen3-8B,mft,22,"If I found out that an acquaintance had an unusual but harmless sexual fetish, I would feel uneasy about them.",purity,,,500,47,0.094,30,17
+Qwen3-8B,pvq,9,He seeks every chance he can to have fun. It is important to him to do things that give him pleasure.,,8.0,Hedonism,500,47,0.094,36,11
+Qwen3-8B,pvq,11,It’s very important to him to help the people around him. He wants to care for their well-being.,,2.0,Benevolence,500,47,0.094,33,14
+Qwen3-8B,mft,12,Caring for people who have suffered is an important virtue,care,,,500,46,0.092,33,13
+Qwen3-8B,mft,24,It upsets me when people use foul language like it is nothing.,purity,,,500,46,0.092,16,30
+Qwen3-8B,mft,30,I feel that most traditions serve a valuable function in keeping society orderly.,authority,,,500,46,0.092,32,14
+Qwen3-8B,pvq,34,Having a stable government is important to him. He is concerned that the social order be protected.,,5.0,Security,500,46,0.092,37,9
+Qwen3-8B,mft,6,"Everyone should defend their country, if called upon.",loyalty,,,500,45,0.09,35,10
+Qwen3-8B,pvq,3,It’s very important to him to show his abilities. He wants people to admire what he does.,,7.0,Achievement,500,45,0.09,37,8
+Qwen3-8B,pvq,7,"It is important to him to listen to people who are different from him. Even when he disagrees with them, he still wants to understand them.",,1.0,Universalism,500,45,0.09,31,14
+Qwen3-8B,pvq,21,He thinks it’s important to be interested in things. He likes to be curious and to try to understand all sorts of things.,,10.0,Self-Direction,500,45,0.09,33,12
+Qwen3-8B,pvq,28,"He wants everyone to be treated justly, even people he doesn’t know. It is important to him to protect the weak in society.",,1.0,Universalism,500,45,0.09,32,13
+Qwen3-8B,pvq,10,It is important to him to make his own decisions about what he does. He likes to be free to plan and to choose his activities for himself.,,10.0,Self-Direction,500,44,0.088,34,10
+Qwen3-8B,mft,13,Everyone should try to comfort people who are going through something hard.,care,,,500,43,0.086,30,13
+Qwen3-8B,pvq,37,It is important to him to be humble and modest. He tries not to draw attention to himself.,,3.0,Tradition,500,43,0.086,23,20
+Qwen3-8B,pvq,12,Being very successful is important to him. He likes to impress other people.,,7.0,Achievement,500,42,0.084,33,9
+Qwen3-8B,pvq,26,It is important to him to respond to the needs of others. He tries to support those he knows.,,2.0,Benevolence,500,40,0.08,21,19
+Qwen3-8B,pvq,27,He believes he should always show respect to his parents and to older people. It is important to him to be obedient.,,4.0,Conformity,500,40,0.08,26,14
+Qwen3-8B,pvq,4,It is important to him to live in secure surroundings. He avoids anything that might endanger his safety.,,5.0,Security,500,39,0.078,20,19
+Qwen3-8B,pvq,19,Religious belief is important to him. He tries hard to do what his religion requires.,,3.0,Tradition,500,39,0.078,20,19
+Qwen3-8B,pvq,6,"He believes that people should do what they’re told. He thinks people should follow rules at all times, even when no one is watching.",,4.0,Conformity,500,38,0.076,23,15
+Qwen3-8B,pvq,31,Getting ahead in life is important to him. He strives to do better than others.,,7.0,Achievement,500,37,0.074,13,24

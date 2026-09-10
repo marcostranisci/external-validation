@@ -353,6 +353,24 @@ questions:
    model and pooled (`model="ALL"`): item count, how many are significant,
    in which direction, and the mean delta. Saved to `pvq_value_patterns.csv`
    / `mft_foundation_patterns.csv`.
+6. **Model-wise: how often does steering flip the predicted label at
+   all?** Tests 1-5 only look at the positive class and at whether
+   *correctness* changes. `flip_counts_by_item` instead counts, for every
+   model and item, how many of the 500 messages get a different predicted
+   label under steering than under zero-shot — regardless of ground truth
+   or correctness, split into flips toward "hate" vs. toward "not hate".
+   `flip_counts_by_model` aggregates this to one row per model (and per
+   model × MFT/PVQ/combined); `flip_counts_by_model_and_value` breaks it
+   down further by MFT foundation / Schwartz PVQ value (needs
+   `pvq_mapping_path`, as in test 4). Saved to `flip_counts_by_item.csv`,
+   `flip_counts_by_model.csv`, `flip_counts_by_model_and_value.csv`.
+7. **Instance-wise: how often is each message's prediction flipped?**
+   `flip_counts_by_instance` inverts the view: for each of the 500
+   messages, across all 456 (6 models × 76 items) steering conditions, how
+   many times does the predicted label differ from that same model's own
+   zero-shot prediction on it — i.e. which specific messages are most
+   unstable under moral steering, pooling across every model and belief.
+   Saved to `flip_counts_by_instance.csv`.
 
 The full per-item recall table (one row per model × condition × item) is
 in `recall_by_model_condition_item.csv`.
@@ -408,6 +426,38 @@ everything else.** For the other four models, care/purity aren't
 negative, but they're still consistently their two *weakest* foundations
 (smallest positive delta of the six) — so the pattern holds directionally
 even where it doesn't flip to a net negative.
+
+**Flip counts (model-wise).** Ranking models by total label flips across
+all 76 items (`flip_counts_by_model.csv`, `condition="combined"`) gives
+the same ordering as the recall-shift results, but adds a mechanism:
+Olmo flips the most overall (6030 flips, mean flip rate 15.9% of the 500
+messages per item) and flips overwhelmingly *toward "not hate"* (4730 vs.
+1300 toward "hate") — it isn't just losing recall on average, it's
+actively relabeling messages away from hate speech under steering.
+Ministral flips almost as often (5245) but in the opposite direction —
+overwhelmingly *toward "hate"* (5117 vs. 128) — the mechanism behind its
+recall gain. Qwen and Falcon show the same toward-hate skew, more mildly;
+Llama is toward-hate too but flips least overall (3025); Apertus is the
+only model with a roughly even split (1572 vs. 1602), consistent with its
+mixed, cancelling-out item-level effects. Breaking flips down by value
+type (`flip_counts_by_model_and_value.csv`) reproduces the
+Universalism/Benevolence/care/purity pattern at the mechanism level too:
+Olmo's Universalism items alone cause 992 flips — more than any other
+single (model, value) cell in the whole table by a wide margin (next
+highest is Olmo's own Benevolence at 565) — while every other model's
+Universalism/Benevolence flip counts are in the same range as their other
+values.
+
+**Flip counts (instance-wise).** `flip_counts_by_instance.csv` pools all
+456 (6 models × 76 items) steering conditions per message and counts how
+often each message's label is unstable. Instability is not concentrated
+in a handful of messages: flip rates range continuously from 0 up to 53%
+(message id 465, an actual non-hate message that gets flipped both
+directions roughly evenly). Non-hate messages flip slightly more often on
+average than actual hate messages (mean flip rate 12.2% vs. 9.7%) — so
+steering is somewhat more likely to churn a model's opinion on borderline
+non-hate content than on clear-cut hate speech, across models and beliefs
+alike.
 
 Rerun with:
 

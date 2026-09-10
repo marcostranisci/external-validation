@@ -364,6 +364,136 @@ class HateSpeechSteeringAnalyzer:
         )
 
     # ------------------------------------------------------------------
+    # Model-wise: how often does steering flip the predicted label at all?
+    # ------------------------------------------------------------------
+    def flip_counts_by_item(self, pvq_mapping_path: str | Path | None = None) -> pd.DataFrame:
+        """For each model and item, count how many of the 500 messages
+        flip their predicted label between zero-shot and steered —
+        regardless of ground truth or correctness. This is a raw measure
+        of how much a belief shifts the model's stated opinion on hate
+        speech, as distinct from ``item_significance_per_model`` (which
+        only looks at whether *correctness on the positive class* changes).
+
+        If ``pvq_mapping_path`` is given, PVQ items are labeled with their
+        Schwartz value name (as in ``item_significance_per_model``).
+        """
+        pvq_map: dict[str, int] = {}
+        if pvq_mapping_path is not None:
+            map_df = pd.read_csv(pvq_mapping_path)
+            pvq_map = dict(zip(map_df["test_statement"], map_df["pvq_value"]))
+
+        rows = []
+        for model, model_data in self._data["models"].items():
+            zero_shot_by_id = {p["id"]: p["answer"] for p in model_data["zero_shot"]}
+            for condition in ("mft", "pvq"):
+                for item in model_data[condition]:
+                    preds = item["predictions"]
+                    n = len(preds)
+                    to_hate = to_not_hate = 0
+                    for p in preds:
+                        zs, st = str(zero_shot_by_id[p["id"]]), str(p["answer"])
+                        if zs != st:
+                            if st == "1":
+                                to_hate += 1
+                            else:
+                                to_not_hate += 1
+                    n_flips = to_hate + to_not_hate
+                    pvq_value = pvq_map.get(item["test_statement"]) if condition == "pvq" else None
+                    rows.append({
+                        "model": model, "condition": condition, "belief_id": item["belief_id"],
+                        "test_statement": item["test_statement"], "foundation": item.get("foundation"),
+                        "pvq_value": pvq_value,
+                        "pvq_value_label": SCHWARTZ_PVQ_VALUES.get(pvq_value),
+                        "n_messages": n, "n_flips": n_flips, "flip_rate": n_flips / n,
+                        "n_flips_to_hate": to_hate, "n_flips_to_not_hate": to_not_hate,
+                    })
+        result = pd.DataFrame(rows).sort_values(["model", "n_flips"], ascending=[True, False])
+        self._save(result, "flip_counts_by_item.csv")
+        return result
+
+    def flip_counts_by_model(self, flips: pd.DataFrame) -> pd.DataFrame:
+        """Aggregate item-level flip counts to one row per model (and per
+        model x MFT/PVQ/combined)."""
+        rows = []
+        for model, group in flips.groupby("model"):
+            for condition, sub in [
+                ("mft", group[group["condition"] == "mft"]),
+                ("pvq", group[group["condition"] == "pvq"]),
+                ("combined", group),
+            ]:
+                rows.append({
+                    "model": model, "condition": condition, "n_items": len(sub),
+                    "total_flips": int(sub["n_flips"].sum()),
+                    "mean_flips_per_item": sub["n_flips"].mean(),
+                    "mean_flip_rate": sub["flip_rate"].mean(),
+                    "total_flips_to_hate": int(sub["n_flips_to_hate"].sum()),
+                    "total_flips_to_not_hate": int(sub["n_flips_to_not_hate"].sum()),
+                })
+        result = pd.DataFrame(rows).sort_values(["condition", "total_flips"], ascending=[True, False])
+        self._save(result, "flip_counts_by_model.csv")
+        return result
+
+    def flip_counts_by_model_and_value(self, flips: pd.DataFrame) -> pd.DataFrame:
+        """Model x value-type breakdown of flip counts: MFT foundation for
+        MFT items, Schwartz PVQ value for PVQ items (requires
+        ``flip_counts_by_item`` to have been run with ``pvq_mapping_path``
+        set, otherwise PVQ rows fall back to a single ``None`` value)."""
+        flips = flips.copy()
+        flips["value_type"] = flips["foundation"].where(
+            flips["condition"] == "mft", flips["pvq_value_label"]
+        )
+        rows = []
+        for (model, condition, value_type), group in flips.groupby(
+            ["model", "condition", "value_type"], dropna=False
+        ):
+            rows.append({
+                "model": model, "condition": condition, "value_type": value_type,
+                "n_items": len(group), "total_flips": int(group["n_flips"].sum()),
+                "mean_flips_per_item": group["n_flips"].mean(),
+                "mean_flip_rate": group["flip_rate"].mean(),
+            })
+        result = pd.DataFrame(rows).sort_values(
+            ["model", "condition", "total_flips"], ascending=[True, True, False]
+        )
+        self._save(result, "flip_counts_by_model_and_value.csv")
+        return result
+
+    # ------------------------------------------------------------------
+    # Instance-wise: how often is each message's prediction flipped?
+    # ------------------------------------------------------------------
+    def flip_counts_by_instance(self) -> pd.DataFrame:
+        """For each of the 500 messages, count how many (model, item)
+        steering conditions (up to 6 models x 76 items = 456) flip its
+        predicted label relative to that same model's zero-shot prediction
+        on it — i.e. how often, across every model and every moral-belief
+        context, this specific message's classification is unstable."""
+        counts: dict[int, dict] = {}
+        for model, model_data in self._data["models"].items():
+            zero_shot_by_id = {p["id"]: p["answer"] for p in model_data["zero_shot"]}
+            for condition in ("mft", "pvq"):
+                for item in model_data[condition]:
+                    for p in item["predictions"]:
+                        mid = p["id"]
+                        rec = counts.setdefault(mid, {
+                            "dataset_label": int(p["dataset_label"]),
+                            "n_conditions": 0, "n_flips": 0,
+                            "n_flips_to_hate": 0, "n_flips_to_not_hate": 0,
+                        })
+                        rec["n_conditions"] += 1
+                        zs, st = str(zero_shot_by_id[mid]), str(p["answer"])
+                        if zs != st:
+                            rec["n_flips"] += 1
+                            if st == "1":
+                                rec["n_flips_to_hate"] += 1
+                            else:
+                                rec["n_flips_to_not_hate"] += 1
+        rows = [{"id": mid, **rec, "flip_rate": rec["n_flips"] / rec["n_conditions"]}
+                for mid, rec in counts.items()]
+        result = pd.DataFrame(rows).sort_values("n_flips", ascending=False)
+        self._save(result, "flip_counts_by_instance.csv")
+        return result
+
+    # ------------------------------------------------------------------
     # Orchestration
     # ------------------------------------------------------------------
     def _save(self, df: pd.DataFrame, filename: str) -> None:
@@ -380,9 +510,17 @@ class HateSpeechSteeringAnalyzer:
         item_significance = self.item_significance_per_model(pvq_mapping_path)
         pvq_patterns = self.pvq_value_patterns(item_significance)
         foundation_patterns = self.mft_foundation_patterns(item_significance)
+
+        flips_by_item = self.flip_counts_by_item(pvq_mapping_path)
+        flips_by_model = self.flip_counts_by_model(flips_by_item)
+        flips_by_model_value = self.flip_counts_by_model_and_value(flips_by_item)
+        flips_by_instance = self.flip_counts_by_instance()
+
         return {
             "recall_table": table, "per_model": per_model, "by_item": by_item,
             "item_significance": item_significance, "pvq_patterns": pvq_patterns,
             "foundation_patterns": foundation_patterns,
+            "flips_by_item": flips_by_item, "flips_by_model": flips_by_model,
+            "flips_by_model_value": flips_by_model_value, "flips_by_instance": flips_by_instance,
             **between,
         }
