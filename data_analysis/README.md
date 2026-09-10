@@ -473,21 +473,29 @@ non-hate content than on clear-cut hate speech, across models and beliefs
 alike.
 
 **Predicted-label stability (instance-wise, no baseline).** Pooled across
-all 462 predictions per message, the distribution is bimodal, not
-uniform: 175/500 messages are predicted "hate" in ≥90% of all contexts
-they're classified under, and 65/500 are predicted "hate" in ≤10% — so
-48% of the corpus is classified with high, context-independent
-consistency in one direction or the other, regardless of which model or
-which moral belief is steering it. Checked against ground truth, these
-confident bins are mostly right but not purely so: of the 175
-confidently-"hate" messages, 131 are actually hate speech and 44 are
-not (i.e. 44 persistent false positives, confidently mislabeled across
-nearly every model and belief); of the 65 confidently-"not hate"
-messages, only 6 are actually hate speech (59 correct, 6 persistent
-false negatives — implicit hate that essentially no context makes any
-model flag). The remaining 122/500 messages (proportion between 0.3 and
-0.7) are genuinely context-dependent: their label depends on which model
-and which belief is asked.
+all 462 predictions per message, splitting the 10 bins into three tiers
+gives a cleaner picture than "confident vs. ambiguous" alone:
+
+| tier | `proportion_hate` | n | % of corpus | actually hate speech |
+|---|---|---|---|---|
+| Confident | ≤0.1 or ≥0.9 | 240 | 48.0% | 137 (131 in the "hate" extreme, 6 in the "not hate" extreme) |
+| Leaning | (0.1, 0.3] or [0.7, 0.9) | 138 | 27.6% | 64 |
+| Balanced | (0.3, 0.7) | 122 | 24.4% | 49 |
+
+Just under half the corpus (240/500) is classified with high,
+context-independent consistency in one direction, regardless of which
+model or which moral belief is steering it — and checked against ground
+truth these confident bins are mostly right but not purely so: of the
+175 confidently-"hate" messages, 131 are actually hate speech and 44 are
+not (44 persistent false positives, confidently mislabeled across nearly
+every model and belief); of the 65 confidently-"not hate" messages, only
+6 are actually hate speech (59 correct, 6 persistent false negatives —
+implicit hate that essentially no context makes any model flag). Another
+138 (27.6%) lean one way without reaching that consistency, and only the
+remaining 122 (24.4%) are genuinely balanced (`proportion_hate` between
+0.3 and 0.7) — real context-dependence, where the label actually depends
+on which model and which belief is asked, rather than the "everything
+outside the confident bins is ambiguous" reading.
 
 The per-model bins (`model` column in `instance_prediction_bins.csv`)
 show each model's base rate for calling something "hate speech" at all,
