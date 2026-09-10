@@ -371,6 +371,19 @@ questions:
    zero-shot prediction on it — i.e. which specific messages are most
    unstable under moral steering, pooling across every model and belief.
    Saved to `flip_counts_by_instance.csv`.
+8. **Instance-wise: raw predicted-label stability (no baseline).**
+   `instance_prediction_profile` counts, for each message, how many of
+   *every* prediction ever made on it — zero-shot plus all 76
+   belief-steered runs, per model (77 per model, 462 pooled across all 6,
+   `model="ALL"`) — landed on class 1 ("hate") vs. class 0, and the
+   resulting `proportion_hate`. Unlike test 7, this doesn't reference a
+   zero-shot baseline at all: it's the raw consistency of the predicted
+   label across every context the message was ever classified under.
+   `instance_prediction_bins` bins `proportion_hate` into 10 equal-width
+   bins (0-0.1, 0.1-0.2, ..., 0.9-1.0), per model and pooled, each bin
+   split by the message's actual `dataset_label` so a bin's count can be
+   read against how many of its messages are truly hate speech. Saved to
+   `instance_prediction_profile.csv` / `instance_prediction_bins.csv`.
 
 The full per-item recall table (one row per model × condition × item) is
 in `recall_by_model_condition_item.csv`.
@@ -458,6 +471,33 @@ average than actual hate messages (mean flip rate 12.2% vs. 9.7%) — so
 steering is somewhat more likely to churn a model's opinion on borderline
 non-hate content than on clear-cut hate speech, across models and beliefs
 alike.
+
+**Predicted-label stability (instance-wise, no baseline).** Pooled across
+all 462 predictions per message, the distribution is bimodal, not
+uniform: 175/500 messages are predicted "hate" in ≥90% of all contexts
+they're classified under, and 65/500 are predicted "hate" in ≤10% — so
+48% of the corpus is classified with high, context-independent
+consistency in one direction or the other, regardless of which model or
+which moral belief is steering it. Checked against ground truth, these
+confident bins are mostly right but not purely so: of the 175
+confidently-"hate" messages, 131 are actually hate speech and 44 are
+not (i.e. 44 persistent false positives, confidently mislabeled across
+nearly every model and belief); of the 65 confidently-"not hate"
+messages, only 6 are actually hate speech (59 correct, 6 persistent
+false negatives — implicit hate that essentially no context makes any
+model flag). The remaining 122/500 messages (proportion between 0.3 and
+0.7) are genuinely context-dependent: their label depends on which model
+and which belief is asked.
+
+The per-model bins (`model` column in `instance_prediction_bins.csv`)
+show each model's base rate for calling something "hate speech" at all,
+consistent with the flip-count and recall results above: Llama and
+Ministral put the most messages in the confidently-"hate" bin (379/500
+and 365/500) and the fewest in confidently-"not hate" (63, 59); Olmo is
+the mirror image (94 confidently-"hate", 214 confidently-"not hate");
+Falcon, Qwen, and Apertus fall in between. A model's overall willingness
+to call something hate speech, largely independent of the specific
+steering belief, is itself a stable per-model property.
 
 Rerun with:
 

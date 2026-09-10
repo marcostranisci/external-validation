@@ -493,6 +493,81 @@ class HateSpeechSteeringAnalyzer:
         self._save(result, "flip_counts_by_instance.csv")
         return result
 
+    def instance_prediction_profile(self) -> pd.DataFrame:
+        """For each message, across *every* prediction ever made on it —
+        zero-shot plus all 76 belief-steered runs, for each model (77
+        predictions per model, 462 pooled across all 6) — count how many
+        times it was predicted class 1 ("hate") vs. class 0 ("not hate"),
+        and the resulting proportion predicted hate. Unlike the flip-count
+        analyses, this doesn't reference a zero-shot baseline at all: it's
+        the raw stability of the predicted label across every context the
+        message was ever classified under.
+
+        One row per (model, id), plus a pooled ``model="ALL"`` row per id
+        summing across all 6 models."""
+        per_model_counts: dict[str, dict[int, dict]] = {}
+        for model, model_data in self._data["models"].items():
+            id_counts: dict[int, dict] = {}
+            all_preds = list(model_data["zero_shot"])
+            for condition in ("mft", "pvq"):
+                for item in model_data[condition]:
+                    all_preds.extend(item["predictions"])
+            for p in all_preds:
+                mid = p["id"]
+                rec = id_counts.setdefault(mid, {"dataset_label": int(p["dataset_label"]), "n_0": 0, "n_1": 0})
+                if str(p["answer"]) == "1":
+                    rec["n_1"] += 1
+                else:
+                    rec["n_0"] += 1
+            per_model_counts[model] = id_counts
+
+        rows = []
+        pooled: dict[int, dict] = {}
+        for model, id_counts in per_model_counts.items():
+            for mid, rec in id_counts.items():
+                n_total = rec["n_0"] + rec["n_1"]
+                rows.append({
+                    "model": model, "id": mid, "dataset_label": rec["dataset_label"],
+                    "n_0": rec["n_0"], "n_1": rec["n_1"], "n_total": n_total,
+                    "proportion_hate": rec["n_1"] / n_total,
+                })
+                p = pooled.setdefault(mid, {"dataset_label": rec["dataset_label"], "n_0": 0, "n_1": 0})
+                p["n_0"] += rec["n_0"]
+                p["n_1"] += rec["n_1"]
+        for mid, rec in pooled.items():
+            n_total = rec["n_0"] + rec["n_1"]
+            rows.append({
+                "model": "ALL", "id": mid, "dataset_label": rec["dataset_label"],
+                "n_0": rec["n_0"], "n_1": rec["n_1"], "n_total": n_total,
+                "proportion_hate": rec["n_1"] / n_total,
+            })
+        result = pd.DataFrame(rows).sort_values(["model", "proportion_hate"], ascending=[True, False])
+        self._save(result, "instance_prediction_profile.csv")
+        return result
+
+    def instance_prediction_bins(self, profile: pd.DataFrame, n_bins: int = 10) -> pd.DataFrame:
+        """Bin ``proportion_hate`` from ``instance_prediction_profile`` into
+        ``n_bins`` equal-width bins over [0, 1], counted per model (plus
+        pooled ``model="ALL"``), each bin split by ground-truth
+        ``dataset_label`` so a bin's count can be read against how many of
+        its messages are actually hate speech."""
+        df = profile.copy()
+        edges = np.linspace(0, 1, n_bins + 1)
+        df["bin"] = pd.cut(df["proportion_hate"], bins=edges, include_lowest=True)
+
+        rows = []
+        for (model, bin_), group in df.groupby(["model", "bin"], observed=True):
+            rows.append({
+                "model": model, "bin": str(bin_),
+                "bin_left": bin_.left, "bin_right": bin_.right,
+                "n_instances": len(group),
+                "n_actual_hate": int((group["dataset_label"] == 1).sum()),
+                "n_actual_not_hate": int((group["dataset_label"] == 0).sum()),
+            })
+        result = pd.DataFrame(rows).sort_values(["model", "bin_left"])
+        self._save(result, "instance_prediction_bins.csv")
+        return result
+
     # ------------------------------------------------------------------
     # Orchestration
     # ------------------------------------------------------------------
@@ -516,11 +591,15 @@ class HateSpeechSteeringAnalyzer:
         flips_by_model_value = self.flip_counts_by_model_and_value(flips_by_item)
         flips_by_instance = self.flip_counts_by_instance()
 
+        prediction_profile = self.instance_prediction_profile()
+        prediction_bins = self.instance_prediction_bins(prediction_profile)
+
         return {
             "recall_table": table, "per_model": per_model, "by_item": by_item,
             "item_significance": item_significance, "pvq_patterns": pvq_patterns,
             "foundation_patterns": foundation_patterns,
             "flips_by_item": flips_by_item, "flips_by_model": flips_by_model,
             "flips_by_model_value": flips_by_model_value, "flips_by_instance": flips_by_instance,
+            "prediction_profile": prediction_profile, "prediction_bins": prediction_bins,
             **between,
         }
