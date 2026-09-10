@@ -150,15 +150,15 @@ least one variable"`, `"fewer than 3 valid paired observations"`).
 Chi-square (tests 3-4) treats ratings as unordered nominal categories,
 discarding the fact that a 4 is closer to a 5 than to a 1; Mann-Whitney/
 Kruskal-Wallis use ranks and don't have that problem. On the raw scale
-both approaches agree there's a real, large difference between models:
-Kruskal-Wallis on `opinion` gives η²≈0.45-0.46 in both MFT and PVQ (a large
-effect by Cohen's benchmarks — models genuinely differ a lot in their
-absolute rating level), and on `external_opinion` gives η²≈0.11 (MFT) /
-0.14 (PVQ) (medium-to-large — annotators' absolute ratings of different
-models' replies differ too, not just the shape of the pattern). Pairwise
-Mann-Whitney: 18/20 valid MFT pairs and 12/15 valid PVQ pairs differ
-significantly on `opinion`; 5/15 (MFT) and 9/15 (PVQ) differ on
-`external_opinion`.
+both approaches agree there's a real, large difference between the 6
+models: Kruskal-Wallis on `opinion` gives η²=0.49 (MFT) / 0.46 (PVQ) (a
+large effect by Cohen's benchmarks — models genuinely differ a lot in
+their absolute rating level), and on `external_opinion` gives η²=0.11
+(MFT) / 0.14 (PVQ) (medium-to-large — annotators' absolute ratings of
+different models' replies differ too, not just the shape of the pattern).
+Pairwise Mann-Whitney (15 pairs = C(6,2), all valid): 13/15 MFT and 12/15
+PVQ pairs differ significantly on `opinion`; 5/15 (MFT) and 9/15 (PVQ)
+differ on `external_opinion`.
 
 ## Annotator-level analysis: own replies vs. model evaluations
 
@@ -478,20 +478,27 @@ just the two extremes (Ministral vs. Olmo, p=6e-23) from each other.
 
 ## Data quality notes
 
-See `data_analysis/data_quality_warnings.log` for issues detected while
-processing the raw files, notably:
+`data_analysis/data_quality_warnings.log` currently reports no issues —
+`run_questionnaire_analysis.py` processes exactly 6 clean model files per
+folder, each with a numeric `opinion` column and a matching
+`*_disaggregated` column.
 
-- `surveys/mft/Ministral-3-8B-Instruct-2512.csv` and
-  `surveys/pvq/Ministral-3-8B-Instruct-2512.csv` have no `*_disaggregated`
-  column, so `annotator_disagreement`/`external_opinion` are `NaN` and all
-  tests involving them are skipped for that model.
-- `surveys/pvq/Ministral-3-8B-Instruct.csv` has free-text values in its
-  `opinion` column instead of numeric ratings; these are coerced to `NaN`,
-  so tests involving `opinion` are skipped for that model in the `pvq`
-  folder (its `annotator_disagreement`/`external_opinion` are still
-  computed from the disaggregated ratings it does have).
-- `surveys/mft/Ministral-3-8B-Instruct.csv` and
-  `surveys/mft/Ministral-3-8B-Instruct-2512.csv` both contain the
-  `model_name` value `Ministral-3-8B-Instruct-2512` and (for the `opinion`
-  column) identical data — they are kept as two separate models in the
-  output, keyed by file name, since that is what the two files represent.
+This was not always true. `surveys/{mft,pvq}/` used to contain two files
+for the same model — `Ministral-3-8B-Instruct.csv` and
+`Ministral-3-8B-Instruct-2512.csv` — both with the internal `model_name`
+`Ministral-3-8B-Instruct-2512`, i.e. two incomplete halves of one export
+rather than two different models (confirmed against
+`hs_detection/implicit_hate_all_models.json`, which only ever had one
+Ministral entry). Since the pipeline keys models by filename, this meant
+every between-model output (pairwise correlations/independence/
+Mann-Whitney, and the pooled chi-square/Kruskal-Wallis tests) silently
+treated `mft`/`pvq` as 7-model datasets instead of 6, with one model's
+signal double-counted and a spurious "Ministral vs. Ministral-2512"
+self-comparison row in every pairwise table (recognizable in hindsight by
+suspiciously perfect agreement: r≈1.0, χ²=0/p=1, U=648/p=1). The fix
+consolidated both files into one `Ministral-3-8B-Instruct-2512.csv` per
+questionnaire, taking numeric `opinion`/`pvq_value` from whichever file
+had them and `*_disaggregated` from whichever file had that; every CSV in
+`data_analysis/mft/` and `data_analysis/pvq/` has been regenerated against
+the corrected 6-model data, and every reported figure in this file and in
+`SUMMARY.md` reflects that regeneration.

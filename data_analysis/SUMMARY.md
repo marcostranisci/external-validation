@@ -1,7 +1,7 @@
 # Findings Summary
 
 Six models: Apertus-8B-Instruct, Falcon3-7B-Instruct, Llama-3.1-8B-Instruct,
-Ministral-3-8B-Instruct(-2512), Olmo-3-7B-Instruct, Qwen3-8B. Two
+Ministral-3-8B-Instruct-2512, Olmo-3-7B-Instruct, Qwen3-8B. Two
 questionnaires: MFT (Moral Foundations, 36 items) and PVQ (Portrait
 Values, 40 items, mapped to Schwartz's 10 basic values). Full methodology,
 per-test caveats, and CSVs are in `data_analysis/README.md`; this is the
@@ -22,11 +22,11 @@ into `external_opinion` (mean) and `annotator_disagreement`.
   don't reliably track each other at all.
 - **Models differ enormously from each other in absolute answer level,
   much more than in relative pattern.** Kruskal-Wallis on raw `opinion`:
-  η²≈0.45-0.46 (large) in both questionnaires — almost half the variance
-  in ratings is "which model is this." One model (Llama, PVQ) gave the
+  η²=0.49 (MFT) / 0.46 (PVQ), both large — almost half the variance in
+  ratings is "which model is this." One model (Llama, PVQ) gave the
   identical answer to all 40 items — no discrimination at all. Humans'
   ratings of the free text (`external_opinion`) differ by model too, but
-  less (η²≈0.11-0.14, medium-large).
+  less (η²=0.11 MFT / 0.14 PVQ, medium-large).
 - **What humans see in the free text is driven by item content, not by
   which model wrote it.** Despite the level differences above, the
   *pattern* of which items draw more/less human agreement is highly
