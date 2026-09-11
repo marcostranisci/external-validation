@@ -586,19 +586,49 @@ just the two extremes (Ministral vs. Olmo, p=6e-23) from each other.
 ## Free-text opinion vs. verbalized questionnaire item: does steering method matter?
 
 `hs_detection/implicit_hate_verbalized_all_models.json` is a second
-steering run, structurally identical to
-`implicit_hate_all_models.json` (same models, same 500 messages, same 76
-MFT/PVQ items, `"prediction_setup": "paired_by_model"`) but with a
-different `belief`: instead of the model's free-text explanation, it's a
-one-line verbalization of the model's own *Likert rating* itself (e.g.
-`"Caring for people who have suffered is an important virtue" describes
-you extremely well.`, plus the scale text) — confirmed identical item set
-(all 36 MFT / 40 PVQ `test_statement`s match) and confirmed the `score`
+steering run: same models, same 500 messages, same 76 MFT/PVQ items
+(confirmed identical `test_statement` sets), same `"prediction_setup":
+"paired_by_model"`, but the `belief` is a one-line verbalization of the
+model's own *Likert rating* itself (e.g. `"Caring for people who have
+suffered is an important virtue" describes you extremely well.`, plus
+scale text) rather than its free-text explanation — confirmed the `score`
 field exactly equals that model's own `opinion` in `surveys/mft`/`surveys/pvq`.
 Because `HateSpeechSteeringAnalyzer` only assumes the belief-steering JSON
 shape, no code changes were needed — `run_hs_detection_verbalized_analysis.py`
 runs the identical pipeline (tests 1-8 above) against it, writing to
 `data_analysis/hs_detection_verbalized/`.
+
+**Important confound: the two files do not hold the instruction prompt
+constant.** `zero_shot_prompt` and `belief_prompt` differ in wording
+between the two files (the verbalized file's adds an explicit "If it is,
+label it as 1, otherwise label it as 0. Answer with only 1 or 0." and
+minor rephrasing elsewhere) — this is *not* an isolated
+belief-content-only manipulation. Because `delta_recall` is always
+computed against *that file's own* zero-shot baseline, the within-file
+"does steering shift recall" conclusions are still valid — but the
+prompt wording alone (with **no belief/steering involved at all**) shifts
+zero-shot recall substantially for some models:
+
+| model | zero-shot recall (free-text file's prompt) | zero-shot recall (verbalized file's prompt) | shift from wording alone |
+|---|---|---|---|
+| Apertus | 0.856 | 0.264 | **−0.592** |
+| Llama | 0.896 | 0.816 | −0.080 |
+| Qwen | 0.716 | 0.660 | −0.056 |
+| Falcon | 0.620 | 0.572 | −0.048 |
+| Olmo | 0.628 | 0.684 | +0.056 |
+| Ministral | 0.856 | 0.868 | +0.012 |
+
+Apertus's zero-shot recall collapses by 59 points from prompt wording
+alone — larger than any steering effect measured anywhere in this
+analysis. **Apertus's comparison result below should be read as
+unreliable**: its "flip from no effect to a large positive effect" is
+at least partly, possibly mostly, an artifact of an anomalously low,
+easy-to-improve-on baseline rather than a genuine property of verbalized
+steering. The other five models' zero-shot shift from wording alone
+(−0.08 to +0.06) is far smaller than their measured steering effects, so
+their comparisons below are less contaminated but not perfectly clean —
+treat the cross-condition comparison as suggestive, not as a controlled
+isolation of "belief content type" as the only variable.
 
 `src/hs_detection_comparison.py` (`SteeringConditionComparison`,
 `run_hs_detection_comparison.py`) then compares the two conditions'
@@ -638,14 +668,23 @@ direction for half the models, and the two conditions barely agree on
 | Ministral | +0.090 | +0.042 | Yes (smaller) |
 
 Half the models (Apertus, Olmo, Qwen) don't just change magnitude, they
-flip sign — Apertus goes from no effect to one of the largest positive
-effects; Olmo goes from significantly *hurt* to significantly *helped*;
-Qwen goes from significantly *helped* to significantly *hurt*. Verbalized
-steering is also a stronger signal on average (5 of 6 comparable
-magnitudes are larger, sometimes by 2-6x: Apertus, Falcon, Llama, Olmo),
-consistent with a short, unhedged declarative statement ("X describes you
-extremely well") being a more direct steering signal than a long,
-often-hedged free-text paragraph.
+flip sign. Apertus's flip (no effect → one of the largest positive
+effects) is the one to discount, given its 59-point zero-shot swing from
+prompt wording alone (see confound note above) — its baseline was so
+depressed under the verbalized file's prompt that almost any steering
+would look like a large improvement. **Olmo and Qwen are the clean
+cases**: their zero-shot recall barely moves from wording alone (+0.056,
+−0.056) — far smaller than their steering deltas — so their flips are not
+explained by the same artifact. Olmo goes from significantly *hurt*
+(−0.096) to significantly *helped* (+0.053); Qwen goes from significantly
+*helped* (+0.051) to significantly *hurt* (−0.057). Verbalized steering
+is also a stronger signal on average for the models with a clean
+comparison (Falcon, Llama: 2-3x larger; Olmo: reversed and comparable
+magnitude), consistent with a short, unhedged declarative statement ("X
+describes you extremely well") being a more direct steering signal than a
+long, often-hedged free-text paragraph — though Ministral is the
+counterexample (smaller under verbalized), so this isn't universal
+either.
 
 **Item-level agreement between the two conditions is weak to absent**
 (`item_level_correlation_between_conditions.csv`): Pearson r ranges from
@@ -675,6 +714,15 @@ style for that content), not a property of self-transcendence moral
 content in general. That finding should be scoped explicitly to the
 free-text steering condition in any write-up, not stated as a general
 claim about moral content.
+
+This reversal is not an artifact of the Apertus confound: recomputing
+both pooled means with Apertus excluded entirely gives the same story —
+free-text Universalism/Benevolence mean delta is −0.051/−0.041 (still
+negative), care/purity is +0.029/+0.015 (still trailing); verbalized
+Universalism/Benevolence is +0.074/+0.057, care/purity +0.061/+0.044
+(still uniformly positive, still no longer trailing). The other five
+models alone reproduce both the original free-text exception and its
+disappearance under verbalized steering.
 
 ## Data quality notes
 

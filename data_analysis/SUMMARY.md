@@ -115,18 +115,30 @@ general.
 ## 3. Does the steering *mechanism* matter — free-text opinion vs. the verbalized questionnaire item itself?
 
 A second steering run (`hs_detection/implicit_hate_verbalized_all_models.json`)
-is structurally identical to §2's (same models, same 500 messages, same
-76 items, `paired_by_model`) but replaces the free-text belief with a
-one-line verbalization of the model's own Likert rating (e.g. `"Caring
-for people who have suffered is an important virtue" describes you
-extremely well.`). Everything else about the pipeline is unchanged.
+uses the same models, 500 messages, 76 items, and `paired_by_model`
+setup as §2, replacing the free-text belief with a one-line
+verbalization of the model's own Likert rating (e.g. `"Caring for people
+who have suffered is an important virtue" describes you extremely
+well.`). **It is not a clean isolated manipulation of belief content,
+though**: `zero_shot_prompt` and `belief_prompt` also differ in wording
+between the two files. Zero-shot recall (no belief at all) shifts purely
+from that wording for Apertus (0.856 → 0.264, a 59-point collapse) —
+larger than any steering effect in this analysis — while the other five
+models shift only −0.08 to +0.06 from wording alone, much smaller than
+their steering deltas. **Apertus's results below are unreliable and
+should be discounted**; the other five are less contaminated but not
+perfectly clean.
 
-- **Direction flips for half the models.** Apertus: no effect (−0.003,
-  n.s.) → **+0.173** (large, significant). Olmo: significantly *hurt*
-  (−0.096) → significantly *helped* (+0.053). Qwen: significantly
-  *helped* (+0.051) → significantly *hurt* (−0.057). Only Falcon, Llama,
-  and Ministral keep the same direction (all bigger under verbalized
-  steering except Ministral, which shrinks).
+- **Direction flips for half the models — but only two cleanly.**
+  Apertus: no effect (−0.003, n.s.) → **+0.173** (large, significant), but
+  this is likely mostly the confound (an anomalously depressed baseline
+  is easy to "improve" on), not a real steering effect. **Olmo and Qwen
+  are the clean cases** (their zero-shot-from-wording-alone shift is
+  small): Olmo goes from significantly *hurt* (−0.096) to significantly
+  *helped* (+0.053); Qwen goes from significantly *helped* (+0.051) to
+  significantly *hurt* (−0.057) — genuine sign flips, not confound
+  artifacts. Falcon, Llama, and Ministral keep the same direction (bigger
+  under verbalized steering except Ministral, which shrinks).
 - **The two conditions barely agree on *which items* matter.** Per-model
   correlation between the two conditions' per-item recall deltas ranges
   from r=−0.03 to r=0.25 — essentially uncorrelated, and the one nominally
@@ -134,12 +146,17 @@ extremely well.`). Everything else about the pipeline is unchanged.
   for 6 models. Same model, same items, same labels — different belief
   phrasing produces a near-unrelated pattern of which items move the
   needle.
-- **The §2 Universalism/Benevolence/care/purity exception disappears.**
-  Under verbalized steering, *every* PVQ value and *every* MFT foundation
-  has a net positive pooled effect — Universalism swings from −0.048 to
-  **+0.090**, Benevolence from −0.044 to **+0.074**; MFT's care and purity
-  (+0.076, +0.066) land in the same range as every other foundation
-  instead of trailing them.
+- **The §2 Universalism/Benevolence/care/purity exception disappears —
+  and this one survives excluding Apertus entirely.** Under verbalized
+  steering, *every* PVQ value and *every* MFT foundation has a net
+  positive pooled effect — Universalism swings from −0.048 to **+0.090**,
+  Benevolence from −0.044 to **+0.074**; MFT's care and purity (+0.076,
+  +0.066) land in the same range as every other foundation instead of
+  trailing them. Recomputed on the other 5 models alone (Apertus
+  removed), the same reversal holds: free-text Universalism/Benevolence
+  −0.051/−0.041 → verbalized +0.074/+0.057; free-text care/purity
+  +0.029/+0.015 → verbalized +0.061/+0.044. So this specific finding is
+  not a confound artifact.
 
 **Bottom line:** the mechanism of eliciting the moral opinion is not a
 neutral implementation detail — it changes which models are helped vs.
