@@ -1,22 +1,16 @@
 model_a,model_b,column,n,chi2_stat,chi2_p,chi2_dof,notes
-Apertus-8B-Instruct,Falcon3-7B-Instruct,opinion,80,15.82328190743338,0.001232612826317969,3.0,
-Apertus-8B-Instruct,Llama-3.1-8B-Instruct,opinion,80,80.0,3.0692774861724164e-17,3.0,
-Apertus-8B-Instruct,Ministral-3-8B-Instruct,opinion,40,,,,fewer than 2 distinct categories
-Apertus-8B-Instruct,Ministral-3-8B-Instruct-2512,opinion,80,40.98575498575499,9.445161033521067e-08,5.0,
-Apertus-8B-Instruct,Olmo-3-7B-Instruct,opinion,80,37.404853128991064,4.968159306830828e-07,5.0,
-Apertus-8B-Instruct,Qwen3-8B,opinion,80,22.720364741641337,4.6181822436196725e-05,3.0,
-Falcon3-7B-Instruct,Llama-3.1-8B-Instruct,opinion,80,76.09756097560975,2.989679207226923e-17,2.0,
-Falcon3-7B-Instruct,Ministral-3-8B-Instruct,opinion,40,,,,fewer than 2 distinct categories
-Falcon3-7B-Instruct,Ministral-3-8B-Instruct-2512,opinion,80,33.09243697478992,1.143542072402651e-06,4.0,
-Falcon3-7B-Instruct,Olmo-3-7B-Instruct,opinion,80,27.555555555555557,1.5346038016946977e-05,4.0,
-Falcon3-7B-Instruct,Qwen3-8B,opinion,80,4.708180708180708,0.1944558844820912,3.0,
-Llama-3.1-8B-Instruct,Ministral-3-8B-Instruct,opinion,40,,,,fewer than 2 distinct categories
-Llama-3.1-8B-Instruct,Ministral-3-8B-Instruct-2512,opinion,80,34.285714285714285,6.511145791059218e-07,4.0,
-Llama-3.1-8B-Instruct,Olmo-3-7B-Instruct,opinion,80,65.45454545454545,2.063988490837055e-13,4.0,
-Llama-3.1-8B-Instruct,Qwen3-8B,opinion,80,80.0,3.0692774861724164e-17,3.0,
-Ministral-3-8B-Instruct,Ministral-3-8B-Instruct-2512,opinion,40,,,,fewer than 2 distinct categories
-Ministral-3-8B-Instruct,Olmo-3-7B-Instruct,opinion,40,,,,fewer than 2 distinct categories
-Ministral-3-8B-Instruct,Qwen3-8B,opinion,40,,,,fewer than 2 distinct categories
-Ministral-3-8B-Instruct-2512,Olmo-3-7B-Instruct,opinion,80,12.06,0.016910622669695157,4.0,
-Ministral-3-8B-Instruct-2512,Qwen3-8B,opinion,80,33.56692506459948,9.142209289961957e-07,4.0,
-Olmo-3-7B-Instruct,Qwen3-8B,opinion,80,29.154589371980677,7.271992002868349e-06,4.0,
+Apertus-8B-Instruct,Falcon3-7B-Instruct,opinion,80,15.82328190743338,0.001232612826317969,3,
+Apertus-8B-Instruct,Llama-3.1-8B-Instruct,opinion,80,80.0,3.0692774861724164e-17,3,
+Apertus-8B-Instruct,Ministral-3-8B-Instruct-2512,opinion,80,40.98575498575499,9.445161033521067e-08,5,
+Apertus-8B-Instruct,Olmo-3-7B-Instruct,opinion,80,37.404853128991064,4.968159306830828e-07,5,
+Apertus-8B-Instruct,Qwen3-8B,opinion,80,22.720364741641337,4.6181822436196725e-05,3,
+Falcon3-7B-Instruct,Llama-3.1-8B-Instruct,opinion,80,76.09756097560975,2.989679207226923e-17,2,
+Falcon3-7B-Instruct,Ministral-3-8B-Instruct-2512,opinion,80,33.09243697478992,1.143542072402651e-06,4,
+Falcon3-7B-Instruct,Olmo-3-7B-Instruct,opinion,80,27.555555555555557,1.5346038016946977e-05,4,
+Falcon3-7B-Instruct,Qwen3-8B,opinion,80,4.708180708180708,0.1944558844820912,3,
+Llama-3.1-8B-Instruct,Ministral-3-8B-Instruct-2512,opinion,80,34.285714285714285,6.511145791059218e-07,4,
+Llama-3.1-8B-Instruct,Olmo-3-7B-Instruct,opinion,80,65.45454545454545,2.063988490837055e-13,4,
+Llama-3.1-8B-Instruct,Qwen3-8B,opinion,80,80.0,3.0692774861724164e-17,3,
+Ministral-3-8B-Instruct-2512,Olmo-3-7B-Instruct,opinion,80,12.06,0.016910622669695157,4,
+Ministral-3-8B-Instruct-2512,Qwen3-8B,opinion,80,33.56692506459948,9.142209289961957e-07,4,
+Olmo-3-7B-Instruct,Qwen3-8B,opinion,80,29.154589371980677,7.271992002868349e-06,4,

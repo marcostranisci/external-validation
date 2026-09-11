@@ -1,22 +1,16 @@
 model_a,model_b,column,n,chi2_stat,chi2_p,chi2_dof,notes
-Apertus-8B-Instruct,Falcon3-7B-Instruct,external_opinion,72,2.090909090909091,0.5537541045021457,3.0,
-Apertus-8B-Instruct,Llama-3.1-8B-Instruct,external_opinion,72,12.81904761904762,0.0050447239417826546,3.0,
-Apertus-8B-Instruct,Ministral-3-8B-Instruct,external_opinion,72,3.098581560283688,0.376674167641979,3.0,
-Apertus-8B-Instruct,Ministral-3-8B-Instruct-2512,external_opinion,36,,,,fewer than 2 distinct categories
-Apertus-8B-Instruct,Olmo-3-7B-Instruct,external_opinion,72,4.444444444444445,0.2172995701784638,3.0,
-Apertus-8B-Instruct,Qwen3-8B,external_opinion,72,2.082079343365253,0.5555467334952118,3.0,
-Falcon3-7B-Instruct,Llama-3.1-8B-Instruct,external_opinion,72,16.94404761904762,0.0007257173036578073,3.0,
-Falcon3-7B-Instruct,Ministral-3-8B-Instruct,external_opinion,72,0.7503401360544217,0.6871724027979215,2.0,
-Falcon3-7B-Instruct,Ministral-3-8B-Instruct-2512,external_opinion,36,,,,fewer than 2 distinct categories
-Falcon3-7B-Instruct,Olmo-3-7B-Instruct,external_opinion,72,1.934640522875817,0.3801002438528629,2.0,
-Falcon3-7B-Instruct,Qwen3-8B,external_opinion,72,0.08104575163398693,0.9602871969059729,2.0,
-Llama-3.1-8B-Instruct,Ministral-3-8B-Instruct,external_opinion,72,19.21576354679803,0.00024670212663095215,3.0,
-Llama-3.1-8B-Instruct,Ministral-3-8B-Instruct-2512,external_opinion,36,,,,fewer than 2 distinct categories
-Llama-3.1-8B-Instruct,Olmo-3-7B-Instruct,external_opinion,72,25.884961884961882,1.0081251239083864e-05,3.0,
-Llama-3.1-8B-Instruct,Qwen3-8B,external_opinion,72,15.188940092165897,0.0016621021801847783,3.0,
-Ministral-3-8B-Instruct,Ministral-3-8B-Instruct-2512,external_opinion,36,,,,fewer than 2 distinct categories
-Ministral-3-8B-Instruct,Olmo-3-7B-Instruct,external_opinion,72,1.035113035113035,0.5959750247620261,2.0,
-Ministral-3-8B-Instruct,Qwen3-8B,external_opinion,72,1.0833333333333333,0.5817778142098081,2.0,
-Ministral-3-8B-Instruct-2512,Olmo-3-7B-Instruct,external_opinion,36,,,,fewer than 2 distinct categories
-Ministral-3-8B-Instruct-2512,Qwen3-8B,external_opinion,36,,,,fewer than 2 distinct categories
-Olmo-3-7B-Instruct,Qwen3-8B,external_opinion,72,2.754188034188034,0.2523106993214891,2.0,
+Apertus-8B-Instruct,Falcon3-7B-Instruct,external_opinion,72,2.090909090909091,0.5537541045021457,3,
+Apertus-8B-Instruct,Llama-3.1-8B-Instruct,external_opinion,72,12.81904761904762,0.0050447239417826546,3,
+Apertus-8B-Instruct,Ministral-3-8B-Instruct-2512,external_opinion,72,3.098581560283688,0.376674167641979,3,
+Apertus-8B-Instruct,Olmo-3-7B-Instruct,external_opinion,72,4.444444444444445,0.2172995701784638,3,
+Apertus-8B-Instruct,Qwen3-8B,external_opinion,72,2.082079343365253,0.5555467334952118,3,
+Falcon3-7B-Instruct,Llama-3.1-8B-Instruct,external_opinion,72,16.94404761904762,0.0007257173036578073,3,
+Falcon3-7B-Instruct,Ministral-3-8B-Instruct-2512,external_opinion,72,0.7503401360544217,0.6871724027979215,2,
+Falcon3-7B-Instruct,Olmo-3-7B-Instruct,external_opinion,72,1.934640522875817,0.3801002438528629,2,
+Falcon3-7B-Instruct,Qwen3-8B,external_opinion,72,0.08104575163398693,0.9602871969059729,2,
+Llama-3.1-8B-Instruct,Ministral-3-8B-Instruct-2512,external_opinion,72,19.21576354679803,0.00024670212663095215,3,
+Llama-3.1-8B-Instruct,Olmo-3-7B-Instruct,external_opinion,72,25.884961884961882,1.0081251239083864e-05,3,
+Llama-3.1-8B-Instruct,Qwen3-8B,external_opinion,72,15.188940092165897,0.0016621021801847783,3,
+Ministral-3-8B-Instruct-2512,Olmo-3-7B-Instruct,external_opinion,72,1.035113035113035,0.5959750247620261,2,
+Ministral-3-8B-Instruct-2512,Qwen3-8B,external_opinion,72,1.0833333333333333,0.5817778142098081,2,
+Olmo-3-7B-Instruct,Qwen3-8B,external_opinion,72,2.754188034188034,0.2523106993214891,2,

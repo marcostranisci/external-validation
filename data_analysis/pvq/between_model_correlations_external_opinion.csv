@@ -1,22 +1,16 @@
 model_a,model_b,column,n,pearson_r,pearson_p,spearman_r,spearman_p,notes
 Apertus-8B-Instruct,Falcon3-7B-Instruct,external_opinion,40,0.7568867666350628,1.5954741320453554e-08,0.6850710863466019,1.0806713795192332e-06,
 Apertus-8B-Instruct,Llama-3.1-8B-Instruct,external_opinion,40,0.7467959774559981,3.1353966527117675e-08,0.7446281108128593,3.610365932824791e-08,
-Apertus-8B-Instruct,Ministral-3-8B-Instruct,external_opinion,40,0.7447399801748541,3.584304859468486e-08,0.7143133314492559,2.26484842132205e-07,
-Apertus-8B-Instruct,Ministral-3-8B-Instruct-2512,external_opinion,0,,,,,fewer than 3 valid paired observations
+Apertus-8B-Instruct,Ministral-3-8B-Instruct-2512,external_opinion,40,0.7447399801748541,3.584304859468486e-08,0.7143133314492559,2.26484842132205e-07,
 Apertus-8B-Instruct,Olmo-3-7B-Instruct,external_opinion,40,0.7755441872497119,4.182514039273813e-09,0.7328741304563181,7.575583690870976e-08,
 Apertus-8B-Instruct,Qwen3-8B,external_opinion,40,0.7155825589853189,2.1071814340400767e-07,0.7149660589332177,2.182449360222826e-07,
 Falcon3-7B-Instruct,Llama-3.1-8B-Instruct,external_opinion,40,0.7225113522373612,1.4113439352348507e-07,0.6714110081331567,2.1125417679330315e-06,
-Falcon3-7B-Instruct,Ministral-3-8B-Instruct,external_opinion,40,0.7316515762964388,8.164599745957769e-08,0.6681485051876506,2.466696479374868e-06,
-Falcon3-7B-Instruct,Ministral-3-8B-Instruct-2512,external_opinion,0,,,,,fewer than 3 valid paired observations
+Falcon3-7B-Instruct,Ministral-3-8B-Instruct-2512,external_opinion,40,0.7316515762964388,8.164599745957769e-08,0.6681485051876506,2.466696479374868e-06,
 Falcon3-7B-Instruct,Olmo-3-7B-Instruct,external_opinion,40,0.7653924356213737,8.798536694710171e-09,0.6783339698064109,1.51070775241577e-06,
 Falcon3-7B-Instruct,Qwen3-8B,external_opinion,40,0.6745381393861524,1.8176160808195923e-06,0.6045211226741976,3.609658408961713e-05,
-Llama-3.1-8B-Instruct,Ministral-3-8B-Instruct,external_opinion,40,0.8032919970684294,4.4300182039727025e-10,0.7758808306985133,4.0779570146160255e-09,
-Llama-3.1-8B-Instruct,Ministral-3-8B-Instruct-2512,external_opinion,0,,,,,fewer than 3 valid paired observations
+Llama-3.1-8B-Instruct,Ministral-3-8B-Instruct-2512,external_opinion,40,0.8032919970684294,4.4300182039727025e-10,0.7758808306985133,4.0779570146160255e-09,
 Llama-3.1-8B-Instruct,Olmo-3-7B-Instruct,external_opinion,40,0.7730847731376996,5.025683454939836e-09,0.7570265673760426,1.5802514379652704e-08,
 Llama-3.1-8B-Instruct,Qwen3-8B,external_opinion,40,0.7874475523594354,1.6627674343743103e-09,0.801200423472444,5.310725896937344e-10,
-Ministral-3-8B-Instruct,Ministral-3-8B-Instruct-2512,external_opinion,0,,,,,fewer than 3 valid paired observations
-Ministral-3-8B-Instruct,Olmo-3-7B-Instruct,external_opinion,40,0.8019588576962868,4.974004687007799e-10,0.7953048327207672,8.754327354541871e-10,
-Ministral-3-8B-Instruct,Qwen3-8B,external_opinion,40,0.6837005753480442,1.1577066207024286e-06,0.6976523782417542,5.642780537363515e-07,
-Ministral-3-8B-Instruct-2512,Olmo-3-7B-Instruct,external_opinion,0,,,,,fewer than 3 valid paired observations
-Ministral-3-8B-Instruct-2512,Qwen3-8B,external_opinion,0,,,,,fewer than 3 valid paired observations
+Ministral-3-8B-Instruct-2512,Olmo-3-7B-Instruct,external_opinion,40,0.8019588576962868,4.974004687007799e-10,0.7953048327207672,8.754327354541871e-10,
+Ministral-3-8B-Instruct-2512,Qwen3-8B,external_opinion,40,0.6837005753480442,1.1577066207024286e-06,0.6976523782417542,5.642780537363515e-07,
 Olmo-3-7B-Instruct,Qwen3-8B,external_opinion,40,0.759727126828815,1.311444100129353e-08,0.7245057276248462,1.2547797516367646e-07,
