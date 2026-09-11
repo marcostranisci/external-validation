@@ -87,6 +87,7 @@ class HateSpeechSteeringAnalyzer:
 
     json_path: str | Path
     output_dir: str | Path = "data_analysis"
+    output_subdir: str = "hs_detection"
 
     def __post_init__(self) -> None:
         self.json_path = Path(self.json_path)
@@ -572,7 +573,7 @@ class HateSpeechSteeringAnalyzer:
     # Orchestration
     # ------------------------------------------------------------------
     def _save(self, df: pd.DataFrame, filename: str) -> None:
-        out_folder = self.output_dir / "hs_detection"
+        out_folder = self.output_dir / self.output_subdir
         out_folder.mkdir(parents=True, exist_ok=True)
         df.to_csv(out_folder / filename, index=False)
 

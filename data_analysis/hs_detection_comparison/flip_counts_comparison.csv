@@ -1,0 +1,7 @@
+model,total_flips_free_text,total_flips_to_hate_free_text,total_flips_to_not_hate_free_text,total_flips_verbalized,total_flips_to_hate_verbalized,total_flips_to_not_hate_verbalized
+Falcon3-7B-Instruct,3531,2887,644,7206,7171,35
+Llama-3.1-8B-Instruct,3025,2778,247,5908,5744,164
+Apertus-8B-Instruct,3174,1572,1602,5547,5135,412
+Qwen3-8B,4006,3050,956,4405,1455,2950
+Olmo-3-7B-Instruct,6030,1300,4730,4099,3438,661
+Ministral-3-8B-Instruct-2512,5245,5117,128,3443,2753,690

@@ -98,12 +98,58 @@ steering in this data — `"prediction_setup": "paired_by_model"`).
     Universalism/Benevolence), while the other four are helped by it
     just like everything else, only less so.
 
-**Bottom line:** steering with a model's own moral/values opinions
-changes hate-speech recall substantially, and the effect is not uniform —
-it usually helps, sometimes hurts, and even where it helps, "care for
+**Bottom line (free-text steering specifically — see §3 below):**
+steering with a model's own *free-text* moral/values opinion changes
+hate-speech recall substantially, and the effect is not uniform — it
+usually helps, sometimes hurts, and even where it helps, "care for
 others" content is consistently the weakest lever (and for two models,
 Apertus and Olmo, an actively harmful one) while
 achievement/security/tradition/proportionality-type content is the most
 reliable booster. That two independently-designed questionnaires converge
-on the same two models and the same substantive content category is the
-strongest signal in this analysis.
+on the same two models and the same substantive content category was, at
+the time, the strongest signal in this analysis — §3 shows it does not
+survive a change in how the opinion is elicited, so it should be read as
+a finding about free-text elicitation, not about moral content in
+general.
+
+## 3. Does the steering *mechanism* matter — free-text opinion vs. the verbalized questionnaire item itself?
+
+A second steering run (`hs_detection/implicit_hate_verbalized_all_models.json`)
+is structurally identical to §2's (same models, same 500 messages, same
+76 items, `paired_by_model`) but replaces the free-text belief with a
+one-line verbalization of the model's own Likert rating (e.g. `"Caring
+for people who have suffered is an important virtue" describes you
+extremely well.`). Everything else about the pipeline is unchanged.
+
+- **Direction flips for half the models.** Apertus: no effect (−0.003,
+  n.s.) → **+0.173** (large, significant). Olmo: significantly *hurt*
+  (−0.096) → significantly *helped* (+0.053). Qwen: significantly
+  *helped* (+0.051) → significantly *hurt* (−0.057). Only Falcon, Llama,
+  and Ministral keep the same direction (all bigger under verbalized
+  steering except Ministral, which shrinks).
+- **The two conditions barely agree on *which items* matter.** Per-model
+  correlation between the two conditions' per-item recall deltas ranges
+  from r=−0.03 to r=0.25 — essentially uncorrelated, and the one nominally
+  significant case (Falcon, r=0.25, p=0.03) wouldn't survive correcting
+  for 6 models. Same model, same items, same labels — different belief
+  phrasing produces a near-unrelated pattern of which items move the
+  needle.
+- **The §2 Universalism/Benevolence/care/purity exception disappears.**
+  Under verbalized steering, *every* PVQ value and *every* MFT foundation
+  has a net positive pooled effect — Universalism swings from −0.048 to
+  **+0.090**, Benevolence from −0.044 to **+0.074**; MFT's care and purity
+  (+0.076, +0.066) land in the same range as every other foundation
+  instead of trailing them.
+
+**Bottom line:** the mechanism of eliciting the moral opinion is not a
+neutral implementation detail — it changes which models are helped vs.
+hurt, which items matter, and whether the "self-transcendence content is
+the exception" finding exists at all. The §2 finding should be reported
+as specific to free-text elicitation (plausibly driven by its length,
+hedging, or rhetorical style for that content) rather than as a general
+claim that moral content of a particular kind is inherently weaker at
+shifting hate-speech sensitivity. The properly general claim supported by
+both runs is narrower: moral-belief steering reliably shifts hate-speech
+recall, substantially and in a model-specific direction — but *what*
+drives that shift depends on how the belief is presented, not just on
+its content.

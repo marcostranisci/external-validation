@@ -31,6 +31,13 @@ per-test results in detail.
   `hs_detection/implicit_hate_all_models.json` and writes everything under
   `data_analysis/hs_detection/` (see "Belief-steered hate-speech detection"
   below).
+- `run_hs_detection_verbalized_analysis.py` — the same analyzer, on
+  `hs_detection/implicit_hate_verbalized_all_models.json` (steering by the
+  verbalized questionnaire item/Likert score instead of free-text opinion),
+  writing to `data_analysis/hs_detection_verbalized/`.
+- `src/hs_detection_comparison.py` — `SteeringConditionComparison` class
+  and `run_hs_detection_comparison.py` — compares the two runs above (see
+  "Free-text opinion vs. verbalized questionnaire item" below).
 
 ### Re-running the analysis
 
@@ -40,6 +47,8 @@ python run_questionnaire_analysis.py
 python run_annotator_analysis.py
 python run_annotator_demographics.py
 python run_hs_detection_analysis.py
+python run_hs_detection_verbalized_analysis.py
+python run_hs_detection_comparison.py
 ```
 
 ### Reusing the class on a new folder/dataset
@@ -573,6 +582,99 @@ them — and all 15 pairwise Mann-Whitney comparisons between models are
 significant (p≤0.021 in every case), meaning every model's steering
 response is statistically distinguishable from every other model's, not
 just the two extremes (Ministral vs. Olmo, p=6e-23) from each other.
+
+## Free-text opinion vs. verbalized questionnaire item: does steering method matter?
+
+`hs_detection/implicit_hate_verbalized_all_models.json` is a second
+steering run, structurally identical to
+`implicit_hate_all_models.json` (same models, same 500 messages, same 76
+MFT/PVQ items, `"prediction_setup": "paired_by_model"`) but with a
+different `belief`: instead of the model's free-text explanation, it's a
+one-line verbalization of the model's own *Likert rating* itself (e.g.
+`"Caring for people who have suffered is an important virtue" describes
+you extremely well.`, plus the scale text) — confirmed identical item set
+(all 36 MFT / 40 PVQ `test_statement`s match) and confirmed the `score`
+field exactly equals that model's own `opinion` in `surveys/mft`/`surveys/pvq`.
+Because `HateSpeechSteeringAnalyzer` only assumes the belief-steering JSON
+shape, no code changes were needed — `run_hs_detection_verbalized_analysis.py`
+runs the identical pipeline (tests 1-8 above) against it, writing to
+`data_analysis/hs_detection_verbalized/`.
+
+`src/hs_detection_comparison.py` (`SteeringConditionComparison`,
+`run_hs_detection_comparison.py`) then compares the two conditions'
+outputs directly, writing to `data_analysis/hs_detection_comparison/`:
+
+- **`steering_effect_comparison.csv`** — per model: recall-shift
+  magnitude, significance, and direction agreement between the two
+  conditions.
+- **`flip_counts_comparison.csv`** — per model: total flips and flip
+  direction (toward "hate" vs. "not hate") under each condition.
+- **`pvq_category_comparison.csv`** / **`mft_category_comparison.csv`** —
+  pooled mean delta-recall by Schwartz value / Moral Foundation, side by
+  side.
+- **`item_level_correlation_between_conditions.csv`** — per model,
+  Pearson/Spearman correlation between the two conditions' per-item
+  `delta_recall` (same items, same model, different steering text) — do
+  the same items drive the effect under both steering methods?
+
+Rerun with:
+
+```bash
+python run_hs_detection_verbalized_analysis.py
+python run_hs_detection_comparison.py
+```
+
+**Result: steering method changes more than magnitude — it flips
+direction for half the models, and the two conditions barely agree on
+*which items* matter.**
+
+| model | Δrecall (free-text) | Δrecall (verbalized) | same direction? |
+|---|---|---|---|
+| Apertus | −0.003 (n.s.) | **+0.173** (p=4e-14) | **No** |
+| Olmo | **−0.096** (p=1e-5) | **+0.053** (p=3e-13) | **No** |
+| Qwen | **+0.051** (p=3e-12) | **−0.057** (p=3e-12) | **No** |
+| Falcon | +0.071 | +0.200 | Yes (bigger) |
+| Llama | +0.040 | +0.108 | Yes (bigger) |
+| Ministral | +0.090 | +0.042 | Yes (smaller) |
+
+Half the models (Apertus, Olmo, Qwen) don't just change magnitude, they
+flip sign — Apertus goes from no effect to one of the largest positive
+effects; Olmo goes from significantly *hurt* to significantly *helped*;
+Qwen goes from significantly *helped* to significantly *hurt*. Verbalized
+steering is also a stronger signal on average (5 of 6 comparable
+magnitudes are larger, sometimes by 2-6x: Apertus, Falcon, Llama, Olmo),
+consistent with a short, unhedged declarative statement ("X describes you
+extremely well") being a more direct steering signal than a long,
+often-hedged free-text paragraph.
+
+**Item-level agreement between the two conditions is weak to absent**
+(`item_level_correlation_between_conditions.csv`): Pearson r ranges from
+−0.03 to 0.25 across all 6 models, and only Falcon's is even nominally
+significant (r=0.25, p=0.03, and that wouldn't survive correction for 6
+tests). So which *specific* item drives a model's recall shift is
+essentially uncorrelated between free-text and verbalized steering, even
+within the same model — the two steering mechanisms appear to operate
+through different pathways, not just different-strength versions of the
+same one.
+
+**The Universalism/Benevolence/care/purity exception does not
+replicate.** This is the most important caveat to the Experiment 2
+findings above: under free-text steering, Universalism and Benevolence
+were the only PVQ values with a net *negative* pooled effect, and MFT's
+care/purity were far behind the other four foundations. Under verbalized
+steering, **every single PVQ value and every MFT foundation has a net
+positive effect** — Universalism actually swings from −0.048 to **+0.090**
+and Benevolence from −0.044 to **+0.074**, no longer standing out at all;
+MFT's care (+0.076) and purity (+0.066) land in the same range as the
+other foundations (+0.063 to +0.123) rather than trailing them. Read
+together with the weak item-level correlation, this indicates the
+"self-transcendence content is the weak/harmful lever, and Apertus/Olmo
+are specifically vulnerable to it" finding is a property of *free-text
+elicitation specifically* (plausibly its length, hedging, or rhetorical
+style for that content), not a property of self-transcendence moral
+content in general. That finding should be scoped explicitly to the
+free-text steering condition in any write-up, not stated as a general
+claim about moral content.
 
 ## Data quality notes
 
