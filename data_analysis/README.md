@@ -642,10 +642,27 @@ outputs directly, writing to `data_analysis/hs_detection_comparison/`:
 - **`pvq_category_comparison.csv`** / **`mft_category_comparison.csv`** —
   pooled mean delta-recall by Schwartz value / Moral Foundation, side by
   side.
+- **`flip_counts_by_value_comparison_pvq.csv`** /
+  **`flip_counts_by_value_comparison_mft.csv`** — the raw-flip-volume
+  counterpart of the two above (which compare recall-significance
+  patterns): model × value-type total flips and mean flip rate, side by
+  side between the two conditions.
 - **`item_level_correlation_between_conditions.csv`** — per model,
   Pearson/Spearman correlation between the two conditions' per-item
   `delta_recall` (same items, same model, different steering text) — do
   the same items drive the effect under both steering methods?
+- **`instance_flip_counts_comparison.csv`** / **`instance_flip_rate_correlation.csv`** —
+  per message (pooled across all 6 models), flip count/rate/direction
+  relative to each condition's own zero-shot baseline, side by side, plus
+  an overall Pearson/Spearman correlation of `flip_rate` across all 500
+  messages between conditions — are the *same* messages unstable under
+  both steering methods?
+- **`instance_prediction_profile_comparison.csv`** /
+  **`instance_proportion_hate_correlation.csv`** — per message (pooled
+  `model="ALL"`), raw predicted-label stability (`proportion_hate`, no
+  zero-shot baseline) side by side, plus an overall correlation across all
+  500 messages — does a message's overall "how often is this called hate
+  speech" carry over regardless of steering method?
 
 Rerun with:
 
@@ -723,6 +740,38 @@ Universalism/Benevolence is +0.074/+0.057, care/purity +0.061/+0.044
 (still uniformly positive, still no longer trailing). The other five
 models alone reproduce both the original free-text exception and its
 disappearance under verbalized steering.
+
+**Olmo's Universalism spike is specific to free-text elicitation, at the
+raw-flip level too.** Under free-text steering, Olmo's Universalism items
+caused 992 flips (mean flip rate 33%) — 3x its next-highest category and
+the single largest (model, value) cell across the entire study. Under
+verbalized steering that collapses to 314 flips (rate 10.5%), landing
+Olmo's Universalism back in the same narrow band as its other 9 PVQ
+values (9-13%). Qwen shows no such concentration under either condition
+(flip rate stays in a flat 9-13% band across all 10 values both times) —
+its sign-flipped recall (§ above) comes from a broad shift in flip
+*direction* (76%→33% toward "hate", `flip_counts_comparison.csv`)
+rather than a specific content category, unlike Olmo's.
+
+**Instance-wise: absolute prediction stability is highly robust across
+steering methods; relative instability is only moderately so.** Pooling
+across all 6 models, a message's raw `proportion_hate` (how often it's
+called "hate" across every context it's ever classified under) correlates
+r=0.96 between the free-text and verbalized conditions (`instance_proportion_hate_correlation.csv`)
+— essentially the same messages are confidently "hate", confidently "not
+hate", or genuinely ambiguous regardless of which steering method
+produced the predictions. `flip_rate` (relative to each condition's own
+zero-shot baseline) correlates more modestly, r=0.53
+(`instance_flip_rate_correlation.csv`) — real and highly significant, but
+with real exceptions: some messages swing from near-stable to highly
+unstable between conditions (e.g. id 113: flip rate 0.007 → 0.33; id 183:
+0.48 → 0.13, an instability *reversal*). So a message's absolute
+"how does an ensemble of models see this" signal is a robust, largely
+steering-method-independent property, while "how much does steering
+perturb this specific message relative to zero-shot" is more
+method-sensitive — consistent with the per-model recall/flip findings
+above, where absolute prediction tendencies proved more stable than
+steering-induced shifts.
 
 ## Data quality notes
 
