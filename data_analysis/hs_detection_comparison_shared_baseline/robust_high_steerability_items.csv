@@ -1,0 +1,5 @@
+condition,test_statement,category,mean_flip_rate_free_text,mean_flip_rate_verbalized
+mft,I think people who are more hard-working should end up with more money.,proportionality,0.1223333333333333,0.1886666666666666
+mft,We all need to learn from our elders.,authority,0.123,0.1783333333333333
+pvq,He likes surprises. It is important to him to have an exciting life.,Stimulation,0.125,0.1796666666666666
+pvq,He thinks it’s important not to ask for more than what you have. He believes that people should be satisfied with what they have.,Tradition,0.1193333333333333,0.1743333333333333

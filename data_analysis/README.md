@@ -35,9 +35,19 @@ per-test results in detail.
   `hs_detection/implicit_hate_verbalized_all_models.json` (steering by the
   verbalized questionnaire item/Likert score instead of free-text opinion),
   writing to `data_analysis/hs_detection_verbalized/`.
+- `run_hs_detection_verbalized_shared_baseline_analysis.py` — the same
+  verbalized run, but with every model's `zero_shot` baseline replaced by
+  its `zero_shot` predictions from the free-text file (via
+  `HateSpeechSteeringAnalyzer`'s `baseline_json_path`), writing to
+  `data_analysis/hs_detection_verbalized_shared_baseline/` — controls for
+  the wording confound (see "does steering method matter?" below) across
+  the *entire* pipeline, not just the one-off check in
+  `steering_effect_shared_baseline_check.csv`.
 - `src/hs_detection_comparison.py` — `SteeringConditionComparison` class
   and `run_hs_detection_comparison.py` — compares the two runs above (see
   "Free-text opinion vs. verbalized questionnaire item" below).
+  `run_hs_detection_comparison_shared_baseline.py` runs the same
+  comparison against the shared-baseline run instead.
 
 ### Re-running the analysis
 
@@ -49,7 +59,9 @@ python run_annotator_analysis.py
 python run_annotator_demographics.py
 python run_hs_detection_analysis.py
 python run_hs_detection_verbalized_analysis.py
+python run_hs_detection_verbalized_shared_baseline_analysis.py
 python run_hs_detection_comparison.py
+python run_hs_detection_comparison_shared_baseline.py
 ```
 
 ### Reusing the class on a new folder/dataset
@@ -415,7 +427,21 @@ questions:
    PVQ/MFT results by Schwartz value or Moral Foundation respectively, per
    model and pooled (`model="ALL"`): item count, how many are significant,
    in which direction, and the mean delta. Saved to `pvq_value_patterns.csv`
-   / `mft_foundation_patterns.csv`.
+   / `mft_foundation_patterns.csv`. `within_model_category_rank` then ranks
+   each category's `mean_delta_recall` *within* each model (rank 1 = that
+   model's weakest lever) instead of pooling absolute levels across
+   models — this is invariant to any per-model baseline shift (a fixed
+   additive shift to all of one model's categories doesn't change their
+   relative order), so it's a fairer way to ask "is this category
+   consistently weak for a given model" than averaging absolute deltas
+   when models differ hugely in overall level. Saved to
+   `within_model_rank_{foundation,pvq_value_label}.csv` (per model×category
+   rank) and `within_model_rank_summary_{foundation,pvq_value_label}.csv`
+   (mean rank per category across models, plus a one-sample Wilcoxon test
+   against the chance expectation — capped at the same n=6-models power
+   ceiling as test 3, so read this within-condition test as descriptive;
+   the cross-condition rank *correlation*, below, is the properly powered
+   version of "does this pattern replicate").
 6. **Model-wise: how often does steering flip the predicted label at
    all?** Tests 1-5 only look at the positive class and at whether
    *correctness* changes. `flip_counts_by_item` instead counts, for every
@@ -849,6 +875,18 @@ resolved** — they were already the two "clean" cases by the simpler check
 above, and this stricter test confirms it quantitatively rather than by
 just noting their baseline shift was small.
 
+**This shared-baseline substitution is also run as a full, standalone
+pipeline** (`run_hs_detection_verbalized_shared_baseline_analysis.py`,
+writing to `data_analysis/hs_detection_verbalized_shared_baseline/`), not
+just the one-off model-level check above — every downstream test (flip
+counts, item significance, category patterns, instance profiles) is
+recomputed with the verbalized condition's `zero_shot` replaced by the
+free-text file's, so any of the tests above can be directly compared
+against the free-text run without the wording confound. The category-
+level results from this full run are folded into the corrected
+Universalism/Benevolence-vs-care/purity discussion below, since that is
+exactly where the confound mattered most.
+
 `src/hs_detection_comparison.py` (`SteeringConditionComparison`,
 `run_hs_detection_comparison.py`) then compares the two conditions'
 outputs directly, writing to `data_analysis/hs_detection_comparison/`:
@@ -877,7 +915,16 @@ outputs directly, writing to `data_analysis/hs_detection_comparison/`:
   statistically real.
 - **`pvq_category_comparison.csv`** / **`mft_category_comparison.csv`** —
   pooled mean delta-recall by Schwartz value / Moral Foundation, side by
-  side.
+  side. **`{pvq,mft}_category_comparison_excl_apertus.csv`** —
+  the same, recomputed over the other 5 models only, since Apertus's
+  extreme baseline shift otherwise dominates the pooled mean.
+- **`within_model_rank_comparison_{pvq,mft}.csv`** /
+  **`within_model_rank_correlation_{pvq,mft}.csv`** — a fairer,
+  baseline-shift-invariant alternative to the pooled-mean comparisons
+  above: joins each category's mean *within-model rank* (test 5) between
+  the two conditions and reports the Pearson/Spearman correlation — does
+  a category that's a relatively weak lever for a model under one
+  elicitation method stay relatively weak under the other?
 - **`flip_counts_by_value_comparison_pvq.csv`** /
   **`flip_counts_by_value_comparison_mft.csv`** — the raw-flip-volume
   counterpart of the two above (which compare recall-significance
@@ -931,6 +978,8 @@ Rerun with:
 ```bash
 python run_hs_detection_verbalized_analysis.py
 python run_hs_detection_comparison.py
+python run_hs_detection_verbalized_shared_baseline_analysis.py
+python run_hs_detection_comparison_shared_baseline.py
 ```
 
 **Result: steering method changes more than magnitude — it flips
@@ -976,33 +1025,62 @@ within the same model — the two steering mechanisms appear to operate
 through different pathways, not just different-strength versions of the
 same one.
 
-**The Universalism/Benevolence/care/purity exception does not
-replicate.** This is the most important caveat to the Experiment 2
-findings above: under free-text steering, Universalism and Benevolence
-were the only PVQ values with a net *negative* pooled effect, and MFT's
-care/purity were far behind the other four foundations. Under verbalized
-steering, **every single PVQ value and every MFT foundation has a net
-positive effect** — Universalism actually swings from −0.048 to **+0.090**
-and Benevolence from −0.044 to **+0.074**, no longer standing out at all;
-MFT's care (+0.076) and purity (+0.066) land in the same range as the
-other foundations (+0.063 to +0.123) rather than trailing them. Read
-together with the weak item-level correlation, this indicates the
-"self-transcendence content is the weak/harmful lever, and Apertus/Olmo
-are specifically vulnerable to it" finding is a property of *free-text
-elicitation specifically* (plausibly its length, hedging, or rhetorical
-style for that content), not a property of self-transcendence moral
-content in general. That finding should be scoped explicitly to the
-free-text steering condition in any write-up, not stated as a general
-claim about moral content.
+**Correction to an earlier version of this finding, and why: pooling
+models' absolute mean deltas is the wrong lens for a fair cross-condition
+comparison, and using it led to an overstated "the exception disappears"
+claim.** Under free-text steering, Universalism and Benevolence were the
+only PVQ values with a net *negative* pooled-mean effect, and MFT's
+care/purity were behind the other four foundations. Pooling all 6 models'
+*absolute* deltas under verbalized steering, every PVQ value and every
+MFT foundation looks positive — but models differ hugely in their overall
+effect *level* under verbalized steering (Apertus/Falcon average roughly
++0.15 to +0.30 across all foundations, Qwen averages roughly −0.06 to
+−0.14), so averaging absolute deltas across models with such different
+levels can hide a category's *relative* standing within each model. Two
+checks fix this:
 
-This reversal is not an artifact of the Apertus confound: recomputing
-both pooled means with Apertus excluded entirely gives the same story —
-free-text Universalism/Benevolence mean delta is −0.051/−0.041 (still
-negative), care/purity is +0.029/+0.015 (still trailing); verbalized
-Universalism/Benevolence is +0.074/+0.057, care/purity +0.061/+0.044
-(still uniformly positive, still no longer trailing). The other five
-models alone reproduce both the original free-text exception and its
-disappearance under verbalized steering.
+1. **The shared-baseline check (above) shows the "every category is
+   positive" appearance is itself partly a confound artifact**: with the
+   free-text zero-shot as a common baseline, the all-6-model pooled
+   Universalism delta is actually still *negative* (−0.028, not +0.090)
+   — it only turns positive (+0.051) once Apertus, whose extreme
+   baseline-shift dominates any pooled mean it's in, is also excluded.
+2. **Ranking each category *within* each model — not pooling absolute
+   levels — is invariant to any per-model baseline shift by construction**
+   (a constant added to all of one model's categories doesn't change
+   their relative order), so it needs no baseline correction at all and
+   is a more honest test of whether the *relative* pattern itself
+   changes. `within_model_category_rank` does this: for each model, rank
+   its 6 MFT foundations (or 10 PVQ values) from weakest (rank 1) to
+   strongest lever, then compare that ranking's stability across
+   conditions with `compare_within_model_rank`
+   (`within_model_rank_correlation_{mft,pvq}.csv`).
+
+**Result: MFT's care/purity pattern is highly stable across elicitation
+methods; PVQ's Universalism/Benevolence pattern is not.** The two
+conditions' mean within-model rank per foundation correlates at
+Spearman ρ=0.93 (p=0.008) for MFT — **purity is every model's rank-1 or
+rank-2 weakest foundation in both free-text and verbalized steering**
+(mean rank 1.5/6, expected by chance 3.5), care close behind (mean rank
+2.1-2.3/6) — this specific relative pattern does *not* depend on
+elicitation method, contrary to what the pooled-absolute-mean comparison
+suggested. (Neither individually reaches BH-corrected significance in the
+one-sample rank test, p_fdr≈0.09-0.19 — the familiar n=6-models power
+ceiling — but the cross-condition rank *correlation* itself is a properly
+powered, independent test, and it's the one that matters for "does this
+pattern replicate.") **PVQ tells the opposite story**: the rank
+correlation is ρ=0.22 (p=0.53, not significant) — Benevolence's rank
+jumps from 1.7/10 (very weak) under free-text to 4.25/10 (unremarkable)
+under verbalized, Universalism from 3.0 to 7.7 (now relatively *strong*),
+while Power and Conformity — unremarkable under free-text (rank
+6.8, 3.8) — become the *weakest* under verbalized (rank 2.1, 2.5). So for
+PVQ, the earlier "exception disappears" characterization holds up: the
+relative pattern genuinely reshuffles, not just its absolute level. For
+MFT, it does not — care/purity's status as relatively weak levers is a
+property of the foundations themselves, stable across how the belief is
+elicited, and the free-text-vs-verbalized difference is specifically in
+each model's *overall* effect level (which the shared-baseline model-wise
+check above already covers), not in which foundation is weakest for it.
 
 **Olmo's Universalism spike is specific to free-text elicitation, at the
 raw-flip level too.** Under free-text steering, Olmo's Universalism items

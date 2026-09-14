@@ -88,12 +88,28 @@ class HateSpeechSteeringAnalyzer:
     json_path: str | Path
     output_dir: str | Path = "data_analysis"
     output_subdir: str = "hs_detection"
+    baseline_json_path: str | Path | None = None
+    """If set, every model's ``zero_shot`` predictions are replaced with
+    that model's ``zero_shot`` predictions from this other JSON file
+    before any analysis runs — every method below reads
+    ``model_data["zero_shot"]``, so this one substitution makes the whole
+    pipeline (recall, flips, item significance, instance profiles, ...)
+    use a single shared baseline instead of each file's own. Built to
+    control for a wording difference in ``zero_shot_prompt`` between two
+    files that would otherwise confound a same-model, own-baseline
+    comparison between them."""
 
     def __post_init__(self) -> None:
         self.json_path = Path(self.json_path)
         self.output_dir = Path(self.output_dir)
         with open(self.json_path) as fh:
             self._data = json.load(fh)
+        if self.baseline_json_path is not None:
+            self.baseline_json_path = Path(self.baseline_json_path)
+            with open(self.baseline_json_path) as fh:
+                baseline_data = json.load(fh)
+            for model, model_data in self._data["models"].items():
+                model_data["zero_shot"] = baseline_data["models"][model]["zero_shot"]
 
     # ------------------------------------------------------------------
     # Recall table
@@ -363,6 +379,43 @@ class HateSpeechSteeringAnalyzer:
         return self._category_patterns(
             item_significance, "mft", "foundation", "mft_foundation_patterns.csv"
         )
+
+    def within_model_category_rank(self, category_patterns: pd.DataFrame, category_col: str) -> dict[str, pd.DataFrame]:
+        """Ranks each category's `mean_delta_recall` *within* each model
+        (rank 1 = that model's weakest/most-negative category) instead of
+        pooling across models. Pooling first (the `model="ALL"` row in
+        `pvq_value_patterns`/`mft_foundation_patterns`) can hide a
+        consistent *relative* pattern when models differ hugely in their
+        overall effect level (e.g. one model's mean is strongly positive,
+        another's strongly negative) — averaging their absolute deltas
+        washes out which category is *that model's own* weakest lever.
+        Ranking within each model first avoids that.
+
+        Returns the per-(model, category) rank, plus a per-category
+        summary (mean rank across models, and a one-sample Wilcoxon test
+        of whether that mean rank differs from the chance expectation
+        of (n_categories + 1) / 2)."""
+        df = category_patterns[category_patterns["model"] != "ALL"]
+        pivot = df.pivot(index="model", columns=category_col, values="mean_delta_recall")
+        n_categories = pivot.shape[1]
+        ranks = pivot.rank(axis=1)
+        long = ranks.reset_index().melt(id_vars="model", var_name=category_col, value_name="rank_within_model")
+        self._save(long, f"within_model_rank_{category_col}.csv")
+
+        expected = (n_categories + 1) / 2
+        rows = []
+        for category, group in long.groupby(category_col):
+            r = group["rank_within_model"].dropna()
+            row = {category_col: category, "n_models": len(r), "mean_rank": r.mean(),
+                   "expected_rank_by_chance": expected, "p": np.nan}
+            if len(r) >= 3 and r.std() > 0:
+                w = stats.wilcoxon(r - expected)
+                row["p"] = float(w.pvalue)
+            rows.append(row)
+        summary = pd.DataFrame(rows).sort_values("mean_rank")
+        summary["p_fdr_bh"] = _benjamini_hochberg(summary["p"])
+        self._save(summary, f"within_model_rank_summary_{category_col}.csv")
+        return {"ranks": long, "summary": summary}
 
     # ------------------------------------------------------------------
     # Model-wise: how often does steering flip the predicted label at all?
@@ -863,6 +916,8 @@ class HateSpeechSteeringAnalyzer:
         item_significance = self.item_significance_per_model(pvq_mapping_path)
         pvq_patterns = self.pvq_value_patterns(item_significance)
         foundation_patterns = self.mft_foundation_patterns(item_significance)
+        pvq_rank = self.within_model_category_rank(pvq_patterns, "pvq_value_label")
+        foundation_rank = self.within_model_category_rank(foundation_patterns, "foundation")
 
         flips_by_item = self.flip_counts_by_item(pvq_mapping_path)
         item_steerability = self.item_steerability(flips_by_item)
@@ -884,6 +939,7 @@ class HateSpeechSteeringAnalyzer:
             "recall_table": table, "per_model": per_model, "by_item": by_item,
             "item_significance": item_significance, "pvq_patterns": pvq_patterns,
             "foundation_patterns": foundation_patterns,
+            "pvq_rank": pvq_rank, "foundation_rank": foundation_rank,
             "flips_by_item": flips_by_item, "flips_by_model": flips_by_model,
             "item_steerability": item_steerability, "item_tiers": item_tiers,
             "tier_patterns": tier_patterns,

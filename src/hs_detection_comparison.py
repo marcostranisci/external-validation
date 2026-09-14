@@ -156,6 +156,49 @@ class SteeringConditionComparison:
         self._save(result, f"{kind}_category_comparison.csv")
         return result
 
+    def compare_category_patterns_excluding_model(self, kind: str, exclude_model: str) -> pd.DataFrame:
+        """The same category comparison as ``compare_category_patterns``,
+        but averaging each category's ``mean_delta_recall`` across the
+        5 models excluding ``exclude_model`` instead of reading the
+        precomputed ``model="ALL"`` pooled row — for isolating whether a
+        pattern in the pooled-6-model number is being driven by one
+        outlier model (e.g. Apertus, whose depressed baseline dominates
+        any pooled mean it's part of)."""
+        filename = "pvq_value_patterns.csv" if kind == "pvq" else "mft_foundation_patterns.csv"
+        category_col = "pvq_value_label" if kind == "pvq" else "foundation"
+        a, b = self._load(filename)
+        a_excl = a[(a["model"] != "ALL") & (a["model"] != exclude_model)]
+        b_excl = b[(b["model"] != "ALL") & (b["model"] != exclude_model)]
+        a_mean = a_excl.groupby(category_col)["mean_delta_recall"].mean().rename(f"mean_delta_recall_{self.label_a}")
+        b_mean = b_excl.groupby(category_col)["mean_delta_recall"].mean().rename(f"mean_delta_recall_{self.label_b}")
+        result = pd.concat([a_mean, b_mean], axis=1).reset_index()
+        result = result.sort_values(f"mean_delta_recall_{self.label_b}", ascending=False)
+        self._save(result, f"{kind}_category_comparison_excl_{exclude_model.split('-')[0].lower()}.csv")
+        return result
+
+    def compare_within_model_rank(self, kind: str) -> pd.DataFrame:
+        """Do the two conditions agree on each category's *within-model*
+        rank (from ``within_model_category_rank`` — rank 1 = that model's
+        weakest lever), pooled across the 6 models via ``mean_rank``? This
+        rank is invariant to any per-model additive baseline shift, so
+        unlike ``compare_category_patterns`` it needs no shared-baseline
+        correction to be a fair comparison. A high, significant Spearman
+        correlation means a category that's relatively weak for a model
+        under one elicitation method is also relatively weak under the
+        other; a low one means the *relative* pattern itself depends on
+        elicitation method, not just its overall level."""
+        category_col = "pvq_value_label" if kind == "pvq" else "foundation"
+        a, b = self._load(f"within_model_rank_summary_{category_col}.csv")
+        merged = a.merge(b, on=category_col, suffixes=(f"_{self.label_a}", f"_{self.label_b}"))
+        cols = [category_col, f"mean_rank_{self.label_a}", f"mean_rank_{self.label_b}"]
+        result = merged[cols].sort_values(f"mean_rank_{self.label_a}")
+        corr = self._correlate(
+            merged[f"mean_rank_{self.label_a}"], merged[f"mean_rank_{self.label_b}"]
+        )
+        self._save(result, f"within_model_rank_comparison_{kind}.csv")
+        self._save(pd.DataFrame([{kind: kind, **corr}]), f"within_model_rank_correlation_{kind}.csv")
+        return result
+
     @staticmethod
     def _correlate(x: pd.Series, y: pd.Series) -> dict:
         n = len(x)
@@ -483,6 +526,12 @@ class SteeringConditionComparison:
             "flip_counts_by_value_mft": self.compare_flip_counts_by_value("mft"),
             "pvq_patterns": self.compare_category_patterns("pvq"),
             "mft_patterns": self.compare_category_patterns("mft"),
+            "pvq_patterns_excl_apertus": self.compare_category_patterns_excluding_model(
+                "pvq", "Apertus-8B-Instruct"),
+            "mft_patterns_excl_apertus": self.compare_category_patterns_excluding_model(
+                "mft", "Apertus-8B-Instruct"),
+            "pvq_rank_comparison": self.compare_within_model_rank("pvq"),
+            "mft_rank_comparison": self.compare_within_model_rank("mft"),
             "item_level_correlation": self.compare_item_level(),
             "instance_flips": instance_flips, "instance_flip_corr": instance_flip_corr,
             "instance_profile": instance_profile, "instance_profile_corr": instance_profile_corr,

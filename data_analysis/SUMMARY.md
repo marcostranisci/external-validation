@@ -174,12 +174,16 @@ usually helps, sometimes hurts, and even where it helps, "care for
 others" content is consistently the weakest lever (and for two models,
 Apertus and Olmo, an actively harmful one) while
 achievement/security/tradition/proportionality-type content is the most
-reliable booster. That two independently-designed questionnaires converge
-on the same two models and the same substantive content category was, at
-the time, the strongest signal in this analysis — §3 shows it does not
-survive a change in how the opinion is elicited, so it should be read as
-a finding about free-text elicitation, not about moral content in
-general.
+reliable booster. That two independently-designed questionnaires converge on the same two
+models and an analogous content category was, at the time, the strongest
+signal in this analysis — §3's more careful, baseline-shift-invariant
+re-test shows this convergence is only partly real: MFT's "care/purity
+are relatively weak levers" *does* survive a change in elicitation
+method, but PVQ's "Universalism/Benevolence are the exception" does not.
+So the general, questionnaire-independent version of this finding does
+not hold — it should be read as a genuine (if not fully understood)
+property of MFT's care/purity foundations specifically, plus a separate,
+elicitation-method-specific artifact for PVQ's Universalism/Benevolence.
 
 ## 3. Does the steering *mechanism* matter — free-text opinion vs. the verbalized questionnaire item itself?
 
@@ -266,17 +270,37 @@ reported here.
   by steering (`flip_rate`, r=0.53) is only moderately consistent, and
   that inconsistency doesn't average out — it lands disproportionately on
   the mid-volatility messages.
-- **The §2 Universalism/Benevolence/care/purity exception disappears —
-  and this one survives excluding Apertus entirely.** Under verbalized
-  steering, *every* PVQ value and *every* MFT foundation has a net
-  positive pooled effect — Universalism swings from −0.048 to **+0.090**,
-  Benevolence from −0.044 to **+0.074**; MFT's care and purity (+0.076,
-  +0.066) land in the same range as every other foundation instead of
-  trailing them. Recomputed on the other 5 models alone (Apertus
-  removed), the same reversal holds: free-text Universalism/Benevolence
-  −0.051/−0.041 → verbalized +0.074/+0.057; free-text care/purity
-  +0.029/+0.015 → verbalized +0.061/+0.044. So this specific finding is
-  not a confound artifact.
+- **Correction: the §2 exception disappears for PVQ, but not for MFT —
+  pooling models' absolute mean deltas was the wrong lens, and an earlier
+  version of this bullet overstated the reversal for both.** Pooling all
+  6 models' *absolute* deltas under verbalized steering makes every PVQ
+  value and every MFT foundation look net-positive — but the shared-
+  baseline check above shows part of that is the confound itself
+  (Universalism's all-6 pooled delta is still *negative*, −0.028, once
+  the free-text zero-shot is used as a common baseline; it only turns
+  positive, +0.051, after *also* excluding Apertus, whose extreme
+  baseline shift dominates any pooled mean it's in). More fundamentally,
+  averaging absolute deltas is the wrong test when models differ hugely
+  in overall level (Apertus/Falcon average +0.15 to +0.30 across all
+  categories under verbalized steering, Qwen averages −0.06 to −0.14) —
+  it can hide a category's *relative* standing within a model entirely.
+  Ranking each category *within* each model instead (rank 1 = that
+  model's weakest lever) sidesteps this: it's mathematically invariant to
+  any per-model baseline shift, so needs no confound correction at all.
+  That ranking's correlation between free-text and verbalized steering is
+  **ρ=0.93 (p=0.008) for MFT** — purity is every model's rank-1/2 weakest
+  foundation under *both* conditions, care close behind — this pattern is
+  stable across elicitation method, not disappearing as the pooled-mean
+  comparison suggested. **PVQ is genuinely different: ρ=0.22 (p=0.53,
+  n.s.)** — Benevolence's rank jumps from 1.7/10 (very weak) to 4.25/10
+  (unremarkable), Universalism from 3.0 to 7.7 (now relatively strong),
+  while Power and Conformity (unremarkable under free-text) become the
+  weakest under verbalized. So the "exception disappears under a
+  different elicitation method" story is correct for PVQ, but for MFT the
+  more accurate statement is: care/purity are consistently weak levers
+  regardless of elicitation method, and what actually differs between
+  methods is each model's *overall* effect level (see the shared-baseline
+  model-level results above), not which foundation is weakest for it.
 - **The item-steerability-tier confirmation of the Universalism finding
   (§2) vanishes just as completely under verbalized steering.**
   Universalism's striking free-text result — all 6 items in the
@@ -306,13 +330,18 @@ reported here.
 
 **Bottom line:** the mechanism of eliciting the moral opinion is not a
 neutral implementation detail — it changes which models are helped vs.
-hurt, which items matter, and whether the "self-transcendence content is
-the exception" finding exists at all. The §2 finding should be reported
-as specific to free-text elicitation (plausibly driven by its length,
-hedging, or rhetorical style for that content) rather than as a general
-claim that moral content of a particular kind is inherently weaker at
-shifting hate-speech sensitivity. The properly general claim supported by
-both runs is narrower: moral-belief steering reliably shifts hate-speech
-recall, substantially and in a model-specific direction — but *what*
-drives that shift depends on how the belief is presented, not just on
-its content.
+hurt and which items matter, and it determines whether the PVQ
+Universalism/Benevolence exception exists at all (it's specific to
+free-text elicitation — ρ=0.22, n.s., between conditions). It does
+*not*, however, determine the MFT care/purity finding, which replicates
+across elicitation methods at the level that matters (each model's
+*relative* ranking of its weakest foundation, ρ=0.93, p=0.008) even
+though each model's *overall* effect level still shifts with elicitation
+method just like everything else. So the properly general claim is
+two-layered: moral-belief steering reliably shifts hate-speech recall,
+substantially and in a model-specific direction that depends on how the
+belief is presented (robust across both questionnaires) — but *which
+specific content is the weak lever* is itself sometimes a stable property
+of the content (MFT's care/purity) and sometimes an artifact of the
+elicitation method (PVQ's Universalism/Benevolence), and the two
+questionnaires disagree on which case they're in.
