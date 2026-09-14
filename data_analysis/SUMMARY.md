@@ -16,8 +16,12 @@ into `external_opinion` (mean) and `annotator_disagreement`.
 
 - **Weak, inconsistent alignment.** Correlating a model's own `opinion`
   against how humans rated its free-text explanation (`external_opinion`)
-  is only significant for 1-2 of 6 models per questionnaire (MFT: Apertus
-  r=0.60, Ministral r=0.39; PVQ: Qwen r=0.58 only). For most models, the
+  is nominally significant for 1-2 of 6 models per questionnaire (MFT:
+  Apertus r=0.60 p=9.3e-5, Ministral r=0.39 p=0.019; PVQ: Qwen r=0.58
+  p=7.5e-5 only), but after Benjamini-Hochberg correction (across the 6
+  models per questionnaire) only **one model per questionnaire survives**:
+  Apertus for MFT (p_fdr=0.00056) and Qwen for PVQ (p_fdr=0.00037) —
+  Ministral's MFT case does not (p_fdr=0.058). For every other model, the
   Likert self-report and the human-perceived content of the explanation
   don't reliably track each other at all.
 - **Models differ enormously from each other in absolute answer level,

@@ -111,7 +111,19 @@ are saved under `data_analysis/mft/` and `data_analysis/pvq/` respectively.
 1. **`opinion_vs_external_opinion_per_model.csv`**
    Per model: Pearson correlation, Spearman correlation, and a chi-square
    test of independence (on rounded ratings) between the model's own
-   `opinion` and the human `external_opinion`.
+   `opinion` and the human `external_opinion`. `pearson_p_fdr_bh` /
+   `spearman_p_fdr_bh` are Benjamini-Hochberg-corrected across the 6
+   models in the folder (one hypothesis family per questionnaire).
+
+   **Result: correlation is low almost everywhere, and only one model per
+   questionnaire survives correction.** Raw p-values look significant for
+   2/6 MFT models (Apertus p=9.3e-5, Ministral p=0.019) and 1/6 PVQ models
+   (Qwen p=7.5e-5), but after BH correction only **Apertus (MFT,
+   p_fdr=0.00056)** and **Qwen (PVQ, p_fdr=0.00037)** survive — Ministral's
+   MFT case does not (p_fdr=0.058, just above 0.05). So, strictly, a
+   model's own Likert self-report reliably tracks how humans read its
+   free-text explanation for exactly one model per questionnaire, not
+   "1-2 of 6" as the uncorrected p-values would suggest.
 
 2. **`between_model_correlations_opinion.csv`** /
    **`between_model_correlations_external_opinion.csv`**

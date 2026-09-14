@@ -110,6 +110,17 @@ def _correlations(a: pd.Series, b: pd.Series) -> dict:
     return result
 
 
+def _benjamini_hochberg(pvalues: pd.Series) -> pd.Series:
+    """Benjamini-Hochberg FDR-adjusted p-values, leaving NaN entries as NaN
+    and correcting only across the valid p-values (one hypothesis family)."""
+    valid = pvalues.dropna()
+    adjusted = pd.Series(np.nan, index=pvalues.index)
+    if len(valid) == 0:
+        return adjusted
+    adjusted.loc[valid.index] = stats.false_discovery_control(valid.to_numpy(), method="bh")
+    return adjusted
+
+
 def _mannwhitney(a: pd.Series, b: pd.Series) -> dict:
     """Two-sample Mann-Whitney U test between two independent (unpaired)
     groups, with a rank-biserial correlation as effect size.
@@ -285,7 +296,11 @@ class QuestionnaireAnalyzer:
     ) -> pd.DataFrame:
         """Independence + correlation tests between ``column_a`` and ``column_b``,
         run separately for each model. Intended for raw Likert-scale columns
-        (the chi-square step rounds values to the nearest integer)."""
+        (the chi-square step rounds values to the nearest integer).
+
+        ``pearson_p_fdr_bh`` / ``spearman_p_fdr_bh`` Benjamini-Hochberg
+        correct across the models in this one call (one hypothesis family
+        per folder)."""
         rows = []
         for model, df in dfs.items():
             corr = self._correlations(df[column_a], df[column_b])
@@ -300,6 +315,8 @@ class QuestionnaireAnalyzer:
                 "notes": "; ".join(n for n in (corr["notes"], chi2["notes"]) if n),
             })
         result = pd.DataFrame(rows)
+        result["pearson_p_fdr_bh"] = _benjamini_hochberg(result["pearson_p"])
+        result["spearman_p_fdr_bh"] = _benjamini_hochberg(result["spearman_p"])
         self._save(result, folder_name, filename or f"{column_a}_vs_{column_b}_per_model.csv")
         return result
 
