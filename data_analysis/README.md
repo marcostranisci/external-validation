@@ -842,6 +842,23 @@ outputs directly, writing to `data_analysis/hs_detection_comparison/`:
   tier, the chance-level baseline implied by the marginals, Cohen's kappa,
   and a chi-square test that the two conditions' tier assignments are
   associated at all).
+- **`item_steerability_tier_contingency.csv`** /
+  **`item_steerability_tier_agreement.csv`** — the item-level counterpart
+  of the two files above: the same overlap/agreement metrics
+  (contingency table, Cohen's kappa, chi-square), but on the 76
+  questionnaire items' `low`/`mid`/`high_steerability` tier (test 7)
+  instead of the 500 messages' flip-rate tier, computed separately within
+  MFT, within PVQ, and combined.
+- **`robust_high_steerability_items.csv`** — which specific items land in
+  the `high_steerability` tier under *both* conditions — a
+  method-independent, per-item signal, as opposed to a category-level
+  pattern that could hold on average without any single item being
+  robust.
+- **`robust_high_steerability_by_foundation.csv`** /
+  **`robust_high_steerability_by_pvq_value.csv`** — one-vs-rest Fisher
+  exact test (BH-corrected within each questionnaire) asking whether any
+  single MFT foundation / Schwartz PVQ value is over-represented among
+  those robust items.
 - **`instance_prediction_profile_comparison.csv`** /
   **`instance_proportion_hate_correlation.csv`** — per message (pooled
   `model="ALL"`), raw predicted-label stability (`proportion_hate`, no
@@ -1003,6 +1020,33 @@ stays mild) and splits roughly evenly toward both neighbors, while
 completely stable under verbalized steering** (0/158), consistent with
 verbalized steering's higher overall flip rate (mean 13.4% vs. 11.0%):
 instability doesn't fully reverse, it mostly just changes magnitude.
+
+**Item-level tier overlap is weaker than the message-level one, and only
+14 of 76 items are robustly high-steerability under both conditions — but
+those 14 skew toward `equality`.** Cross-tabulating the 76 items'
+low/mid/high-steerability tier (test 7) between conditions
+(`item_steerability_tier_agreement.csv`): only 50% land in the same tier
+(vs. a 33.4% chance baseline, κ=0.25 — weaker agreement than the
+message-level κ=0.30, and MFT alone is stronger than PVQ alone: κ=0.375,
+p=0.017 vs. κ=0.136, p=0.50 not even significant on its own). Only 14
+items are `high_steerability` under *both* conditions
+(`robust_high_steerability_items.csv`) — 8 MFT (4 of them `equality`, 2
+`loyalty`, 1 each `proportionality`/`purity`) and 6 PVQ (2 `Universalism`,
+2 `Stimulation`, 1 each `Hedonism`/`Tradition`; notably **no
+`Benevolence` item** makes this robust-high list at all, despite being
+part of the earlier Universalism/Benevolence pairing). A one-vs-rest
+Fisher exact test on which foundation/value these 14 items belong to
+(`robust_high_steerability_by_foundation.csv` /
+`robust_high_steerability_by_pvq_value.csv`) shows `equality` is the
+strongest candidate (4/6 of its items are robust-high, p=0.014
+uncorrected) but **does not survive BH correction** (p_fdr=0.086) — so
+"equality items tend to be robustly steerable" is a real, visible pattern
+in this data, but not a confirmed one at this sample size. No individual
+PVQ value comes close (`Stimulation` is closest: 2/3 items, p_fdr=0.54).
+So: there is no single item, and no fully confirmed category, that is
+"always" high-steerability regardless of elicitation method — the
+closest thing is `equality`'s 4-of-6 items, a suggestive but
+not-statistically-confirmed pattern given only 6 items per foundation.
 
 **Between-model disagreement is not spread evenly across messages — it
 concentrates almost entirely on the messages that are steerable at all,

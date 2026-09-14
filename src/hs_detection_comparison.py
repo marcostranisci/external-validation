@@ -284,6 +284,111 @@ class SteeringConditionComparison:
         self._save(summary, "flip_rate_tier_agreement.csv")
         return {"contingency": contingency, "per_tier": per_tier, "summary": summary}
 
+    def compare_item_steerability_tiers(self) -> dict[str, pd.DataFrame]:
+        """The item-level counterpart of ``compare_flip_rate_tiers``: do
+        the same 76 items fall in the same low/mid/high-steerability tier
+        (from ``item_steerability_tiers.csv``) under both conditions? Joins
+        on ``condition`` + ``test_statement`` (items are tiered separately
+        within MFT and PVQ, so cross-tabulates within each questionnaire
+        too), reports the 3x3 contingency table, per-tier stability, and
+        overall agreement (proportion in the same tier vs. the chance
+        baseline implied by the marginals, Cohen's kappa, chi-square)."""
+        a, b = self._load("item_steerability_tiers.csv")
+        merged = a.merge(b, on=["condition", "test_statement"], suffixes=(f"_{self.label_a}", f"_{self.label_b}"))
+        tiers = ["low_steerability", "mid_steerability", "high_steerability"]
+
+        contingencies = {}
+        summaries = []
+        for condition, sub in [("mft", merged[merged["condition"] == "mft"]),
+                                ("pvq", merged[merged["condition"] == "pvq"]),
+                                ("combined", merged)]:
+            contingency = pd.crosstab(
+                sub[f"steerability_tier_{self.label_a}"], sub[f"steerability_tier_{self.label_b}"]
+            ).reindex(index=tiers, columns=tiers, fill_value=0)
+            contingencies[condition] = contingency
+
+            n = contingency.to_numpy().sum()
+            observed_agree = np.trace(contingency.to_numpy())
+            p_o = observed_agree / n
+            row_marg = contingency.sum(axis=1).to_numpy() / n
+            col_marg = contingency.sum(axis=0).to_numpy() / n
+            p_e = float((row_marg * col_marg).sum())
+            kappa = (p_o - p_e) / (1 - p_e) if p_e < 1 else np.nan
+            chi2, p, dof, _ = stats.chi2_contingency(contingency.to_numpy())
+            summaries.append({
+                "condition": condition, "n": int(n), "n_same_tier": int(observed_agree),
+                "proportion_same_tier": p_o, "expected_by_chance": p_e,
+                "cohens_kappa": kappa, "chi2_stat": float(chi2), "chi2_p": float(p), "dof": int(dof),
+            })
+
+        combined_contingency = contingencies["combined"].reset_index()
+        self._save(combined_contingency, "item_steerability_tier_contingency.csv")
+        summary_df = pd.DataFrame(summaries)
+        self._save(summary_df, "item_steerability_tier_agreement.csv")
+        return {"contingency": combined_contingency, "summary": summary_df}
+
+    def robust_high_steerability_items(self) -> pd.DataFrame:
+        """Which specific items land in the high-steerability tier under
+        *both* conditions — a method-independent, item-level signal, as
+        opposed to a category-level pattern that could hold on average
+        while no individual item is robust. Saved to
+        ``robust_high_steerability_items.csv``, sorted by condition and
+        combined mean flip rate."""
+        a, b = self._load("item_steerability_tiers.csv")
+        merged = a.merge(b, on=["condition", "test_statement"], suffixes=(f"_{self.label_a}", f"_{self.label_b}"))
+        both_high = merged[
+            (merged[f"steerability_tier_{self.label_a}"] == "high_steerability") &
+            (merged[f"steerability_tier_{self.label_b}"] == "high_steerability")
+        ].copy()
+        category_col_a = f"foundation_{self.label_a}"
+        category_col_b = f"pvq_value_label_{self.label_a}"
+        both_high["category"] = both_high[category_col_a].fillna(both_high[category_col_b])
+        cols = ["condition", "test_statement", "category",
+                f"mean_flip_rate_{self.label_a}", f"mean_flip_rate_{self.label_b}"]
+        result = both_high[cols].sort_values(
+            ["condition", f"mean_flip_rate_{self.label_b}"], ascending=[True, False]
+        )
+        self._save(result, "robust_high_steerability_items.csv")
+        return result
+
+    def robust_high_steerability_by_category(self, robust_items: pd.DataFrame) -> dict[str, pd.DataFrame]:
+        """For each questionnaire, is any single MFT foundation / Schwartz
+        PVQ value over-represented among items that are robustly
+        high-steerability in *both* conditions (from
+        ``robust_high_steerability_items``)? One-vs-rest Fisher exact test
+        per category, BH-corrected within each questionnaire — the item-
+        overlap analogue of ``steerability_tier_patterns``'s single-
+        condition version."""
+        a, _ = self._load("item_steerability_tiers.csv")
+        out: dict[str, pd.DataFrame] = {}
+        for condition, category_col, filename_stub in [
+            ("mft", "foundation", "foundation"), ("pvq", "pvq_value_label", "pvq_value"),
+        ]:
+            sub = a[a["condition"] == condition][["test_statement", category_col]].drop_duplicates()
+            robust_ids = set(robust_items[robust_items["condition"] == condition]["test_statement"])
+            sub = sub.copy()
+            sub["both_high"] = sub["test_statement"].isin(robust_ids)
+
+            n_total = len(sub)
+            n_high_total = sub["both_high"].sum()
+            rows = []
+            for category, g in sub.groupby(category_col):
+                n_cat = len(g)
+                n_cat_high = int(g["both_high"].sum())
+                table = [[n_cat_high, n_cat - n_cat_high],
+                         [n_high_total - n_cat_high, n_total - n_cat - (n_high_total - n_cat_high)]]
+                odds_ratio, p = stats.fisher_exact(table, alternative="two-sided")
+                rows.append({
+                    "condition": condition, category_col: category, "n_items": n_cat,
+                    "n_robust_high": n_cat_high, "odds_ratio": float(odds_ratio), "p": float(p),
+                })
+            fisher_df = pd.DataFrame(rows)
+            fisher_df["p_fdr_bh"] = stats.false_discovery_control(fisher_df["p"].to_numpy(), method="bh")
+            fisher_df = fisher_df.sort_values("p_fdr_bh")
+            out[filename_stub] = fisher_df
+            self._save(fisher_df, f"robust_high_steerability_by_{filename_stub}.csv")
+        return out
+
     def compare_item_level(self) -> pd.DataFrame:
         """Per model: Pearson/Spearman correlation between the two
         conditions' per-item ``delta_recall`` (joined on condition +
@@ -308,12 +413,18 @@ class SteeringConditionComparison:
         instance_flips, instance_flip_corr = self.compare_instance_flip_counts()
         instance_profile, instance_profile_corr = self.compare_instance_prediction_profile()
         flip_rate_tiers = self.compare_flip_rate_tiers()
+        item_tiers = self.compare_item_steerability_tiers()
+        robust_items = self.robust_high_steerability_items()
+        robust_by_category = self.robust_high_steerability_by_category(robust_items)
         return {
             "steering_effect": self.compare_steering_effect(),
             "flip_counts": self.compare_flip_counts(),
             "flip_magnitude": self.compare_flip_magnitude(),
             "flip_direction": self.compare_flip_direction(),
             "flip_rate_tiers": flip_rate_tiers,
+            "item_steerability_tiers": item_tiers,
+            "robust_high_steerability_items": robust_items,
+            "robust_high_steerability_by_category": robust_by_category,
             "flip_counts_by_value_pvq": self.compare_flip_counts_by_value("pvq"),
             "flip_counts_by_value_mft": self.compare_flip_counts_by_value("mft"),
             "pvq_patterns": self.compare_category_patterns("pvq"),

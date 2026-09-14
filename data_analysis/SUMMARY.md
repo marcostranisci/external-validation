@@ -264,6 +264,18 @@ perfectly clean.
   item-count-by-steerability-tier (this section) — the Universalism
   finding appears, and disappears again under verbalized steering, the
   same way both times.
+- **No single item, and no fully confirmed category, is "always"
+  steerable regardless of elicitation method — only 14 of 76 items are
+  high-steerability under both conditions, and they skew toward
+  `equality`.** Item-level tier agreement between the two conditions is
+  weaker than message-level agreement (κ=0.25 vs. κ=0.30) and is carried
+  by MFT, not PVQ (MFT alone: κ=0.375, p=0.017; PVQ alone: κ=0.136,
+  p=0.50, not even significant). Of the 14 items robust to both methods,
+  4/6 `equality` items make the list (the strongest concentration,
+  p=0.014 uncorrected) but this **does not survive BH correction**
+  (p_fdr=0.086, n=6 items per foundation is simply too small); no PVQ
+  value comes close, and notably no `Benevolence` item is robust at all
+  despite pairing with Universalism in the §2/§3 findings above.
 
 **Bottom line:** the mechanism of eliciting the moral opinion is not a
 neutral implementation detail — it changes which models are helped vs.
