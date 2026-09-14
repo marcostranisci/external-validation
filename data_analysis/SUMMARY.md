@@ -190,6 +190,23 @@ perfectly clean.
   Ministral fall from 1st/2nd to 5th/6th (rank shift −4 each); Qwen is the
   most stable (−1). So "model X is unusually steerable" is not a fact
   about model X in isolation — it depends on how the belief was elicited.
+- **At the message level, the same picture holds: "fair" agreement, not
+  a shared or an unrelated pattern.** Binning each message's flip rate
+  into `no_flip`/`mild_flip`/`strong_flip` tiers under each condition and
+  cross-tabulating: 57.2% of the 500 messages land in the same tier under
+  both, against a 39.0% chance baseline (Cohen's κ=0.30, "fair" —
+  significant, χ²=176.8, p=4e-37, but far short of strong agreement).
+  Stability is uneven: messages that never flip under free-text mostly
+  stay that way (77.8%), and strongly-flipping messages mostly stay
+  volatile (66.5%, and **none** of them become fully stable under
+  verbalized) — but mildly-flipping messages are essentially a coin flip
+  (49.2% stay mild, splitting the rest evenly toward more and less
+  volatile). This mirrors and adds mechanism to the raw-correlation
+  finding: absolute prediction tendency is highly robust across steering
+  methods (r=0.96), but how much a given message's *label gets perturbed*
+  by steering (`flip_rate`, r=0.53) is only moderately consistent, and
+  that inconsistency doesn't average out — it lands disproportionately on
+  the mid-volatility messages.
 - **The §2 Universalism/Benevolence/care/purity exception disappears —
   and this one survives excluding Apertus entirely.** Under verbalized
   steering, *every* PVQ value and *every* MFT foundation has a net

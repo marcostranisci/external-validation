@@ -577,6 +577,29 @@ class HateSpeechSteeringAnalyzer:
         self._save(result, "flip_counts_by_instance.csv")
         return result
 
+    def flip_rate_tiers_by_instance(
+        self, flips_by_instance: pd.DataFrame, mild_cutoff: float = 0.15
+    ) -> pd.DataFrame:
+        """Bin each message's ``flip_rate`` (from ``flip_counts_by_instance``,
+        pooled across all 6 models x 76 items) into three tiers: ``no_flip``
+        (flip_rate == 0, stable under every model/belief), ``mild_flip``
+        (0 < flip_rate <= ``mild_cutoff``), and ``strong_flip`` (>
+        ``mild_cutoff``). Built for comparing which messages fall in which
+        tier between the free-text and verbalized steering conditions."""
+        df = flips_by_instance.copy()
+
+        def tier(rate: float) -> str:
+            if rate == 0:
+                return "no_flip"
+            if rate <= mild_cutoff:
+                return "mild_flip"
+            return "strong_flip"
+
+        df["tier"] = df["flip_rate"].apply(tier)
+        result = df[["id", "dataset_label", "flip_rate", "tier"]].copy()
+        self._save(result, "flip_rate_tiers_by_instance.csv")
+        return result
+
     def instance_prediction_profile(self) -> pd.DataFrame:
         """For each message, across *every* prediction ever made on it —
         zero-shot plus all 76 belief-steered runs, for each model (77
@@ -674,6 +697,7 @@ class HateSpeechSteeringAnalyzer:
         flips_by_model = self.flip_counts_by_model(flips_by_item)
         flips_by_model_value = self.flip_counts_by_model_and_value(flips_by_item)
         flips_by_instance = self.flip_counts_by_instance()
+        flip_rate_tiers = self.flip_rate_tiers_by_instance(flips_by_instance)
         flip_magnitude = self.flip_magnitude_by_model(flips_by_item)
         flip_direction = self.flip_direction_by_model(flips_by_item)
 
@@ -686,6 +710,7 @@ class HateSpeechSteeringAnalyzer:
             "foundation_patterns": foundation_patterns,
             "flips_by_item": flips_by_item, "flips_by_model": flips_by_model,
             "flips_by_model_value": flips_by_model_value, "flips_by_instance": flips_by_instance,
+            "flip_rate_tiers": flip_rate_tiers,
             "flip_magnitude_kruskal": flip_magnitude["kruskal"],
             "flip_magnitude_pairwise": flip_magnitude["pairwise"],
             "flip_direction_chi2": flip_direction["chi2"],

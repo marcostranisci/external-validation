@@ -450,7 +450,16 @@ questions:
    zero-shot prediction on it — i.e. which specific messages are most
    unstable under moral steering, pooling across every model and belief.
    Saved to `flip_counts_by_instance.csv`.
-10. **Instance-wise: raw predicted-label stability (no baseline).**
+10. **Instance-wise: binning messages by how much they flip.**
+    `flip_rate_tiers_by_instance` bins each message's `flip_rate` (from
+    test 9) into three tiers: `no_flip` (flip_rate == 0, stable under
+    every model/belief), `mild_flip` (0 < flip_rate ≤ 0.15), and
+    `strong_flip` (> 0.15) — a coarser, more interpretable view than the
+    raw continuous rate, built specifically so the two steering
+    conditions' tier assignments can be directly compared (see
+    "does steering method matter?" below). Saved to
+    `flip_rate_tiers_by_instance.csv`.
+11. **Instance-wise: raw predicted-label stability (no baseline).**
    `instance_prediction_profile` counts, for each message, how many of
    *every* prediction ever made on it — zero-shot plus all 76
    belief-steered runs, per model (77 per model, 462 pooled across all 6,
@@ -748,6 +757,15 @@ outputs directly, writing to `data_analysis/hs_detection_comparison/`:
   an overall Pearson/Spearman correlation of `flip_rate` across all 500
   messages between conditions — are the *same* messages unstable under
   both steering methods?
+- **`flip_rate_tier_contingency.csv`** / **`flip_rate_tier_stability.csv`** /
+  **`flip_rate_tier_agreement.csv`** — the coarse-grained counterpart of
+  the correlation above: joins each message's `no_flip`/`mild_flip`/
+  `strong_flip` tier (test 10) between the two conditions into a 3×3
+  contingency table, reports per-tier "stayed in the same tier"
+  proportions, and summarizes overall agreement (proportion in the same
+  tier, the chance-level baseline implied by the marginals, Cohen's kappa,
+  and a chi-square test that the two conditions' tier assignments are
+  associated at all).
 - **`instance_prediction_profile_comparison.csv`** /
   **`instance_proportion_hate_correlation.csv`** — per message (pooled
   `model="ALL"`), raw predicted-label stability (`proportion_hate`, no
@@ -882,6 +900,33 @@ perturb this specific message relative to zero-shot" is more
 method-sensitive — consistent with the per-model recall/flip findings
 above, where absolute prediction tendencies proved more stable than
 steering-induced shifts.
+
+**Coarse no/mild/strong-flip tiers agree above chance but far from
+perfectly — "fair" agreement, not "good."** Binning `flip_rate` into
+three tiers (`no_flip` = 0, `mild_flip` ≤ 0.15, `strong_flip` > 0.15,
+independently under each condition — free-text splits 45/297/158,
+verbalized 87/204/209) and cross-tabulating: 286/500 messages (57.2%)
+land in the same tier under both conditions, against a chance baseline of
+39.0% implied by the marginals (Cohen's κ=0.30 — "fair" by the
+conventional Landis-Koch bands, not "good"/"substantial"); the
+association is highly significant (χ²=176.8, p=4e-37) but the moderate
+κ confirms the r=0.53 flip-rate correlation above: real structure, with
+plenty of individual exceptions. Stability is asymmetric and directional
+between tiers:
+
+| free-text tier (n) | % staying same tier under verbalized | % moving up | % moving down |
+|---|---|---|---|
+| no_flip (45) | 77.8% | 22.2% (11.1% mild, 11.1% strong) | — |
+| mild_flip (297) | 49.2% | 33.3% (to strong) | 17.5% (to no_flip) |
+| strong_flip (158) | 66.5% | — | 33.5% (to mild), **0% to no_flip** |
+
+`mild_flip` is the least stable tier (a coin-flip whether a message
+stays mild) and splits roughly evenly toward both neighbors, while
+`no_flip` and `strong_flip` are the "sticky" ends — and critically,
+**no message that strongly flips under free-text steering becomes
+completely stable under verbalized steering** (0/158), consistent with
+verbalized steering's higher overall flip rate (mean 13.4% vs. 11.0%):
+instability doesn't fully reverse, it mostly just changes magnitude.
 
 ## Data quality notes
 

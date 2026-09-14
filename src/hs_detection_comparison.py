@@ -239,6 +239,51 @@ class SteeringConditionComparison:
         self._save(result, "flip_direction_comparison.csv")
         return result
 
+    def compare_flip_rate_tiers(self) -> dict[str, pd.DataFrame]:
+        """Do the same messages fall in the same no/mild/strong-flip tier
+        under both steering conditions? Builds the 3x3 contingency table
+        (tier under A x tier under B) from ``flip_rate_tiers_by_instance.csv``,
+        reports overall/per-tier overlap, a chi-square test of association,
+        and Cohen's kappa (agreement beyond chance; 0 = chance level, 1 =
+        perfect agreement, computed directly from the contingency table so
+        no extra dependency is needed)."""
+        a, b = self._load("flip_rate_tiers_by_instance.csv")
+        merged = a.merge(b, on=["id", "dataset_label"], suffixes=(f"_{self.label_a}", f"_{self.label_b}"))
+        tiers = ["no_flip", "mild_flip", "strong_flip"]
+        contingency = pd.crosstab(
+            merged[f"tier_{self.label_a}"], merged[f"tier_{self.label_b}"]
+        ).reindex(index=tiers, columns=tiers, fill_value=0)
+        self._save(contingency.reset_index(), "flip_rate_tier_contingency.csv")
+
+        n = contingency.to_numpy().sum()
+        observed_agree = np.trace(contingency.to_numpy())
+        p_o = observed_agree / n
+        row_marg = contingency.sum(axis=1).to_numpy() / n
+        col_marg = contingency.sum(axis=0).to_numpy() / n
+        p_e = float((row_marg * col_marg).sum())
+        kappa = (p_o - p_e) / (1 - p_e) if p_e < 1 else np.nan
+        chi2, p, dof, _ = stats.chi2_contingency(contingency.to_numpy())
+
+        per_tier_rows = []
+        for t in tiers:
+            n_a = int(contingency.loc[t].sum())
+            n_same = int(contingency.loc[t, t])
+            per_tier_rows.append({
+                "tier": t, f"n_{self.label_a}": n_a,
+                "n_stayed_same_tier": n_same,
+                "proportion_stayed": n_same / n_a if n_a else np.nan,
+            })
+        per_tier = pd.DataFrame(per_tier_rows)
+        self._save(per_tier, "flip_rate_tier_stability.csv")
+
+        summary = pd.DataFrame([{
+            "n": int(n), "n_same_tier": int(observed_agree),
+            "proportion_same_tier": p_o, "expected_by_chance": p_e,
+            "cohens_kappa": kappa, "chi2_stat": float(chi2), "chi2_p": float(p), "dof": int(dof),
+        }])
+        self._save(summary, "flip_rate_tier_agreement.csv")
+        return {"contingency": contingency, "per_tier": per_tier, "summary": summary}
+
     def compare_item_level(self) -> pd.DataFrame:
         """Per model: Pearson/Spearman correlation between the two
         conditions' per-item ``delta_recall`` (joined on condition +
@@ -262,11 +307,13 @@ class SteeringConditionComparison:
     def run_all(self) -> dict:
         instance_flips, instance_flip_corr = self.compare_instance_flip_counts()
         instance_profile, instance_profile_corr = self.compare_instance_prediction_profile()
+        flip_rate_tiers = self.compare_flip_rate_tiers()
         return {
             "steering_effect": self.compare_steering_effect(),
             "flip_counts": self.compare_flip_counts(),
             "flip_magnitude": self.compare_flip_magnitude(),
             "flip_direction": self.compare_flip_direction(),
+            "flip_rate_tiers": flip_rate_tiers,
             "flip_counts_by_value_pvq": self.compare_flip_counts_by_value("pvq"),
             "flip_counts_by_value_mft": self.compare_flip_counts_by_value("mft"),
             "pvq_patterns": self.compare_category_patterns("pvq"),
