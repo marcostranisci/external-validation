@@ -87,6 +87,7 @@ class HateSpeechSteeringAnalyzer:
 
     json_path: str | Path
     output_dir: str | Path = "data_analysis"
+    output_subdir: str = "hs_detection"
 
     def __post_init__(self) -> None:
         self.json_path = Path(self.json_path)
@@ -411,6 +412,100 @@ class HateSpeechSteeringAnalyzer:
         self._save(result, "flip_counts_by_item.csv")
         return result
 
+    def item_steerability(self, flips_by_item: pd.DataFrame) -> pd.DataFrame:
+        """Collapse ``flip_counts_by_item`` (one row per model x item) to
+        one row per item, averaging ``flip_rate`` across the 6 models —
+        the item-level analogue of ``mean_flip_rate`` in
+        ``model_variance_by_instance``. Also reports the between-model
+        standard deviation of flip_rate on that item, for context."""
+        group_cols = ["condition", "belief_id", "test_statement", "foundation",
+                      "pvq_value", "pvq_value_label"]
+        agg = flips_by_item.groupby(group_cols, dropna=False)["flip_rate"].agg(
+            mean_flip_rate="mean", std_flip_rate="std", n_models="count"
+        ).reset_index()
+        result = agg.sort_values("mean_flip_rate", ascending=False)
+        self._save(result, "item_steerability.csv")
+        return result
+
+    def item_steerability_tiers(self, item_steerability: pd.DataFrame, n_tiers: int = 3) -> pd.DataFrame:
+        """Bin items into ``n_tiers`` steerability tiers (default 3:
+        `low_steerability`, `mid_steerability`, `high_steerability`) by
+        ``mean_flip_rate`` — unlike the message-level tiers (which use a
+        fixed 0 / 0.15 cutoff, since many messages never flip at all), no
+        item has zero flip rate once averaged over 500 messages and 6
+        models, so tiers are assigned by tertile (roughly equal-sized
+        groups) *within each questionnaire* (MFT's 36 items and PVQ's 40
+        items are tiered separately, since foundation/value patterns are
+        only meaningful within their own questionnaire)."""
+        labels = [f"tier_{i+1}_of_{n_tiers}" for i in range(n_tiers)] if n_tiers != 3 else \
+            ["low_steerability", "mid_steerability", "high_steerability"]
+        result = item_steerability.copy()
+        result["steerability_tier"] = result.groupby("condition")["mean_flip_rate"].transform(
+            lambda s: pd.qcut(s, n_tiers, labels=labels, duplicates="drop")
+        )
+        self._save(result, "item_steerability_tiers.csv")
+        return result
+
+    def steerability_tier_patterns(self, tiers: pd.DataFrame) -> dict[str, pd.DataFrame]:
+        """Does steerability tier associate with MFT foundation / Schwartz
+        PVQ value? For each questionnaire, builds a tier x category
+        contingency table (counts and row/column proportions), a
+        chi-square test of independence (caveat: with ~36-40 items split
+        across 6-10 categories and 3 tiers, expected cell counts are small
+        — read this as descriptive, not confirmatory), and a one-vs-rest
+        Fisher exact test per category asking specifically "is this
+        category over/under-represented in the *high*-steerability tier
+        compared to every other category combined" (BH-corrected across
+        categories, within each questionnaire — the more targeted, better
+        powered version of the question)."""
+        out: dict[str, pd.DataFrame] = {}
+        for condition, category_col, filename_stub in [
+            ("mft", "foundation", "foundation"), ("pvq", "pvq_value_label", "pvq_value"),
+        ]:
+            sub = tiers[tiers["condition"] == condition]
+            contingency = pd.crosstab(sub[category_col], sub["steerability_tier"])
+            contingency["total_items"] = contingency.sum(axis=1)
+            for tier_col in [c for c in contingency.columns if c != "total_items"]:
+                contingency[f"proportion_{tier_col}"] = contingency[tier_col] / contingency["total_items"]
+            contingency = contingency.reset_index()
+            self._save(contingency, f"steerability_tier_by_{filename_stub}.csv")
+            out[f"{filename_stub}_contingency"] = contingency
+
+            counts_only = pd.crosstab(sub[category_col], sub["steerability_tier"])
+            chi2_row = {"condition": condition, "chi2_stat": np.nan, "p": np.nan, "dof": np.nan, "notes": ""}
+            if counts_only.shape[0] >= 2 and counts_only.shape[1] >= 2:
+                chi2, p, dof, expected = stats.chi2_contingency(counts_only.to_numpy())
+                min_expected = expected.min()
+                chi2_row.update(chi2_stat=float(chi2), p=float(p), dof=int(dof))
+                if min_expected < 5:
+                    chi2_row["notes"] = f"min expected cell count {min_expected:.2f} < 5; treat as descriptive"
+            out[f"{filename_stub}_chi2"] = pd.DataFrame([chi2_row])
+            self._save(out[f"{filename_stub}_chi2"], f"steerability_tier_association_{filename_stub}.csv")
+
+            high_tier = "high_steerability" if "high_steerability" in counts_only.columns else counts_only.columns[-1]
+            fisher_rows = []
+            n_total = counts_only.sum().sum()
+            n_high_total = counts_only[high_tier].sum()
+            for category in counts_only.index:
+                n_cat = counts_only.loc[category].sum()
+                n_cat_high = counts_only.loc[category, high_tier]
+                table = [[n_cat_high, n_cat - n_cat_high],
+                         [n_high_total - n_cat_high, n_total - n_cat - (n_high_total - n_cat_high)]]
+                odds_ratio, p = stats.fisher_exact(table, alternative="two-sided")
+                fisher_rows.append({
+                    "condition": condition, category_col: category,
+                    "n_items": int(n_cat), "n_high_steerability": int(n_cat_high),
+                    "proportion_high_steerability": n_cat_high / n_cat if n_cat else np.nan,
+                    "overall_proportion_high_steerability": n_high_total / n_total,
+                    "odds_ratio": float(odds_ratio), "p": float(p),
+                })
+            fisher_df = pd.DataFrame(fisher_rows)
+            fisher_df["p_fdr_bh"] = _benjamini_hochberg(fisher_df["p"])
+            fisher_df = fisher_df.sort_values("p_fdr_bh")
+            out[f"{filename_stub}_fisher"] = fisher_df
+            self._save(fisher_df, f"steerability_tier_onevsrest_fisher_{filename_stub}.csv")
+        return out
+
     def flip_counts_by_model(self, flips: pd.DataFrame) -> pd.DataFrame:
         """Aggregate item-level flip counts to one row per model (and per
         model x MFT/PVQ/combined)."""
@@ -432,6 +527,89 @@ class HateSpeechSteeringAnalyzer:
         result = pd.DataFrame(rows).sort_values(["condition", "total_flips"], ascending=[True, False])
         self._save(result, "flip_counts_by_model.csv")
         return result
+
+    def flip_magnitude_by_model(self, flips: pd.DataFrame) -> dict[str, pd.DataFrame]:
+        """Do models differ in how *often* their prediction flips when
+        steered? Kruskal-Wallis on per-item ``flip_rate`` across the 6
+        models (n=76 items, or 36/40 within mft/pvq alone), plus pairwise
+        Mann-Whitney U tests — the same magnitude-comparison approach as
+        ``between_model_steering_effect``, but on raw flip rate rather than
+        on the recall delta (a flip doesn't have to change the item's
+        correctness to count here)."""
+        kruskal_rows = []
+        pairwise_rows = []
+        for condition, sub in [
+            ("mft", flips[flips["condition"] == "mft"]),
+            ("pvq", flips[flips["condition"] == "pvq"]),
+            ("combined", flips),
+        ]:
+            groups = {model: g["flip_rate"] for model, g in sub.groupby("model")}
+            res = _kruskal(groups)
+            kruskal_rows.append({"condition": condition, **res})
+            for model_a, model_b in itertools.combinations(sorted(groups), 2):
+                mw = _mannwhitney(groups[model_a], groups[model_b])
+                pairwise_rows.append({
+                    "condition": condition, "model_a": model_a, "model_b": model_b, **mw
+                })
+        kruskal_df = pd.DataFrame(kruskal_rows)
+        pairwise_df = pd.DataFrame(pairwise_rows)
+        pairwise_df["p_fdr_bh"] = pairwise_df.groupby("condition")["p"].transform(_benjamini_hochberg)
+        self._save(kruskal_df, "flip_magnitude_kruskal.csv")
+        self._save(pairwise_df, "flip_magnitude_pairwise_mannwhitney.csv")
+        return {"kruskal": kruskal_df, "pairwise": pairwise_df}
+
+    def flip_direction_by_model(self, flips: pd.DataFrame) -> dict[str, pd.DataFrame]:
+        """Do models differ in *which direction* they flip (toward vs. away
+        from the hate-speech label) when steered? A chi-square test of
+        independence between model identity and flip direction, on the
+        pooled to-hate/to-not-hate counts (summed across items), separately
+        for mft, pvq, and both combined. Cramer's V is reported as effect
+        size (0 = no association, 1 = perfect association)."""
+        rows = []
+        for condition, sub in [
+            ("mft", flips[flips["condition"] == "mft"]),
+            ("pvq", flips[flips["condition"] == "pvq"]),
+            ("combined", flips),
+        ]:
+            counts = sub.groupby("model")[["n_flips_to_hate", "n_flips_to_not_hate"]].sum()
+            counts = counts[(counts.sum(axis=1)) > 0]
+            row = {"condition": condition, "n_models": len(counts),
+                   "chi2_stat": np.nan, "p": np.nan, "dof": np.nan, "cramers_v": np.nan,
+                   "notes": ""}
+            if len(counts) < 2:
+                row["notes"] = "fewer than 2 models with at least 1 flip"
+                rows.append(row)
+                continue
+            chi2, p, dof, _ = stats.chi2_contingency(counts.to_numpy())
+            n = counts.to_numpy().sum()
+            k = min(counts.shape) - 1
+            cramers_v = float(np.sqrt((chi2 / n) / k)) if k > 0 else np.nan
+            row.update(chi2_stat=float(chi2), p=float(p), dof=int(dof), cramers_v=cramers_v)
+            rows.append(row)
+        result = pd.DataFrame(rows)
+        self._save(result, "flip_direction_chi2_by_model.csv")
+
+        # Per-model proportion of flips that go toward "hate", for readability
+        # alongside the pooled test above.
+        prop_rows = []
+        for condition, sub in [
+            ("mft", flips[flips["condition"] == "mft"]),
+            ("pvq", flips[flips["condition"] == "pvq"]),
+            ("combined", flips),
+        ]:
+            for model, g in sub.groupby("model"):
+                to_hate = int(g["n_flips_to_hate"].sum())
+                to_not_hate = int(g["n_flips_to_not_hate"].sum())
+                total = to_hate + to_not_hate
+                prop_rows.append({
+                    "condition": condition, "model": model,
+                    "total_flips": total, "n_flips_to_hate": to_hate,
+                    "n_flips_to_not_hate": to_not_hate,
+                    "proportion_to_hate": to_hate / total if total else np.nan,
+                })
+        prop_df = pd.DataFrame(prop_rows).sort_values(["condition", "proportion_to_hate"], ascending=[True, False])
+        self._save(prop_df, "flip_direction_proportion_by_model.csv")
+        return {"chi2": result, "proportions": prop_df}
 
     def flip_counts_by_model_and_value(self, flips: pd.DataFrame) -> pd.DataFrame:
         """Model x value-type breakdown of flip counts: MFT foundation for
@@ -491,6 +669,106 @@ class HateSpeechSteeringAnalyzer:
                 for mid, rec in counts.items()]
         result = pd.DataFrame(rows).sort_values("n_flips", ascending=False)
         self._save(result, "flip_counts_by_instance.csv")
+        return result
+
+    def flip_rate_tiers_by_instance(
+        self, flips_by_instance: pd.DataFrame, mild_cutoff: float = 0.15
+    ) -> pd.DataFrame:
+        """Bin each message's ``flip_rate`` (from ``flip_counts_by_instance``,
+        pooled across all 6 models x 76 items) into three tiers: ``no_flip``
+        (flip_rate == 0, stable under every model/belief), ``mild_flip``
+        (0 < flip_rate <= ``mild_cutoff``), and ``strong_flip`` (>
+        ``mild_cutoff``). Built for comparing which messages fall in which
+        tier between the free-text and verbalized steering conditions."""
+        df = flips_by_instance.copy()
+
+        def tier(rate: float) -> str:
+            if rate == 0:
+                return "no_flip"
+            if rate <= mild_cutoff:
+                return "mild_flip"
+            return "strong_flip"
+
+        df["tier"] = df["flip_rate"].apply(tier)
+        result = df[["id", "dataset_label", "flip_rate", "tier"]].copy()
+        self._save(result, "flip_rate_tiers_by_instance.csv")
+        return result
+
+    def model_variance_by_instance(self) -> pd.DataFrame:
+        """For each message, compute *each model's own* flip rate (over its
+        76 items) rather than pooling across models, then the variance of
+        those 6 per-model rates. Tests whether more-steerable messages
+        (high overall flip rate) are also where models diverge from each
+        other the most, or whether steerability and between-model
+        disagreement are independent.
+
+        ``dispersion_ratio`` divides the observed variance by the
+        theoretical maximum variance 6 values bounded in [0, 1] can have
+        given that mean (``mean * (1 - mean) * 6/5``, i.e. the
+        maximum-spread case where some models sit at 0 and others at 1) —
+        this matters because that ceiling itself shrinks toward 0 as the
+        mean approaches 0 or 1, which would otherwise make "more
+        steerable => more between-model variance" a near-tautology for
+        low-flip-rate messages. A dispersion ratio that still correlates
+        with the mean, after this normalization, is not just an artifact
+        of that ceiling."""
+        counts: dict[str, dict[int, list[int]]] = {}
+        dataset_label: dict[int, int] = {}
+        for model, model_data in self._data["models"].items():
+            zero_shot_by_id = {p["id"]: p["answer"] for p in model_data["zero_shot"]}
+            model_counts: dict[int, list[int]] = {}
+            for condition in ("mft", "pvq"):
+                for item in model_data[condition]:
+                    for p in item["predictions"]:
+                        mid = p["id"]
+                        dataset_label[mid] = int(p["dataset_label"])
+                        rec = model_counts.setdefault(mid, [0, 0])
+                        rec[1] += 1
+                        if str(zero_shot_by_id[mid]) != str(p["answer"]):
+                            rec[0] += 1
+            counts[model] = model_counts
+
+        rows = []
+        all_ids = sorted({mid for model_counts in counts.values() for mid in model_counts})
+        for mid in all_ids:
+            rates = np.array([
+                counts[model][mid][0] / counts[model][mid][1]
+                for model in counts if mid in counts[model]
+            ])
+            mean_rate = float(rates.mean())
+            var = float(rates.var(ddof=1)) if len(rates) > 1 else np.nan
+            max_var = mean_rate * (1 - mean_rate) * (len(rates) / (len(rates) - 1)) \
+                if 0 < mean_rate < 1 and len(rates) > 1 else 0.0
+            rows.append({
+                "id": mid, "dataset_label": dataset_label[mid], "n_models": len(rates),
+                "mean_flip_rate": mean_rate, "between_model_var": var,
+                "max_possible_var": max_var,
+                "dispersion_ratio": var / max_var if max_var > 0 else np.nan,
+            })
+        result = pd.DataFrame(rows).sort_values("mean_flip_rate", ascending=False)
+        self._save(result, "model_variance_by_instance.csv")
+        return result
+
+    def steerability_vs_model_divergence(self, variance_by_instance: pd.DataFrame) -> pd.DataFrame:
+        """Correlate a message's overall steerability (``mean_flip_rate``)
+        against how much models diverge from each other on it
+        (``between_model_var`` and the ceiling-normalized
+        ``dispersion_ratio``), across all 500 messages. High, significant
+        correlations mean between-model differences aren't spread evenly
+        across all messages — they concentrate on the messages that are
+        steerable at all."""
+        rows = []
+        for col in ("between_model_var", "dispersion_ratio"):
+            sub = variance_by_instance.dropna(subset=["mean_flip_rate", col])
+            pear = stats.pearsonr(sub["mean_flip_rate"], sub[col])
+            spear = stats.spearmanr(sub["mean_flip_rate"], sub[col])
+            rows.append({
+                "against": col, "n": len(sub),
+                "pearson_r": float(pear.statistic), "pearson_p": float(pear.pvalue),
+                "spearman_r": float(spear.statistic), "spearman_p": float(spear.pvalue),
+            })
+        result = pd.DataFrame(rows)
+        self._save(result, "steerability_vs_model_divergence.csv")
         return result
 
     def instance_prediction_profile(self) -> pd.DataFrame:
@@ -572,7 +850,7 @@ class HateSpeechSteeringAnalyzer:
     # Orchestration
     # ------------------------------------------------------------------
     def _save(self, df: pd.DataFrame, filename: str) -> None:
-        out_folder = self.output_dir / "hs_detection"
+        out_folder = self.output_dir / self.output_subdir
         out_folder.mkdir(parents=True, exist_ok=True)
         df.to_csv(out_folder / filename, index=False)
 
@@ -587,9 +865,17 @@ class HateSpeechSteeringAnalyzer:
         foundation_patterns = self.mft_foundation_patterns(item_significance)
 
         flips_by_item = self.flip_counts_by_item(pvq_mapping_path)
+        item_steerability = self.item_steerability(flips_by_item)
+        item_tiers = self.item_steerability_tiers(item_steerability)
+        tier_patterns = self.steerability_tier_patterns(item_tiers)
         flips_by_model = self.flip_counts_by_model(flips_by_item)
         flips_by_model_value = self.flip_counts_by_model_and_value(flips_by_item)
         flips_by_instance = self.flip_counts_by_instance()
+        flip_rate_tiers = self.flip_rate_tiers_by_instance(flips_by_instance)
+        model_variance = self.model_variance_by_instance()
+        steerability_divergence = self.steerability_vs_model_divergence(model_variance)
+        flip_magnitude = self.flip_magnitude_by_model(flips_by_item)
+        flip_direction = self.flip_direction_by_model(flips_by_item)
 
         prediction_profile = self.instance_prediction_profile()
         prediction_bins = self.instance_prediction_bins(prediction_profile)
@@ -599,7 +885,16 @@ class HateSpeechSteeringAnalyzer:
             "item_significance": item_significance, "pvq_patterns": pvq_patterns,
             "foundation_patterns": foundation_patterns,
             "flips_by_item": flips_by_item, "flips_by_model": flips_by_model,
+            "item_steerability": item_steerability, "item_tiers": item_tiers,
+            "tier_patterns": tier_patterns,
             "flips_by_model_value": flips_by_model_value, "flips_by_instance": flips_by_instance,
+            "flip_rate_tiers": flip_rate_tiers,
+            "model_variance_by_instance": model_variance,
+            "steerability_vs_model_divergence": steerability_divergence,
+            "flip_magnitude_kruskal": flip_magnitude["kruskal"],
+            "flip_magnitude_pairwise": flip_magnitude["pairwise"],
+            "flip_direction_chi2": flip_direction["chi2"],
+            "flip_direction_proportions": flip_direction["proportions"],
             "prediction_profile": prediction_profile, "prediction_bins": prediction_bins,
             **between,
         }

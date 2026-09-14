@@ -110,6 +110,17 @@ def _correlations(a: pd.Series, b: pd.Series) -> dict:
     return result
 
 
+def _benjamini_hochberg(pvalues: pd.Series) -> pd.Series:
+    """Benjamini-Hochberg FDR-adjusted p-values, leaving NaN entries as NaN
+    and correcting only across the valid p-values (one hypothesis family)."""
+    valid = pvalues.dropna()
+    adjusted = pd.Series(np.nan, index=pvalues.index)
+    if len(valid) == 0:
+        return adjusted
+    adjusted.loc[valid.index] = stats.false_discovery_control(valid.to_numpy(), method="bh")
+    return adjusted
+
+
 def _mannwhitney(a: pd.Series, b: pd.Series) -> dict:
     """Two-sample Mann-Whitney U test between two independent (unpaired)
     groups, with a rank-biserial correlation as effect size.
@@ -285,7 +296,11 @@ class QuestionnaireAnalyzer:
     ) -> pd.DataFrame:
         """Independence + correlation tests between ``column_a`` and ``column_b``,
         run separately for each model. Intended for raw Likert-scale columns
-        (the chi-square step rounds values to the nearest integer)."""
+        (the chi-square step rounds values to the nearest integer).
+
+        ``pearson_p_fdr_bh`` / ``spearman_p_fdr_bh`` Benjamini-Hochberg
+        correct across the models in this one call (one hypothesis family
+        per folder)."""
         rows = []
         for model, df in dfs.items():
             corr = self._correlations(df[column_a], df[column_b])
@@ -300,6 +315,8 @@ class QuestionnaireAnalyzer:
                 "notes": "; ".join(n for n in (corr["notes"], chi2["notes"]) if n),
             })
         result = pd.DataFrame(rows)
+        result["pearson_p_fdr_bh"] = _benjamini_hochberg(result["pearson_p"])
+        result["spearman_p_fdr_bh"] = _benjamini_hochberg(result["spearman_p"])
         self._save(result, folder_name, filename or f"{column_a}_vs_{column_b}_per_model.csv")
         return result
 
@@ -473,6 +490,49 @@ class QuestionnaireAnalyzer:
 
         self.disagreement_vs_delta(dfs, folder_name)
         return dfs
+
+    def compare_between_model_correlations(
+        self, folder_a: str, folder_b: str, columns: Iterable[str] = ("opinion", "external_opinion"),
+    ) -> pd.DataFrame:
+        """Compare how strongly models agree with each other on ``columns``
+        between two questionnaires (e.g. is between-model correlation on
+        `mft` systematically weaker than on `pvq`?), reading each folder's
+        already-saved ``between_model_correlations_<column>.csv``.
+
+        Since Pearson r is not itself normally distributed, the two
+        folders' per-pair r values are compared via a Fisher z-transform
+        (``arctanh``) with a two-sample Mann-Whitney U test (distribution-
+        free) and a Welch t-test (parametric, assumes the transformed
+        values are approximately normal) — reported side by side."""
+        rows = []
+        for column in columns:
+            a = pd.read_csv(self.output_dir / folder_a / f"between_model_correlations_{column}.csv")
+            b = pd.read_csv(self.output_dir / folder_b / f"between_model_correlations_{column}.csv")
+            a = a.dropna(subset=["pearson_r"])
+            b = b.dropna(subset=["pearson_r"])
+            row = {
+                "column": column,
+                f"n_{folder_a}": len(a), f"n_{folder_b}": len(b),
+                f"median_r_{folder_a}": a["pearson_r"].median(), f"median_r_{folder_b}": b["pearson_r"].median(),
+                f"n_significant_{folder_a}": int((a["pearson_p"] < 0.05).sum()),
+                f"n_significant_{folder_b}": int((b["pearson_p"] < 0.05).sum()),
+                "mannwhitney_u": np.nan, "mannwhitney_p": np.nan,
+                "welch_t": np.nan, "welch_p": np.nan, "notes": "",
+            }
+            if len(a) < 3 or len(b) < 3:
+                row["notes"] = "fewer than 3 valid pairs in at least one folder"
+            else:
+                za = np.arctanh(a["pearson_r"].clip(-0.999, 0.999))
+                zb = np.arctanh(b["pearson_r"].clip(-0.999, 0.999))
+                u, p_u = stats.mannwhitneyu(za, zb, alternative="two-sided")
+                t, p_t = stats.ttest_ind(za, zb, equal_var=False)
+                row.update(mannwhitney_u=float(u), mannwhitney_p=float(p_u),
+                           welch_t=float(t), welch_p=float(p_t))
+            rows.append(row)
+        result = pd.DataFrame(rows)
+        self.output_dir.mkdir(parents=True, exist_ok=True)
+        result.to_csv(self.output_dir / f"between_model_correlations_{folder_a}_vs_{folder_b}.csv", index=False)
+        return result
 
     def run_all(self, folder_names: Iterable[str] = ("mft", "pvq")) -> None:
         """Run the pipeline for every folder and write a consolidated warnings log."""
