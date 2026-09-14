@@ -125,6 +125,13 @@ steering in this data — `"prediction_setup": "paired_by_model"`).
   reaching significance: equality is the most concentrated in the
   high-steerability tier (5/6 items, p_fdr≈0.06) and care/purity the least
   (0-1/6) — consistent with, but not as strong as, the PVQ result.
+  **Caveat: this is a narrow-band ranking, not a qualitative split** — all
+  76 items' flip rates fall within roughly 0.08-0.17, so
+  "high-steerability" means an item ranks in the top third (only 2.6-3.8
+  points of absolute flip-rate gap between the low and high tiers'
+  means), not that it moves substantially more messages in absolute
+  terms. Read the finding as "which items rank where," not "how much more
+  disruptive these items are."
 - **The mechanism behind the recall shift is raw label-flipping, and both
   how much a model flips and which way it flips are strongly
   model-dependent — not just how its recall moves on average.** Counting

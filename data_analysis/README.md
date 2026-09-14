@@ -452,6 +452,21 @@ questions:
    `steerability_tier_association_pvq_value.csv`, and
    `steerability_tier_onevsrest_fisher_foundation.csv` /
    `steerability_tier_onevsrest_fisher_pvq_value.csv`.
+
+   **Caveat: unlike the message-level tiers, this is a narrow-band split,
+   not a qualitative one.** Every item's `mean_flip_rate` falls in a tight
+   range — 0.077-0.163 (free-text) / 0.105-0.169 (verbalized) — nothing
+   like the message-level 0-0.53 spread where `no_flip` vs. `strong_flip`
+   is a real "does this move at all" distinction. The tiers' *means* are
+   only 2.6-3.8 percentage points apart at the extremes (low 0.093 →
+   high 0.130 free-text, a 41% relative gap; low 0.121 → high 0.147
+   verbalized, 22%) — cleanly separated (the within-tier spread is
+   equally tight, Cohen's d≈2.4-3.9 low-vs-high) but a difference of
+   *degree within a narrow band*, not "some items barely flip anything."
+   Read the foundation/value findings below accordingly: "Universalism's
+   items are high-steerability" means they consistently rank in the top
+   third of item flip rates, not that they cause dramatically more
+   disruption in absolute terms than other PVQ items.
 8. **Model-wise: is the sheer *amount* of flipping different between
    models?** `flip_magnitude_by_model` runs a Kruskal-Wallis test on
    per-item `flip_rate` across the 6 models (n=76 items, or 36/40 within
