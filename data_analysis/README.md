@@ -427,19 +427,35 @@ questions:
    down further by MFT foundation / Schwartz PVQ value (needs
    `pvq_mapping_path`, as in test 4). Saved to `flip_counts_by_item.csv`,
    `flip_counts_by_model.csv`, `flip_counts_by_model_and_value.csv`.
-7. **Instance-wise: how often is each message's prediction flipped?**
+7. **Model-wise: is the sheer *amount* of flipping different between
+   models?** `flip_magnitude_by_model` runs a Kruskal-Wallis test on
+   per-item `flip_rate` across the 6 models (n=76 items, or 36/40 within
+   MFT/PVQ alone) plus pairwise Mann-Whitney U tests (BH-corrected within
+   each condition, 15 pairs). Same magnitude-comparison approach as test
+   2, but on the raw flip rate instead of the recall delta — a flip
+   doesn't need to change the item's correctness to count here. Saved to
+   `flip_magnitude_kruskal.csv` / `flip_magnitude_pairwise_mannwhitney.csv`.
+8. **Model-wise: is the *direction* of flipping (toward vs. away from the
+   hate label) different between models?** `flip_direction_by_model` runs
+   a chi-square test of independence between model identity and flip
+   direction on the pooled to-hate/to-not-hate counts (Cramer's V as
+   effect size), separately for MFT, PVQ, and combined, plus a
+   `flip_direction_proportion_by_model.csv` table of each model's raw
+   proportion of flips that go toward "hate" for readability. Saved to
+   `flip_direction_chi2_by_model.csv` / `flip_direction_proportion_by_model.csv`.
+9. **Instance-wise: how often is each message's prediction flipped?**
    `flip_counts_by_instance` inverts the view: for each of the 500
    messages, across all 456 (6 models × 76 items) steering conditions, how
    many times does the predicted label differ from that same model's own
    zero-shot prediction on it — i.e. which specific messages are most
    unstable under moral steering, pooling across every model and belief.
    Saved to `flip_counts_by_instance.csv`.
-8. **Instance-wise: raw predicted-label stability (no baseline).**
+10. **Instance-wise: raw predicted-label stability (no baseline).**
    `instance_prediction_profile` counts, for each message, how many of
    *every* prediction ever made on it — zero-shot plus all 76
    belief-steered runs, per model (77 per model, 462 pooled across all 6,
    `model="ALL"`) — landed on class 1 ("hate") vs. class 0, and the
-   resulting `proportion_hate`. Unlike test 7, this doesn't reference a
+   resulting `proportion_hate`. Unlike test 9, this doesn't reference a
    zero-shot baseline at all: it's the raw consistency of the predicted
    label across every context the message was ever classified under.
    `instance_prediction_bins` bins `proportion_hate` into 10 equal-width
@@ -523,6 +539,19 @@ single (model, value) cell in the whole table by a wide margin (next
 highest is Olmo's own Benevolence at 565) — while every other model's
 Universalism/Benevolence flip counts are in the same range as their other
 values.
+
+**Flip magnitude and direction are both formally, strongly model-dependent
+(tests 7-8).** The descriptive ranking above is confirmed statistically:
+Kruskal-Wallis on per-item flip rate across the 6 models gives η²=0.40
+(combined, n=456), a large effect (H=183.4, p=1.0e-37); 13/15 pairwise
+Mann-Whitney comparisons survive BH correction. The chi-square test of
+model × flip-direction (pooled to-hate/to-not-hate counts) is even more
+decisive: χ²=9596 (combined), Cramer's V=0.62 — a large, unambiguous
+association between which model is steered and which way its flips go.
+Both tests confirm what test 6's numbers already suggested: models don't
+just differ in *how much* steering churns their predictions, they differ
+just as strongly in *which direction* — this isn't noise around a shared
+tendency, it's 6 genuinely different steering-response profiles.
 
 **Flip counts (instance-wise).** `flip_counts_by_instance.csv` pools all
 456 (6 models × 76 items) steering conditions per message and counts how
@@ -693,6 +722,14 @@ outputs directly, writing to `data_analysis/hs_detection_comparison/`:
   conditions.
 - **`flip_counts_comparison.csv`** — per model: total flips and flip
   direction (toward "hate" vs. "not hate") under each condition.
+- **`flip_magnitude_comparison.csv`** — per model: mean flip rate and rank
+  (among the 6 models) under each condition, plus the rank shift — does a
+  model's *relative* volatility ranking hold up across steering methods?
+- **`flip_direction_comparison.csv`** — per model: proportion of flips
+  toward "hate" under each condition, whether the majority direction
+  agrees, and a 2×2 chi-square test (condition × direction, BH-corrected
+  across the 6 models) of whether the shift in that proportion is itself
+  statistically real.
 - **`pvq_category_comparison.csv`** / **`mft_category_comparison.csv`** —
   pooled mean delta-recall by Schwartz value / Moral Foundation, side by
   side.
@@ -806,6 +843,25 @@ values (9-13%). Qwen shows no such concentration under either condition
 its sign-flipped recall (§ above) comes from a broad shift in flip
 *direction* (76%→33% toward "hate", `flip_counts_comparison.csv`)
 rather than a specific content category, unlike Olmo's.
+
+**Both flip magnitude and flip direction shift significantly for every
+single model between the two steering methods — this is not limited to
+the two "clean" sign-flip cases.** `flip_direction_comparison.csv`'s 2×2
+chi-square test (proportion of flips toward "hate", free-text vs.
+verbalized) is significant for all 6 models even after BH correction
+(largest corrected p ≈ 2e-30, for Llama) — including the three models
+that keep the *same* majority direction under both conditions (Falcon
+98.2%→99.5%, Ministral 97.6%→80.0%, Llama 91.8%→97.2%): the magnitude of
+their directional bias still moves by a statistically real amount, not
+just their headline sign. `flip_magnitude_comparison.csv`'s rank
+comparison shows the volatility ordering is not stable either: Falcon,
+Llama, and Apertus rise sharply in relative flip-proneness under
+verbalized steering (rank shift +3, +4, +2 — becoming the 3 most volatile
+models, up from the middle of the pack), while Olmo and Ministral fall
+just as sharply (−4 each, from 1st/2nd most volatile under free-text to
+5th/6th under verbalized); Qwen is comparatively stable (−1). So the
+"which model is most affected by steering" ranking is itself a property
+of the elicitation method, not a stable trait of the model.
 
 **Instance-wise: absolute prediction stability is highly robust across
 steering methods; relative instability is only moderately so.** Pooling

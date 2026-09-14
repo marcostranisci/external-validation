@@ -110,6 +110,23 @@ steering in this data — `"prediction_setup": "paired_by_model"`).
     content (negative deltas for care/purity and for
     Universalism/Benevolence), while the other four are helped by it
     just like everything else, only less so.
+- **The mechanism behind the recall shift is raw label-flipping, and both
+  how much a model flips and which way it flips are strongly
+  model-dependent — not just how its recall moves on average.** Counting
+  every predicted-label change vs. zero-shot (not just changes to
+  positive-class correctness): total flips range from 3025 (Llama) to
+  6030 (Olmo) per model across the 76 items, and a Kruskal-Wallis test on
+  per-item flip rate confirms this is a real, large effect (η²=0.40,
+  p=1e-37), not noise. Direction is just as strongly model-specific
+  (chi-square on model × flip-direction, Cramer's V=0.62, p≈0): Olmo
+  flips overwhelmingly *away* from "hate" (4730 vs. 1300), Ministral
+  overwhelmingly *toward* it (5117 vs. 128), Qwen/Falcon/Llama skew
+  toward "hate" more mildly, and Apertus is the only model with a
+  roughly even split (1572 vs. 1602) — mirroring its mixed item-level
+  effects. Breaking flips down by content category reproduces the
+  Universalism/Benevolence finding at the mechanism level: Olmo's
+  Universalism items alone cause 992 flips, 3x its next-highest category
+  and the single largest (model, value) cell in the whole study.
 
 **Bottom line (free-text steering specifically — see §3 below):**
 steering with a model's own *free-text* moral/values opinion changes
@@ -159,6 +176,20 @@ perfectly clean.
   for 6 models. Same model, same items, same labels — different belief
   phrasing produces a near-unrelated pattern of which items move the
   needle.
+- **The "which model is most volatile" ranking is a property of the
+  elicitation method, not a stable model trait — and this holds for all 6
+  models, not just the 2 clean sign-flips.** A 2×2 chi-square test
+  (condition × flip-direction) on each model's proportion of flips toward
+  "hate" is significant for every model even after BH correction (largest
+  corrected p≈2e-30) — including Falcon, Ministral, and Llama, which keep
+  the *same* majority direction under both conditions but still shift its
+  strength by a statistically real amount (e.g. Ministral 97.6%→80.0%).
+  The relative flip-magnitude ranking is unstable too: Falcon, Llama, and
+  Apertus jump from the middle of the pack to the 3 most flip-prone models
+  under verbalized steering (rank shift +2 to +4), while Olmo and
+  Ministral fall from 1st/2nd to 5th/6th (rank shift −4 each); Qwen is the
+  most stable (−1). So "model X is unusually steerable" is not a fact
+  about model X in isolation — it depends on how the belief was elicited.
 - **The §2 Universalism/Benevolence/care/purity exception disappears —
   and this one survives excluding Apertus entirely.** Under verbalized
   steering, *every* PVQ value and *every* MFT foundation has a net

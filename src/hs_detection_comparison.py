@@ -186,6 +186,59 @@ class SteeringConditionComparison:
         self._save(pd.DataFrame([corr]), "instance_proportion_hate_correlation.csv")
         return result, corr
 
+    def compare_flip_magnitude(self) -> pd.DataFrame:
+        """Per model: does flip *magnitude* (per-item flip_rate,
+        Kruskal-Wallis-tested for between-model differences within each
+        condition in ``flip_magnitude_kruskal.csv``) rank the same way
+        under both steering conditions? Joins each condition's per-model
+        mean flip rate (from ``flip_counts_by_model.csv``, ``combined``
+        row) side by side, since the two conditions' Kruskal-Wallis tests
+        aren't directly comparable to each other (different H0)."""
+        a, b = self._load("flip_counts_by_model.csv")
+        a = a[a["condition"] == "combined"][["model", "mean_flip_rate"]]
+        b = b[b["condition"] == "combined"][["model", "mean_flip_rate"]]
+        merged = a.merge(b, on="model", suffixes=(f"_{self.label_a}", f"_{self.label_b}"))
+        merged["rank_a"] = merged[f"mean_flip_rate_{self.label_a}"].rank(ascending=False)
+        merged["rank_b"] = merged[f"mean_flip_rate_{self.label_b}"].rank(ascending=False)
+        merged["rank_shift"] = merged["rank_a"] - merged["rank_b"]
+        merged = merged.sort_values(f"mean_flip_rate_{self.label_b}", ascending=False)
+        self._save(merged, "flip_magnitude_comparison.csv")
+        return merged
+
+    def compare_flip_direction(self) -> pd.DataFrame:
+        """Per model: does the *direction* of flips (proportion toward the
+        hate label, from ``flip_direction_proportion_by_model.csv``) agree
+        between the two conditions? A 2x2 chi-square test (condition x
+        direction) per model flags whether the shift in proportion is
+        itself statistically real, not just numerically different."""
+        a, b = self._load("flip_direction_proportion_by_model.csv")
+        a = a[a["condition"] == "combined"]
+        b = b[b["condition"] == "combined"]
+        rows = []
+        for model in sorted(set(a["model"]) & set(b["model"])):
+            ra = a[a["model"] == model].iloc[0]
+            rb = b[b["model"] == model].iloc[0]
+            table = np.array([
+                [ra["n_flips_to_hate"], ra["n_flips_to_not_hate"]],
+                [rb["n_flips_to_hate"], rb["n_flips_to_not_hate"]],
+            ])
+            row = {
+                "model": model,
+                f"proportion_to_hate_{self.label_a}": ra["proportion_to_hate"],
+                f"proportion_to_hate_{self.label_b}": rb["proportion_to_hate"],
+                "same_direction_bias": (ra["proportion_to_hate"] >= 0.5) == (rb["proportion_to_hate"] >= 0.5),
+                "chi2_stat": np.nan, "p": np.nan,
+            }
+            if table.sum() > 0 and table.min(axis=0).sum() >= 0 and (table.sum(axis=0) > 0).all():
+                chi2, p, _, _ = stats.chi2_contingency(table)
+                row.update(chi2_stat=float(chi2), p=float(p))
+            rows.append(row)
+        result = pd.DataFrame(rows)
+        result["p_fdr_bh"] = stats.false_discovery_control(result["p"].to_numpy(), method="bh")
+        result = result.sort_values("p_fdr_bh")
+        self._save(result, "flip_direction_comparison.csv")
+        return result
+
     def compare_item_level(self) -> pd.DataFrame:
         """Per model: Pearson/Spearman correlation between the two
         conditions' per-item ``delta_recall`` (joined on condition +
@@ -212,6 +265,8 @@ class SteeringConditionComparison:
         return {
             "steering_effect": self.compare_steering_effect(),
             "flip_counts": self.compare_flip_counts(),
+            "flip_magnitude": self.compare_flip_magnitude(),
+            "flip_direction": self.compare_flip_direction(),
             "flip_counts_by_value_pvq": self.compare_flip_counts_by_value("pvq"),
             "flip_counts_by_value_mft": self.compare_flip_counts_by_value("mft"),
             "pvq_patterns": self.compare_category_patterns("pvq"),

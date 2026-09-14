@@ -434,6 +434,89 @@ class HateSpeechSteeringAnalyzer:
         self._save(result, "flip_counts_by_model.csv")
         return result
 
+    def flip_magnitude_by_model(self, flips: pd.DataFrame) -> dict[str, pd.DataFrame]:
+        """Do models differ in how *often* their prediction flips when
+        steered? Kruskal-Wallis on per-item ``flip_rate`` across the 6
+        models (n=76 items, or 36/40 within mft/pvq alone), plus pairwise
+        Mann-Whitney U tests — the same magnitude-comparison approach as
+        ``between_model_steering_effect``, but on raw flip rate rather than
+        on the recall delta (a flip doesn't have to change the item's
+        correctness to count here)."""
+        kruskal_rows = []
+        pairwise_rows = []
+        for condition, sub in [
+            ("mft", flips[flips["condition"] == "mft"]),
+            ("pvq", flips[flips["condition"] == "pvq"]),
+            ("combined", flips),
+        ]:
+            groups = {model: g["flip_rate"] for model, g in sub.groupby("model")}
+            res = _kruskal(groups)
+            kruskal_rows.append({"condition": condition, **res})
+            for model_a, model_b in itertools.combinations(sorted(groups), 2):
+                mw = _mannwhitney(groups[model_a], groups[model_b])
+                pairwise_rows.append({
+                    "condition": condition, "model_a": model_a, "model_b": model_b, **mw
+                })
+        kruskal_df = pd.DataFrame(kruskal_rows)
+        pairwise_df = pd.DataFrame(pairwise_rows)
+        pairwise_df["p_fdr_bh"] = pairwise_df.groupby("condition")["p"].transform(_benjamini_hochberg)
+        self._save(kruskal_df, "flip_magnitude_kruskal.csv")
+        self._save(pairwise_df, "flip_magnitude_pairwise_mannwhitney.csv")
+        return {"kruskal": kruskal_df, "pairwise": pairwise_df}
+
+    def flip_direction_by_model(self, flips: pd.DataFrame) -> dict[str, pd.DataFrame]:
+        """Do models differ in *which direction* they flip (toward vs. away
+        from the hate-speech label) when steered? A chi-square test of
+        independence between model identity and flip direction, on the
+        pooled to-hate/to-not-hate counts (summed across items), separately
+        for mft, pvq, and both combined. Cramer's V is reported as effect
+        size (0 = no association, 1 = perfect association)."""
+        rows = []
+        for condition, sub in [
+            ("mft", flips[flips["condition"] == "mft"]),
+            ("pvq", flips[flips["condition"] == "pvq"]),
+            ("combined", flips),
+        ]:
+            counts = sub.groupby("model")[["n_flips_to_hate", "n_flips_to_not_hate"]].sum()
+            counts = counts[(counts.sum(axis=1)) > 0]
+            row = {"condition": condition, "n_models": len(counts),
+                   "chi2_stat": np.nan, "p": np.nan, "dof": np.nan, "cramers_v": np.nan,
+                   "notes": ""}
+            if len(counts) < 2:
+                row["notes"] = "fewer than 2 models with at least 1 flip"
+                rows.append(row)
+                continue
+            chi2, p, dof, _ = stats.chi2_contingency(counts.to_numpy())
+            n = counts.to_numpy().sum()
+            k = min(counts.shape) - 1
+            cramers_v = float(np.sqrt((chi2 / n) / k)) if k > 0 else np.nan
+            row.update(chi2_stat=float(chi2), p=float(p), dof=int(dof), cramers_v=cramers_v)
+            rows.append(row)
+        result = pd.DataFrame(rows)
+        self._save(result, "flip_direction_chi2_by_model.csv")
+
+        # Per-model proportion of flips that go toward "hate", for readability
+        # alongside the pooled test above.
+        prop_rows = []
+        for condition, sub in [
+            ("mft", flips[flips["condition"] == "mft"]),
+            ("pvq", flips[flips["condition"] == "pvq"]),
+            ("combined", flips),
+        ]:
+            for model, g in sub.groupby("model"):
+                to_hate = int(g["n_flips_to_hate"].sum())
+                to_not_hate = int(g["n_flips_to_not_hate"].sum())
+                total = to_hate + to_not_hate
+                prop_rows.append({
+                    "condition": condition, "model": model,
+                    "total_flips": total, "n_flips_to_hate": to_hate,
+                    "n_flips_to_not_hate": to_not_hate,
+                    "proportion_to_hate": to_hate / total if total else np.nan,
+                })
+        prop_df = pd.DataFrame(prop_rows).sort_values(["condition", "proportion_to_hate"], ascending=[True, False])
+        self._save(prop_df, "flip_direction_proportion_by_model.csv")
+        return {"chi2": result, "proportions": prop_df}
+
     def flip_counts_by_model_and_value(self, flips: pd.DataFrame) -> pd.DataFrame:
         """Model x value-type breakdown of flip counts: MFT foundation for
         MFT items, Schwartz PVQ value for PVQ items (requires
@@ -591,6 +674,8 @@ class HateSpeechSteeringAnalyzer:
         flips_by_model = self.flip_counts_by_model(flips_by_item)
         flips_by_model_value = self.flip_counts_by_model_and_value(flips_by_item)
         flips_by_instance = self.flip_counts_by_instance()
+        flip_magnitude = self.flip_magnitude_by_model(flips_by_item)
+        flip_direction = self.flip_direction_by_model(flips_by_item)
 
         prediction_profile = self.instance_prediction_profile()
         prediction_bins = self.instance_prediction_bins(prediction_profile)
@@ -601,6 +686,10 @@ class HateSpeechSteeringAnalyzer:
             "foundation_patterns": foundation_patterns,
             "flips_by_item": flips_by_item, "flips_by_model": flips_by_model,
             "flips_by_model_value": flips_by_model_value, "flips_by_instance": flips_by_instance,
+            "flip_magnitude_kruskal": flip_magnitude["kruskal"],
+            "flip_magnitude_pairwise": flip_magnitude["pairwise"],
+            "flip_direction_chi2": flip_direction["chi2"],
+            "flip_direction_proportions": flip_direction["proportions"],
             "prediction_profile": prediction_profile, "prediction_bins": prediction_bins,
             **between,
         }
