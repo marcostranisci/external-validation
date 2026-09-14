@@ -198,6 +198,26 @@ their steering deltas. **Apertus's results below are unreliable and
 should be discounted**; the other five are less contaminated but not
 perfectly clean.
 
+**A shared-baseline robustness check, using only data already collected
+(no new experiment), confirms the core finding does not depend on
+resolving this confound.** Forcing the verbalized condition's steered
+recall to be compared against the *free-text* condition's zero-shot
+recall (instead of its own) is the most conservative possible test — it
+removes any advantage a model could get from its own baseline having
+shifted from wording alone. Under this test: **Apertus's result doesn't
+just shrink, it reverses sign entirely** (+0.173 → **−0.419**), confirming
+it should be excluded outright, not merely caveated. **Olmo's and Qwen's
+direction flips survive intact and even strengthen** (Olmo: +0.053 →
++0.109; Qwen: −0.057 → −0.113) — strong evidence these two flips are a
+real property of the belief content, not a baseline artifact. Falcon and
+Ministral's effects hold up reasonably well too; Llama's magnitude,
+however, is mostly explained by the baseline shift (+0.108 → +0.028), so
+its "verbalized steering is much bigger" claim should be softened. Net:
+the headline cross-condition claims (Olmo/Qwen sign flips) do not rest on
+the confound being fixed — a controlled-prompt replication would still be
+worth doing eventually, but it is not required to trust the flips
+reported here.
+
 - **Direction flips for half the models — but only two cleanly.**
   Apertus: no effect (−0.003, n.s.) → **+0.173** (large, significant), but
   this is likely mostly the confound (an anomalously depressed baseline

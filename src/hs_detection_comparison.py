@@ -70,6 +70,59 @@ class SteeringConditionComparison:
         self._save(result, "steering_effect_comparison.csv")
         return result
 
+    def compare_steering_effect_shared_baseline(self) -> pd.DataFrame:
+        """Robustness check for the wording confound (`zero_shot_prompt`
+        differs between the two files): recomputes condition B's steering
+        delta against condition A's zero-shot recall instead of B's own —
+        forcing both conditions to share one baseline. If a model's
+        direction flip (test 1) is a genuine content effect rather than an
+        artifact of the baseline itself having shifted from wording alone,
+        it should survive this — condition B's steered recall minus
+        condition A's zero-shot should still point the same direction as
+        condition B's own-baseline delta. Uses only
+        `recall_by_model_condition_item.csv` from both directories (no new
+        model runs needed)."""
+        a, b = self._load("recall_by_model_condition_item.csv")
+        a_zs = a[a["condition"] == "zero_shot"].set_index("model")["recall"]
+        a_items = a[a["condition"] != "zero_shot"]
+        b_items = b[b["condition"] != "zero_shot"]
+        b_zs = b[b["condition"] == "zero_shot"].set_index("model")["recall"]
+
+        rows = []
+        for model in sorted(set(a_zs.index) & set(b_zs.index)):
+            a_delta = a_items[a_items["model"] == model]["recall"] - a_zs[model]
+            b_delta_own = b_items[b_items["model"] == model]["recall"] - b_zs[model]
+            b_delta_shared = b_items[b_items["model"] == model]["recall"] - a_zs[model]
+            wa = stats.wilcoxon(a_delta)
+            wb_own = stats.wilcoxon(b_delta_own)
+            wb_shared = stats.wilcoxon(b_delta_shared)
+            rows.append({
+                "model": model,
+                f"zero_shot_recall_{self.label_a}": float(a_zs[model]),
+                f"zero_shot_recall_{self.label_b}": float(b_zs[model]),
+                "zero_shot_shift_from_wording": float(b_zs[model] - a_zs[model]),
+                f"mean_delta_{self.label_a}": float(a_delta.mean()), "wilcoxon_p_a": float(wa.pvalue),
+                f"mean_delta_{self.label_b}_own_baseline": float(b_delta_own.mean()),
+                "wilcoxon_p_b_own_baseline": float(wb_own.pvalue),
+                f"mean_delta_{self.label_b}_shared_baseline": float(b_delta_shared.mean()),
+                "wilcoxon_p_b_shared_baseline": float(wb_shared.pvalue),
+            })
+        result = pd.DataFrame(rows)
+        # Does B's own-baseline direction survive being forced onto A's
+        # baseline? False means the model's own-baseline result is at
+        # least partly an artifact of the wording-shifted baseline itself.
+        result["b_direction_survives_shared_baseline"] = np.sign(
+            result[f"mean_delta_{self.label_b}_own_baseline"]
+        ) == np.sign(result[f"mean_delta_{self.label_b}_shared_baseline"])
+        # Does the original A-vs-B direction flip (test 1) still hold when
+        # B is forced onto A's baseline instead of comparing own-baseline
+        # deltas?
+        result["ab_flip_survives_shared_baseline"] = np.sign(
+            result[f"mean_delta_{self.label_a}"]
+        ) != np.sign(result[f"mean_delta_{self.label_b}_shared_baseline"])
+        self._save(result, "steering_effect_shared_baseline_check.csv")
+        return result
+
     def compare_flip_counts(self) -> pd.DataFrame:
         """Per model: total flips and flip direction under each condition,
         side by side."""
@@ -418,6 +471,7 @@ class SteeringConditionComparison:
         robust_by_category = self.robust_high_steerability_by_category(robust_items)
         return {
             "steering_effect": self.compare_steering_effect(),
+            "steering_effect_shared_baseline": self.compare_steering_effect_shared_baseline(),
             "flip_counts": self.compare_flip_counts(),
             "flip_magnitude": self.compare_flip_magnitude(),
             "flip_direction": self.compare_flip_direction(),

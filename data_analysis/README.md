@@ -813,6 +813,42 @@ their comparisons below are less contaminated but not perfectly clean —
 treat the cross-condition comparison as suggestive, not as a controlled
 isolation of "belief content type" as the only variable.
 
+**A direct check, using data already collected, confirms this is
+Apertus-specific rather than a problem for the headline direction-flip
+finding.** `compare_steering_effect_shared_baseline` forces the
+verbalized condition's steered recall to be compared against the
+*free-text* condition's zero-shot recall instead of its own — the most
+conservative possible test, since it removes any advantage a model could
+get from an artificially depressed or inflated baseline within its own
+file. Results (`steering_effect_shared_baseline_check.csv`):
+
+| model | free-text delta | verbalized delta (own baseline) | verbalized delta (forced onto free-text baseline) | survives? |
+|---|---|---|---|---|
+| Apertus | −0.003 (n.s.) | **+0.173** | **−0.419** | **No — reverses sign entirely** |
+| Olmo | −0.096 | +0.053 | **+0.109** | Yes — same sign, even larger |
+| Qwen | +0.051 | −0.057 | **−0.113** | Yes — same sign, even larger |
+| Falcon | +0.071 | +0.200 | +0.152 | Yes, magnitude shrinks ~25% |
+| Llama | +0.040 | +0.108 | +0.028 | Yes, but magnitude shrinks ~74% |
+| Ministral | +0.090 | +0.042 | +0.054 | Yes, magnitude similar |
+
+**Apertus's result is not just "unreliable" — under a fair, shared
+baseline it doesn't just shrink, it reverses sign** (+0.173 → −0.419),
+confirming it should be excluded rather than merely caveated. **Olmo and
+Qwen's direction flips are robust**: forcing their verbalized-condition
+recall onto the free-text baseline doesn't just preserve the flip, it
+makes it slightly larger — this is strong evidence these two flips are a
+genuine property of the belief content/elicitation method, not an
+artifact of the wording-shifted baseline. Falcon, Llama, and Ministral
+keep their direction too, though Llama's magnitude is mostly explained by
+the baseline shift (+0.108 own-baseline shrinks to +0.028 once the
+baseline is held fixed) — so Llama's "verbalized steering is much bigger"
+claim should be softened, while Falcon's and Ministral's hold up
+reasonably well. **Net effect: the core cross-condition claims (Olmo/Qwen
+sign flips) do not depend on the prompt-wording confound being
+resolved** — they were already the two "clean" cases by the simpler check
+above, and this stricter test confirms it quantitatively rather than by
+just noting their baseline shift was small.
+
 `src/hs_detection_comparison.py` (`SteeringConditionComparison`,
 `run_hs_detection_comparison.py`) then compares the two conditions'
 outputs directly, writing to `data_analysis/hs_detection_comparison/`:
@@ -820,6 +856,15 @@ outputs directly, writing to `data_analysis/hs_detection_comparison/`:
 - **`steering_effect_comparison.csv`** — per model: recall-shift
   magnitude, significance, and direction agreement between the two
   conditions.
+- **`steering_effect_shared_baseline_check.csv`** — a direct robustness
+  check for the wording confound above, using only data already
+  collected: for each model, recomputes the verbalized condition's
+  steering delta against the *free-text* condition's zero-shot recall
+  instead of its own (forcing both conditions to share one baseline), and
+  reports whether (a) the verbalized condition's own direction survives
+  being forced onto the free-text baseline (`b_direction_survives_shared_baseline`),
+  and (b) the original free-text-vs-verbalized direction flip still holds
+  under this fairer comparison (`ab_flip_survives_shared_baseline`).
 - **`flip_counts_comparison.csv`** — per model: total flips and flip
   direction (toward "hate" vs. "not hate") under each condition.
 - **`flip_magnitude_comparison.csv`** — per model: mean flip rate and rank
@@ -911,14 +956,15 @@ cases**: their zero-shot recall barely moves from wording alone (+0.056,
 −0.056) — far smaller than their steering deltas — so their flips are not
 explained by the same artifact. Olmo goes from significantly *hurt*
 (−0.096) to significantly *helped* (+0.053); Qwen goes from significantly
-*helped* (+0.051) to significantly *hurt* (−0.057). Verbalized steering
-is also a stronger signal on average for the models with a clean
-comparison (Falcon, Llama: 2-3x larger; Olmo: reversed and comparable
-magnitude), consistent with a short, unhedged declarative statement ("X
-describes you extremely well") being a more direct steering signal than a
-long, often-hedged free-text paragraph — though Ministral is the
-counterexample (smaller under verbalized), so this isn't universal
-either.
+*helped* (+0.051) to significantly *hurt* (−0.057). Verbalized steering also looks stronger on average for Falcon (2.8x
+larger) and Llama (2.7x larger) — but the shared-baseline check below
+shows Llama's apparent gain is mostly a baseline-shift artifact (own
+verbalized delta +0.108 shrinks to +0.028 once the baseline is held
+fixed), while Falcon's holds up (+0.200 shrinks only to +0.152). So "a
+short, unhedged declarative statement is a more direct steering signal
+than a long, hedged free-text paragraph" is supported for Falcon, not
+demonstrated for Llama, and Ministral is an outright counterexample
+(smaller under verbalized) — this isn't a universal pattern.
 
 **Item-level agreement between the two conditions is weak to absent**
 (`item_level_correlation_between_conditions.csv`): Pearson r ranges from
