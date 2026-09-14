@@ -412,6 +412,100 @@ class HateSpeechSteeringAnalyzer:
         self._save(result, "flip_counts_by_item.csv")
         return result
 
+    def item_steerability(self, flips_by_item: pd.DataFrame) -> pd.DataFrame:
+        """Collapse ``flip_counts_by_item`` (one row per model x item) to
+        one row per item, averaging ``flip_rate`` across the 6 models —
+        the item-level analogue of ``mean_flip_rate`` in
+        ``model_variance_by_instance``. Also reports the between-model
+        standard deviation of flip_rate on that item, for context."""
+        group_cols = ["condition", "belief_id", "test_statement", "foundation",
+                      "pvq_value", "pvq_value_label"]
+        agg = flips_by_item.groupby(group_cols, dropna=False)["flip_rate"].agg(
+            mean_flip_rate="mean", std_flip_rate="std", n_models="count"
+        ).reset_index()
+        result = agg.sort_values("mean_flip_rate", ascending=False)
+        self._save(result, "item_steerability.csv")
+        return result
+
+    def item_steerability_tiers(self, item_steerability: pd.DataFrame, n_tiers: int = 3) -> pd.DataFrame:
+        """Bin items into ``n_tiers`` steerability tiers (default 3:
+        `low_steerability`, `mid_steerability`, `high_steerability`) by
+        ``mean_flip_rate`` — unlike the message-level tiers (which use a
+        fixed 0 / 0.15 cutoff, since many messages never flip at all), no
+        item has zero flip rate once averaged over 500 messages and 6
+        models, so tiers are assigned by tertile (roughly equal-sized
+        groups) *within each questionnaire* (MFT's 36 items and PVQ's 40
+        items are tiered separately, since foundation/value patterns are
+        only meaningful within their own questionnaire)."""
+        labels = [f"tier_{i+1}_of_{n_tiers}" for i in range(n_tiers)] if n_tiers != 3 else \
+            ["low_steerability", "mid_steerability", "high_steerability"]
+        result = item_steerability.copy()
+        result["steerability_tier"] = result.groupby("condition")["mean_flip_rate"].transform(
+            lambda s: pd.qcut(s, n_tiers, labels=labels, duplicates="drop")
+        )
+        self._save(result, "item_steerability_tiers.csv")
+        return result
+
+    def steerability_tier_patterns(self, tiers: pd.DataFrame) -> dict[str, pd.DataFrame]:
+        """Does steerability tier associate with MFT foundation / Schwartz
+        PVQ value? For each questionnaire, builds a tier x category
+        contingency table (counts and row/column proportions), a
+        chi-square test of independence (caveat: with ~36-40 items split
+        across 6-10 categories and 3 tiers, expected cell counts are small
+        — read this as descriptive, not confirmatory), and a one-vs-rest
+        Fisher exact test per category asking specifically "is this
+        category over/under-represented in the *high*-steerability tier
+        compared to every other category combined" (BH-corrected across
+        categories, within each questionnaire — the more targeted, better
+        powered version of the question)."""
+        out: dict[str, pd.DataFrame] = {}
+        for condition, category_col, filename_stub in [
+            ("mft", "foundation", "foundation"), ("pvq", "pvq_value_label", "pvq_value"),
+        ]:
+            sub = tiers[tiers["condition"] == condition]
+            contingency = pd.crosstab(sub[category_col], sub["steerability_tier"])
+            contingency["total_items"] = contingency.sum(axis=1)
+            for tier_col in [c for c in contingency.columns if c != "total_items"]:
+                contingency[f"proportion_{tier_col}"] = contingency[tier_col] / contingency["total_items"]
+            contingency = contingency.reset_index()
+            self._save(contingency, f"steerability_tier_by_{filename_stub}.csv")
+            out[f"{filename_stub}_contingency"] = contingency
+
+            counts_only = pd.crosstab(sub[category_col], sub["steerability_tier"])
+            chi2_row = {"condition": condition, "chi2_stat": np.nan, "p": np.nan, "dof": np.nan, "notes": ""}
+            if counts_only.shape[0] >= 2 and counts_only.shape[1] >= 2:
+                chi2, p, dof, expected = stats.chi2_contingency(counts_only.to_numpy())
+                min_expected = expected.min()
+                chi2_row.update(chi2_stat=float(chi2), p=float(p), dof=int(dof))
+                if min_expected < 5:
+                    chi2_row["notes"] = f"min expected cell count {min_expected:.2f} < 5; treat as descriptive"
+            out[f"{filename_stub}_chi2"] = pd.DataFrame([chi2_row])
+            self._save(out[f"{filename_stub}_chi2"], f"steerability_tier_association_{filename_stub}.csv")
+
+            high_tier = "high_steerability" if "high_steerability" in counts_only.columns else counts_only.columns[-1]
+            fisher_rows = []
+            n_total = counts_only.sum().sum()
+            n_high_total = counts_only[high_tier].sum()
+            for category in counts_only.index:
+                n_cat = counts_only.loc[category].sum()
+                n_cat_high = counts_only.loc[category, high_tier]
+                table = [[n_cat_high, n_cat - n_cat_high],
+                         [n_high_total - n_cat_high, n_total - n_cat - (n_high_total - n_cat_high)]]
+                odds_ratio, p = stats.fisher_exact(table, alternative="two-sided")
+                fisher_rows.append({
+                    "condition": condition, category_col: category,
+                    "n_items": int(n_cat), "n_high_steerability": int(n_cat_high),
+                    "proportion_high_steerability": n_cat_high / n_cat if n_cat else np.nan,
+                    "overall_proportion_high_steerability": n_high_total / n_total,
+                    "odds_ratio": float(odds_ratio), "p": float(p),
+                })
+            fisher_df = pd.DataFrame(fisher_rows)
+            fisher_df["p_fdr_bh"] = _benjamini_hochberg(fisher_df["p"])
+            fisher_df = fisher_df.sort_values("p_fdr_bh")
+            out[f"{filename_stub}_fisher"] = fisher_df
+            self._save(fisher_df, f"steerability_tier_onevsrest_fisher_{filename_stub}.csv")
+        return out
+
     def flip_counts_by_model(self, flips: pd.DataFrame) -> pd.DataFrame:
         """Aggregate item-level flip counts to one row per model (and per
         model x MFT/PVQ/combined)."""
@@ -771,6 +865,9 @@ class HateSpeechSteeringAnalyzer:
         foundation_patterns = self.mft_foundation_patterns(item_significance)
 
         flips_by_item = self.flip_counts_by_item(pvq_mapping_path)
+        item_steerability = self.item_steerability(flips_by_item)
+        item_tiers = self.item_steerability_tiers(item_steerability)
+        tier_patterns = self.steerability_tier_patterns(item_tiers)
         flips_by_model = self.flip_counts_by_model(flips_by_item)
         flips_by_model_value = self.flip_counts_by_model_and_value(flips_by_item)
         flips_by_instance = self.flip_counts_by_instance()
@@ -788,6 +885,8 @@ class HateSpeechSteeringAnalyzer:
             "item_significance": item_significance, "pvq_patterns": pvq_patterns,
             "foundation_patterns": foundation_patterns,
             "flips_by_item": flips_by_item, "flips_by_model": flips_by_model,
+            "item_steerability": item_steerability, "item_tiers": item_tiers,
+            "tier_patterns": tier_patterns,
             "flips_by_model_value": flips_by_model_value, "flips_by_instance": flips_by_instance,
             "flip_rate_tiers": flip_rate_tiers,
             "model_variance_by_instance": model_variance,

@@ -1,0 +1,2 @@
+condition,chi2_stat,p,dof,notes
+pvq,31.25726495726496,0.026875416682937088,18,min expected cell count 0.90 < 5; treat as descriptive

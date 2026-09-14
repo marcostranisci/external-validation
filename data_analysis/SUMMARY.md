@@ -110,6 +110,21 @@ steering in this data — `"prediction_setup": "paired_by_model"`).
     content (negative deltas for care/purity and for
     Universalism/Benevolence), while the other four are helped by it
     just like everything else, only less so.
+- **Binning the 76 items themselves by steerability (not just by
+  recall-delta significance) gives the cleanest, best-powered confirmation
+  of the Universalism finding in the whole analysis.** Splitting each
+  questionnaire's items into low/mid/high-steerability tertiles by mean
+  flip rate: **all 6 of PVQ's Universalism items land in the
+  high-steerability tier** (vs. a 30% base rate) — a one-vs-rest Fisher
+  exact test gives p=0.00024, and it's the only PVQ value to survive BH
+  correction across all 10 (p_fdr=0.0024). This is the one item-level
+  result in the entire hate-speech analysis that survives correction
+  (test 3's per-item Wilcoxon test found 0/76 survive, because n=6 models
+  per item is too small a sample; counting whole items into a category
+  instead has real power). MFT shows the same directional pattern without
+  reaching significance: equality is the most concentrated in the
+  high-steerability tier (5/6 items, p_fdr≈0.06) and care/purity the least
+  (0-1/6) — consistent with, but not as strong as, the PVQ result.
 - **The mechanism behind the recall shift is raw label-flipping, and both
   how much a model flips and which way it flips are strongly
   model-dependent — not just how its recall moves on average.** Counting
@@ -235,6 +250,20 @@ perfectly clean.
   −0.051/−0.041 → verbalized +0.074/+0.057; free-text care/purity
   +0.029/+0.015 → verbalized +0.061/+0.044. So this specific finding is
   not a confound artifact.
+- **The item-steerability-tier confirmation of the Universalism finding
+  (§2) vanishes just as completely under verbalized steering.**
+  Universalism's striking free-text result — all 6 items in the
+  high-steerability tier, the one BH-corrected-significant item-level
+  finding in the whole analysis (p_fdr=0.0024) — collapses to an even 2/2/2
+  split across tiers under verbalized steering (p_fdr=1.0,
+  indistinguishable from chance). MFT's directional pattern (equality most
+  steerable, care/purity least) holds up in both conditions without
+  reaching significance either time, so it doesn't have the same
+  method-dependence to report. Between two entirely independent
+  statistical approaches — pooled recall-delta by category (§2) and
+  item-count-by-steerability-tier (this section) — the Universalism
+  finding appears, and disappears again under verbalized steering, the
+  same way both times.
 
 **Bottom line:** the mechanism of eliciting the moral opinion is not a
 neutral implementation detail — it changes which models are helped vs.
