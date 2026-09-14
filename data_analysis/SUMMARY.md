@@ -28,14 +28,23 @@ into `external_opinion` (mean) and `annotator_disagreement`.
   ratings of the free text (`external_opinion`) differ by model too, but
   less (η²=0.11 MFT / 0.14 PVQ, medium-large).
 - **What humans see in the free text is driven by item content, not by
-  which model wrote it.** Despite the level differences above, the
-  *pattern* of which items draw more/less human agreement is highly
-  consistent across models' explanations in PVQ (pairwise correlation
-  median r=0.76, all 15 model pairs significant) and directionally
-  consistent (always positive, weaker) in MFT (median r=0.29). A
-  chi-square/Mann-Whitney check of whether this pattern's *shape* (not
-  just level) depends on the model came back null for `external_opinion`
-  either way.
+  which model wrote it — and much more so on PVQ than on MFT.** Despite
+  the level differences above, the *pattern* of which items draw more/less
+  human agreement is highly consistent across models' explanations in PVQ
+  (pairwise correlation median r=0.76, all 15 model pairs significant) and
+  directionally consistent but much weaker in MFT (median r=0.29, only
+  6/15 significant). This PVQ-vs-MFT gap is itself statistically real
+  (Fisher-z Mann-Whitney/Welch test, p≈4e-6) — but the same test on models'
+  own `opinion` (not the human ratings) shows only a nominal, *not*
+  significant, gap (median r=0.36 PVQ vs. 0.25 MFT, p≈0.14–0.19). So the
+  finding is specifically about how humans read the models' free-text
+  explanations, not (yet demonstrably) about the models' own self-report —
+  plausibly because PVQ's third-person trait-similarity items ("how much
+  is this person like you") are a more mechanical judgment than MFT's
+  first-person moral endorsements ("I admire...", "I believe society
+  should..."), which are more inherently divisive. A chi-square/Mann-Whitney
+  check of whether the PVQ/MFT pattern's *shape* (not just level) depends
+  on the model came back null for `external_opinion` either way.
 - **Annotators' own moral stance is a minor factor in their evaluation of
   a model's reply.** Correlating each annotator's own reply to an item
   against their evaluation of a model's reply to that same item: pooled

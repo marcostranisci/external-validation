@@ -44,6 +44,7 @@ per-test results in detail.
 ```bash
 pip install -r requirements.txt   # pandas, numpy, scipy already included
 python run_questionnaire_analysis.py
+python run_mft_pvq_correlation_comparison.py
 python run_annotator_analysis.py
 python run_annotator_demographics.py
 python run_hs_detection_analysis.py
@@ -168,6 +169,47 @@ different models' replies differ too, not just the shape of the pattern).
 Pairwise Mann-Whitney (15 pairs = C(6,2), all valid): 13/15 MFT and 12/15
 PVQ pairs differ significantly on `opinion`; 5/15 (MFT) and 9/15 (PVQ)
 differ on `external_opinion`.
+
+### Is between-model agreement stronger on PVQ than on MFT?
+
+`QuestionnaireAnalyzer.compare_between_model_correlations` tests this
+directly: it takes the per-pair Pearson r values from each folder's
+`between_model_correlations_<column>.csv`, Fisher-z transforms them
+(`arctanh`, the standard way to put correlation coefficients on a scale
+where parametric/rank tests are valid), and compares the MFT and PVQ
+distributions with a two-sample Mann-Whitney U test and a Welch t-test.
+Saved to `between_model_correlations_mft_vs_pvq.csv`. Rerun with:
+
+```bash
+python run_mft_pvq_correlation_comparison.py
+```
+
+**Result: true for `external_opinion`, not statistically supported for
+`opinion`.** For `external_opinion` (how humans rate different models'
+free-text replies), PVQ's between-model correlation is dramatically
+higher and more consistent than MFT's — median r=0.76 (PVQ, 15/15 pairs
+significant) vs. r=0.29 (MFT, 6/15 significant) — and the gap is highly
+significant itself (Mann-Whitney p=4e-6, Welch p=2e-6). For `opinion`
+(models' own Likert self-report), PVQ's median r is nominally higher
+(0.36 vs. 0.25) but the gap is **not significant** (p=0.14–0.19) — with
+only 10 (PVQ) and 15 (MFT) pairs to compare, this could plausibly be
+sampling noise, not a real questionnaire-level difference. So the honest
+version of the finding is narrower than "PVQ shows more model agreement
+than MFT" in general: **it's specifically true for how humans read the
+models' free-text explanations, not (yet demonstrably) for the models'
+own numeric self-report.**
+
+A plausible reading, not tested directly here: PVQ items describe a
+third-person hypothetical person's traits and ask "how much is this
+person like you" — a relatively mechanical similarity judgment. MFT items
+ask for direct first-person endorsement of value-laden moral claims
+("I admire...", "I believe society should...") — a more inherently
+divisive judgment where models' distinct training/alignment could
+plausibly produce more genuinely different stances. This would predict
+weaker between-model agreement on MFT specifically where moral
+disagreement is live, which is what's observed for `external_opinion`
+(and directionally, if not significantly, for `opinion`) — but this is a
+hypothesis about *why*, not something the current tests establish.
 
 ## Annotator-level analysis: own replies vs. model evaluations
 
