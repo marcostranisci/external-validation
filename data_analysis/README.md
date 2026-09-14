@@ -459,7 +459,20 @@ questions:
     conditions' tier assignments can be directly compared (see
     "does steering method matter?" below). Saved to
     `flip_rate_tiers_by_instance.csv`.
-11. **Instance-wise: raw predicted-label stability (no baseline).**
+11. **Instance-wise: do more-steerable messages show more between-model
+    disagreement, or is that independent?** `model_variance_by_instance`
+    computes *each model's own* flip rate on a message (over that model's
+    76 items, not pooled) and the variance of those 6 rates —
+    `dispersion_ratio` normalizes that variance by the theoretical maximum
+    6 values bounded in [0, 1] could have given the same mean (some models
+    at 0, others at 1), since that ceiling itself shrinks toward 0 near
+    the extremes and would otherwise make the raw variance-vs-mean
+    relationship a near-tautology for barely-steerable messages.
+    `steerability_vs_model_divergence` then correlates a message's overall
+    `mean_flip_rate` against both `between_model_var` and
+    `dispersion_ratio`. Saved to `model_variance_by_instance.csv` /
+    `steerability_vs_model_divergence.csv`.
+12. **Instance-wise: raw predicted-label stability (no baseline).**
    `instance_prediction_profile` counts, for each message, how many of
    *every* prediction ever made on it — zero-shot plus all 76
    belief-steered runs, per model (77 per model, 462 pooled across all 6,
@@ -927,6 +940,28 @@ stays mild) and splits roughly evenly toward both neighbors, while
 completely stable under verbalized steering** (0/158), consistent with
 verbalized steering's higher overall flip rate (mean 13.4% vs. 11.0%):
 instability doesn't fully reverse, it mostly just changes magnitude.
+
+**Between-model disagreement is not spread evenly across messages — it
+concentrates almost entirely on the messages that are steerable at all,
+and this survives controlling for the mechanical mean-variance ceiling.**
+`steerability_vs_model_divergence.csv`: a message's overall steerability
+(`mean_flip_rate`, averaged over its 6 models' own flip rates) correlates
+with the variance *between* those 6 models' flip rates at r=0.93
+(free-text) / r=0.92 (verbalized), both p≈0. Because flip rates are
+bounded in [0, 1], variance is mechanically forced toward 0 as the mean
+approaches 0 or 1 (max possible variance for 6 values given mean m is
+m(1-m)·6/5) — so part of this could just be "messages nobody flips can't
+show model disagreement by definition." Controlling for that by dividing
+observed variance by this ceiling (`dispersion_ratio`: what fraction of
+the *possible* disagreement, given the mean, is actually realized), the
+correlation survives, weaker but still large and highly significant:
+r=0.82 (free-text) / r=0.72 (verbalized), p<1e-65 both times. So it's not
+just that steerable messages have more room for models to disagree —
+models actually use a larger share of that room specifically on the
+messages that are more steerable to begin with. Stable messages aren't
+just individually stable; they're where the 6 models agree with each
+other, and steerable messages are disproportionately where the models
+diverge from each other.
 
 ## Data quality notes
 

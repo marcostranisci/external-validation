@@ -127,6 +127,23 @@ steering in this data — `"prediction_setup": "paired_by_model"`).
   Universalism/Benevolence finding at the mechanism level: Olmo's
   Universalism items alone cause 992 flips, 3x its next-highest category
   and the single largest (model, value) cell in the whole study.
+- **Model differences aren't spread evenly across messages — they
+  concentrate on the messages that are steerable at all; stable messages
+  are stable precisely because models agree on them.** Computing each
+  model's own flip rate on a message (over that model's 76 items) and the
+  variance between those 6 rates: a message's overall steerability
+  correlates with how much models diverge from each other on it at r=0.93
+  (free-text) / r=0.92 (verbalized). Since flip rates are bounded in
+  [0, 1], some of that is mechanical (a message nobody flips can't show
+  disagreement by definition) — but normalizing by the theoretical
+  variance ceiling given the mean, the correlation survives at r=0.82 /
+  r=0.72 (both p<1e-65): models don't just have more *room* to disagree on
+  steerable messages, they actually use more of that room. Combined with
+  the tier-overlap finding below (§3), the two-part picture is: messages
+  that don't flip are stable both *within* a steering method (low
+  variance across models) and *across* methods (free-text vs. verbalized,
+  77.8% stay `no_flip`), while messages that do flip are exactly where
+  both model-to-model and method-to-method differences show up.
 
 **Bottom line (free-text steering specifically — see §3 below):**
 steering with a model's own *free-text* moral/values opinion changes

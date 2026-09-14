@@ -600,6 +600,83 @@ class HateSpeechSteeringAnalyzer:
         self._save(result, "flip_rate_tiers_by_instance.csv")
         return result
 
+    def model_variance_by_instance(self) -> pd.DataFrame:
+        """For each message, compute *each model's own* flip rate (over its
+        76 items) rather than pooling across models, then the variance of
+        those 6 per-model rates. Tests whether more-steerable messages
+        (high overall flip rate) are also where models diverge from each
+        other the most, or whether steerability and between-model
+        disagreement are independent.
+
+        ``dispersion_ratio`` divides the observed variance by the
+        theoretical maximum variance 6 values bounded in [0, 1] can have
+        given that mean (``mean * (1 - mean) * 6/5``, i.e. the
+        maximum-spread case where some models sit at 0 and others at 1) —
+        this matters because that ceiling itself shrinks toward 0 as the
+        mean approaches 0 or 1, which would otherwise make "more
+        steerable => more between-model variance" a near-tautology for
+        low-flip-rate messages. A dispersion ratio that still correlates
+        with the mean, after this normalization, is not just an artifact
+        of that ceiling."""
+        counts: dict[str, dict[int, list[int]]] = {}
+        dataset_label: dict[int, int] = {}
+        for model, model_data in self._data["models"].items():
+            zero_shot_by_id = {p["id"]: p["answer"] for p in model_data["zero_shot"]}
+            model_counts: dict[int, list[int]] = {}
+            for condition in ("mft", "pvq"):
+                for item in model_data[condition]:
+                    for p in item["predictions"]:
+                        mid = p["id"]
+                        dataset_label[mid] = int(p["dataset_label"])
+                        rec = model_counts.setdefault(mid, [0, 0])
+                        rec[1] += 1
+                        if str(zero_shot_by_id[mid]) != str(p["answer"]):
+                            rec[0] += 1
+            counts[model] = model_counts
+
+        rows = []
+        all_ids = sorted({mid for model_counts in counts.values() for mid in model_counts})
+        for mid in all_ids:
+            rates = np.array([
+                counts[model][mid][0] / counts[model][mid][1]
+                for model in counts if mid in counts[model]
+            ])
+            mean_rate = float(rates.mean())
+            var = float(rates.var(ddof=1)) if len(rates) > 1 else np.nan
+            max_var = mean_rate * (1 - mean_rate) * (len(rates) / (len(rates) - 1)) \
+                if 0 < mean_rate < 1 and len(rates) > 1 else 0.0
+            rows.append({
+                "id": mid, "dataset_label": dataset_label[mid], "n_models": len(rates),
+                "mean_flip_rate": mean_rate, "between_model_var": var,
+                "max_possible_var": max_var,
+                "dispersion_ratio": var / max_var if max_var > 0 else np.nan,
+            })
+        result = pd.DataFrame(rows).sort_values("mean_flip_rate", ascending=False)
+        self._save(result, "model_variance_by_instance.csv")
+        return result
+
+    def steerability_vs_model_divergence(self, variance_by_instance: pd.DataFrame) -> pd.DataFrame:
+        """Correlate a message's overall steerability (``mean_flip_rate``)
+        against how much models diverge from each other on it
+        (``between_model_var`` and the ceiling-normalized
+        ``dispersion_ratio``), across all 500 messages. High, significant
+        correlations mean between-model differences aren't spread evenly
+        across all messages — they concentrate on the messages that are
+        steerable at all."""
+        rows = []
+        for col in ("between_model_var", "dispersion_ratio"):
+            sub = variance_by_instance.dropna(subset=["mean_flip_rate", col])
+            pear = stats.pearsonr(sub["mean_flip_rate"], sub[col])
+            spear = stats.spearmanr(sub["mean_flip_rate"], sub[col])
+            rows.append({
+                "against": col, "n": len(sub),
+                "pearson_r": float(pear.statistic), "pearson_p": float(pear.pvalue),
+                "spearman_r": float(spear.statistic), "spearman_p": float(spear.pvalue),
+            })
+        result = pd.DataFrame(rows)
+        self._save(result, "steerability_vs_model_divergence.csv")
+        return result
+
     def instance_prediction_profile(self) -> pd.DataFrame:
         """For each message, across *every* prediction ever made on it —
         zero-shot plus all 76 belief-steered runs, for each model (77
@@ -698,6 +775,8 @@ class HateSpeechSteeringAnalyzer:
         flips_by_model_value = self.flip_counts_by_model_and_value(flips_by_item)
         flips_by_instance = self.flip_counts_by_instance()
         flip_rate_tiers = self.flip_rate_tiers_by_instance(flips_by_instance)
+        model_variance = self.model_variance_by_instance()
+        steerability_divergence = self.steerability_vs_model_divergence(model_variance)
         flip_magnitude = self.flip_magnitude_by_model(flips_by_item)
         flip_direction = self.flip_direction_by_model(flips_by_item)
 
@@ -711,6 +790,8 @@ class HateSpeechSteeringAnalyzer:
             "flips_by_item": flips_by_item, "flips_by_model": flips_by_model,
             "flips_by_model_value": flips_by_model_value, "flips_by_instance": flips_by_instance,
             "flip_rate_tiers": flip_rate_tiers,
+            "model_variance_by_instance": model_variance,
+            "steerability_vs_model_divergence": steerability_divergence,
             "flip_magnitude_kruskal": flip_magnitude["kruskal"],
             "flip_magnitude_pairwise": flip_magnitude["pairwise"],
             "flip_direction_chi2": flip_direction["chi2"],
