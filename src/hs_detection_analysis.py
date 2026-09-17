@@ -264,6 +264,77 @@ class HateSpeechSteeringAnalyzer:
         self._save(corr_row, "model_agreement_zero_shot_vs_steered_correlation.csv")
         return result
 
+    def item_level_model_agreement(self) -> pd.DataFrame:
+        """For each of the 76 items, pairwise agreement (raw agreement,
+        Cohen's kappa) between every pair of the 6 models' predicted
+        labels on that item's 500 messages, averaged across the 15 pairs
+        to one `mean_kappa_between_models` score per item — the item-level
+        analogue of `pairwise_model_agreement_steered` (which pools across
+        all 76 items instead of breaking them out). Built to test whether
+        more-steerable items are also where models diverge from each other
+        the most (see `steerability_vs_item_agreement`)."""
+        preds: dict[str, dict[tuple, str]] = {}
+        for model, model_data in self._data["models"].items():
+            model_preds: dict[tuple, str] = {}
+            for condition in ("mft", "pvq"):
+                for item in model_data[condition]:
+                    for p in item["predictions"]:
+                        model_preds[(condition, item["belief_id"], p["id"])] = p["answer"]
+            preds[model] = model_preds
+
+        items = set()
+        for model_preds in preds.values():
+            items.update((c, b) for (c, b, _) in model_preds)
+
+        rows = []
+        for condition, belief_id in sorted(items):
+            per_item_preds = {
+                model: {mid: ans for (c, b, mid), ans in model_preds.items() if c == condition and b == belief_id}
+                for model, model_preds in preds.items()
+            }
+            kappas, raw_agreements = [], []
+            for model_a, model_b in itertools.combinations(sorted(per_item_preds), 2):
+                agr = _agreement(per_item_preds[model_a], per_item_preds[model_b])
+                kappas.append(agr["cohens_kappa"])
+                raw_agreements.append(agr["raw_agreement"])
+            rows.append({
+                "condition": condition, "belief_id": belief_id,
+                "mean_kappa_between_models": float(np.nanmean(kappas)),
+                "mean_raw_agreement_between_models": float(np.nanmean(raw_agreements)),
+                "n_pairs": len(kappas),
+            })
+        result = pd.DataFrame(rows)
+        self._save(result, "item_level_model_agreement.csv")
+        return result
+
+    def steerability_vs_item_agreement(
+        self, item_steerability: pd.DataFrame, item_agreement: pd.DataFrame,
+    ) -> pd.DataFrame:
+        """Correlates each item's steerability (`mean_flip_rate`, from
+        `item_steerability`) against how much models agree with each other
+        on it (`mean_kappa_between_models`, from `item_level_model_agreement`),
+        across all 76 items and separately within MFT/PVQ. A negative
+        correlation means more-steerable items are also where models'
+        predictions diverge from each other the most — the item-level
+        counterpart of `steerability_vs_model_divergence` (which asks the
+        analogous question at the message level, using the variance of
+        each model's own flip rate rather than pairwise label agreement)."""
+        merged = item_steerability.merge(item_agreement, on=["condition", "belief_id"])
+        rows = []
+        for condition, sub in [("mft", merged[merged["condition"] == "mft"]),
+                                ("pvq", merged[merged["condition"] == "pvq"]),
+                                ("combined", merged)]:
+            pear = stats.pearsonr(sub["mean_flip_rate"], sub["mean_kappa_between_models"])
+            spear = stats.spearmanr(sub["mean_flip_rate"], sub["mean_kappa_between_models"])
+            rows.append({
+                "condition": condition, "n_items": len(sub),
+                "pearson_r": float(pear.statistic), "pearson_p": float(pear.pvalue),
+                "spearman_r": float(spear.statistic), "spearman_p": float(spear.pvalue),
+            })
+        result = pd.DataFrame(rows)
+        self._save(result, "steerability_vs_item_agreement.csv")
+        return result
+
     # ------------------------------------------------------------------
     # Does steering shift recall? (within each model)
     # ------------------------------------------------------------------
@@ -1052,6 +1123,8 @@ class HateSpeechSteeringAnalyzer:
         item_steerability = self.item_steerability(flips_by_item)
         item_tiers = self.item_steerability_tiers(item_steerability)
         tier_patterns = self.steerability_tier_patterns(item_tiers)
+        item_agreement = self.item_level_model_agreement()
+        steerability_item_agreement = self.steerability_vs_item_agreement(item_steerability, item_agreement)
         flips_by_model = self.flip_counts_by_model(flips_by_item)
         flips_by_model_value = self.flip_counts_by_model_and_value(flips_by_item)
         flips_by_instance = self.flip_counts_by_instance()
@@ -1074,6 +1147,7 @@ class HateSpeechSteeringAnalyzer:
             "pvq_rank": pvq_rank, "foundation_rank": foundation_rank,
             "flips_by_item": flips_by_item, "flips_by_model": flips_by_model,
             "item_steerability": item_steerability, "item_tiers": item_tiers,
+            "item_agreement": item_agreement, "steerability_item_agreement": steerability_item_agreement,
             "tier_patterns": tier_patterns,
             "flips_by_model_value": flips_by_model_value, "flips_by_instance": flips_by_instance,
             "flip_rate_tiers": flip_rate_tiers,
