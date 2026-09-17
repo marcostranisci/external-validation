@@ -318,8 +318,20 @@ class HateSpeechSteeringAnalyzer:
         predictions diverge from each other the most — the item-level
         counterpart of `steerability_vs_model_divergence` (which asks the
         analogous question at the message level, using the variance of
-        each model's own flip rate rather than pairwise label agreement)."""
+        each model's own flip rate rather than pairwise label agreement).
+
+        Saves two files: `item_steerability_vs_agreement.csv` (the
+        per-item merged table — `test_statement`, `foundation`/
+        `pvq_value_label`, `mean_flip_rate`, `mean_kappa_between_models`,
+        etc., so individual items can be inspected, e.g. sorted by
+        `mean_flip_rate` to see which specific items are both
+        highly-steerable and low-agreement) and
+        `steerability_vs_item_agreement.csv` (the aggregate correlation,
+        as before)."""
         merged = item_steerability.merge(item_agreement, on=["condition", "belief_id"])
+        merged = merged.sort_values("mean_flip_rate", ascending=False)
+        self._save(merged, "item_steerability_vs_agreement.csv")
+
         rows = []
         for condition, sub in [("mft", merged[merged["condition"] == "mft"]),
                                 ("pvq", merged[merged["condition"] == "pvq"]),
