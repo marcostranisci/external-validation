@@ -1,0 +1,4 @@
+steerability_tier_free_text,low_steerability,mid_steerability,high_steerability
+low_steerability,9,8,10
+mid_steerability,5,9,11
+high_steerability,12,8,4

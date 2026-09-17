@@ -1,0 +1,11 @@
+condition,pvq_value_label,n_items,n_robust_high,odds_ratio,p,p_fdr_bh
+pvq,Stimulation,3,1,18.0,0.1461538461538462,0.9615384615384617
+pvq,Tradition,4,1,11.666666666666666,0.19230769230769235,0.9615384615384617
+pvq,Conformity,4,0,0.0,1.0,1.0
+pvq,Achievement,4,0,0.0,1.0,1.0
+pvq,Hedonism,3,0,0.0,1.0,1.0
+pvq,Power,3,0,0.0,1.0,1.0
+pvq,Security,5,0,0.0,1.0,1.0
+pvq,Benevolence,4,0,0.0,1.0,1.0
+pvq,Self-Direction,4,0,0.0,1.0,1.0
+pvq,Universalism,6,0,0.0,1.0,1.0

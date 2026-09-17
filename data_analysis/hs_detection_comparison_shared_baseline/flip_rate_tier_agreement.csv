@@ -1,0 +1,2 @@
+n,n_same_tier,proportion_same_tier,expected_by_chance,cohens_kappa,chi2_stat,chi2_p,dof
+500,291,0.582,0.35826800000000003,0.34863774909152095,205.48568528315369,2.4848977884917772e-43,4

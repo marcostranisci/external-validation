@@ -1,0 +1,4 @@
+tier,n_free_text,n_stayed_same_tier,proportion_stayed
+no_flip,45,35,0.7777777777777778
+mild_flip,297,120,0.40404040404040403
+strong_flip,158,136,0.8607594936708861

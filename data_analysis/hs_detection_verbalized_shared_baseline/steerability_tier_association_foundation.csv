@@ -1,0 +1,2 @@
+condition,chi2_stat,p,dof,notes
+mft,11.0,0.3575180024279255,10,min expected cell count 2.00 < 5; treat as descriptive

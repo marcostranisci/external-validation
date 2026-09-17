@@ -70,6 +70,59 @@ class SteeringConditionComparison:
         self._save(result, "steering_effect_comparison.csv")
         return result
 
+    def compare_steering_effect_shared_baseline(self) -> pd.DataFrame:
+        """Robustness check for the wording confound (`zero_shot_prompt`
+        differs between the two files): recomputes condition B's steering
+        delta against condition A's zero-shot recall instead of B's own —
+        forcing both conditions to share one baseline. If a model's
+        direction flip (test 1) is a genuine content effect rather than an
+        artifact of the baseline itself having shifted from wording alone,
+        it should survive this — condition B's steered recall minus
+        condition A's zero-shot should still point the same direction as
+        condition B's own-baseline delta. Uses only
+        `recall_by_model_condition_item.csv` from both directories (no new
+        model runs needed)."""
+        a, b = self._load("recall_by_model_condition_item.csv")
+        a_zs = a[a["condition"] == "zero_shot"].set_index("model")["recall"]
+        a_items = a[a["condition"] != "zero_shot"]
+        b_items = b[b["condition"] != "zero_shot"]
+        b_zs = b[b["condition"] == "zero_shot"].set_index("model")["recall"]
+
+        rows = []
+        for model in sorted(set(a_zs.index) & set(b_zs.index)):
+            a_delta = a_items[a_items["model"] == model]["recall"] - a_zs[model]
+            b_delta_own = b_items[b_items["model"] == model]["recall"] - b_zs[model]
+            b_delta_shared = b_items[b_items["model"] == model]["recall"] - a_zs[model]
+            wa = stats.wilcoxon(a_delta)
+            wb_own = stats.wilcoxon(b_delta_own)
+            wb_shared = stats.wilcoxon(b_delta_shared)
+            rows.append({
+                "model": model,
+                f"zero_shot_recall_{self.label_a}": float(a_zs[model]),
+                f"zero_shot_recall_{self.label_b}": float(b_zs[model]),
+                "zero_shot_shift_from_wording": float(b_zs[model] - a_zs[model]),
+                f"mean_delta_{self.label_a}": float(a_delta.mean()), "wilcoxon_p_a": float(wa.pvalue),
+                f"mean_delta_{self.label_b}_own_baseline": float(b_delta_own.mean()),
+                "wilcoxon_p_b_own_baseline": float(wb_own.pvalue),
+                f"mean_delta_{self.label_b}_shared_baseline": float(b_delta_shared.mean()),
+                "wilcoxon_p_b_shared_baseline": float(wb_shared.pvalue),
+            })
+        result = pd.DataFrame(rows)
+        # Does B's own-baseline direction survive being forced onto A's
+        # baseline? False means the model's own-baseline result is at
+        # least partly an artifact of the wording-shifted baseline itself.
+        result["b_direction_survives_shared_baseline"] = np.sign(
+            result[f"mean_delta_{self.label_b}_own_baseline"]
+        ) == np.sign(result[f"mean_delta_{self.label_b}_shared_baseline"])
+        # Does the original A-vs-B direction flip (test 1) still hold when
+        # B is forced onto A's baseline instead of comparing own-baseline
+        # deltas?
+        result["ab_flip_survives_shared_baseline"] = np.sign(
+            result[f"mean_delta_{self.label_a}"]
+        ) != np.sign(result[f"mean_delta_{self.label_b}_shared_baseline"])
+        self._save(result, "steering_effect_shared_baseline_check.csv")
+        return result
+
     def compare_flip_counts(self) -> pd.DataFrame:
         """Per model: total flips and flip direction under each condition,
         side by side."""
@@ -101,6 +154,70 @@ class SteeringConditionComparison:
                 f"mean_delta_recall_{self.label_b}", f"n_significant_{self.label_b}"]
         result = merged[cols].sort_values(f"mean_delta_recall_{self.label_b}", ascending=False)
         self._save(result, f"{kind}_category_comparison.csv")
+        return result
+
+    def compare_category_patterns_excluding_model(self, kind: str, exclude_model: str) -> pd.DataFrame:
+        """The same category comparison as ``compare_category_patterns``,
+        but averaging each category's ``mean_delta_recall`` across the
+        5 models excluding ``exclude_model`` instead of reading the
+        precomputed ``model="ALL"`` pooled row — for isolating whether a
+        pattern in the pooled-6-model number is being driven by one
+        outlier model (e.g. Apertus, whose depressed baseline dominates
+        any pooled mean it's part of)."""
+        filename = "pvq_value_patterns.csv" if kind == "pvq" else "mft_foundation_patterns.csv"
+        category_col = "pvq_value_label" if kind == "pvq" else "foundation"
+        a, b = self._load(filename)
+        a_excl = a[(a["model"] != "ALL") & (a["model"] != exclude_model)]
+        b_excl = b[(b["model"] != "ALL") & (b["model"] != exclude_model)]
+        a_mean = a_excl.groupby(category_col)["mean_delta_recall"].mean().rename(f"mean_delta_recall_{self.label_a}")
+        b_mean = b_excl.groupby(category_col)["mean_delta_recall"].mean().rename(f"mean_delta_recall_{self.label_b}")
+        result = pd.concat([a_mean, b_mean], axis=1).reset_index()
+        result = result.sort_values(f"mean_delta_recall_{self.label_b}", ascending=False)
+        self._save(result, f"{kind}_category_comparison_excl_{exclude_model.split('-')[0].lower()}.csv")
+        return result
+
+    def compare_within_model_rank(self, kind: str) -> pd.DataFrame:
+        """Do the two conditions agree on each category's *within-model*
+        rank (from ``within_model_category_rank`` — rank 1 = that model's
+        weakest lever), pooled across the 6 models via ``mean_rank``? This
+        rank is invariant to any per-model additive baseline shift, so
+        unlike ``compare_category_patterns`` it needs no shared-baseline
+        correction to be a fair comparison. A high, significant Spearman
+        correlation means a category that's relatively weak for a model
+        under one elicitation method is also relatively weak under the
+        other; a low one means the *relative* pattern itself depends on
+        elicitation method, not just its overall level."""
+        category_col = "pvq_value_label" if kind == "pvq" else "foundation"
+        a, b = self._load(f"within_model_rank_summary_{category_col}.csv")
+        merged = a.merge(b, on=category_col, suffixes=(f"_{self.label_a}", f"_{self.label_b}"))
+        cols = [category_col, f"mean_rank_{self.label_a}", f"mean_rank_{self.label_b}"]
+        result = merged[cols].sort_values(f"mean_rank_{self.label_a}")
+        corr = self._correlate(
+            merged[f"mean_rank_{self.label_a}"], merged[f"mean_rank_{self.label_b}"]
+        )
+        self._save(result, f"within_model_rank_comparison_{kind}.csv")
+        self._save(pd.DataFrame([{kind: kind, **corr}]), f"within_model_rank_correlation_{kind}.csv")
+        return result
+
+    def compare_model_agreement(self, kind: str) -> pd.DataFrame:
+        """Does the same pair of models agree the most (or least) with
+        each other regardless of elicitation method? ``kind="zero_shot"``
+        or ``kind="steered"`` selects which of the two pairwise-agreement
+        tables to compare. Joins each pair's `cohens_kappa` between the
+        two conditions and reports the Spearman/Pearson correlation across
+        all 15 pairs — a high one means "which models see hate speech the
+        same way" is a stable property of the model pair, not an artifact
+        of how the belief was elicited."""
+        filename = f"pairwise_model_agreement_{kind}.csv"
+        a, b = self._load(filename)
+        merged = a.merge(b, on=["model_a", "model_b"], suffixes=(f"_{self.label_a}", f"_{self.label_b}"))
+        cols = ["model_a", "model_b", f"cohens_kappa_{self.label_a}", f"cohens_kappa_{self.label_b}"]
+        result = merged[cols].sort_values(f"cohens_kappa_{self.label_a}", ascending=False)
+        corr = self._correlate(
+            merged[f"cohens_kappa_{self.label_a}"], merged[f"cohens_kappa_{self.label_b}"]
+        )
+        self._save(result, f"model_agreement_comparison_{kind}.csv")
+        self._save(pd.DataFrame([{"kind": kind, **corr}]), f"model_agreement_correlation_{kind}.csv")
         return result
 
     @staticmethod
@@ -418,6 +535,7 @@ class SteeringConditionComparison:
         robust_by_category = self.robust_high_steerability_by_category(robust_items)
         return {
             "steering_effect": self.compare_steering_effect(),
+            "steering_effect_shared_baseline": self.compare_steering_effect_shared_baseline(),
             "flip_counts": self.compare_flip_counts(),
             "flip_magnitude": self.compare_flip_magnitude(),
             "flip_direction": self.compare_flip_direction(),
@@ -429,6 +547,14 @@ class SteeringConditionComparison:
             "flip_counts_by_value_mft": self.compare_flip_counts_by_value("mft"),
             "pvq_patterns": self.compare_category_patterns("pvq"),
             "mft_patterns": self.compare_category_patterns("mft"),
+            "pvq_patterns_excl_apertus": self.compare_category_patterns_excluding_model(
+                "pvq", "Apertus-8B-Instruct"),
+            "mft_patterns_excl_apertus": self.compare_category_patterns_excluding_model(
+                "mft", "Apertus-8B-Instruct"),
+            "pvq_rank_comparison": self.compare_within_model_rank("pvq"),
+            "mft_rank_comparison": self.compare_within_model_rank("mft"),
+            "model_agreement_zero_shot": self.compare_model_agreement("zero_shot"),
+            "model_agreement_steered": self.compare_model_agreement("steered"),
             "item_level_correlation": self.compare_item_level(),
             "instance_flips": instance_flips, "instance_flip_corr": instance_flip_corr,
             "instance_profile": instance_profile, "instance_profile_corr": instance_profile_corr,
