@@ -307,6 +307,31 @@ class HateSpeechSteeringAnalyzer:
         self._save(result, "item_level_model_agreement.csv")
         return result
 
+    def item_agreement_vs_zero_shot(
+        self, item_agreement: pd.DataFrame, zero_shot_agreement: pd.DataFrame,
+        item_steerability: pd.DataFrame | None = None,
+    ) -> pd.DataFrame:
+        """Each item's steered inter-model kappa (`item_level_model_agreement`)
+        against the single zero-shot baseline kappa (mean of the 15
+        pairwise `pairwise_model_agreement_zero_shot` values — zero-shot
+        predictions have no per-item breakdown, so this is a fixed
+        reference point rather than a per-item one), with the drop
+        (`delta_kappa`) for each item. If `item_steerability` is given,
+        joins in `test_statement`/`foundation`/`pvq_value_label`/
+        `mean_flip_rate` for readability. Sorted by `delta_kappa`
+        ascending (biggest agreement drop first)."""
+        baseline_kappa = float(zero_shot_agreement["cohens_kappa"].mean())
+        result = item_agreement.copy()
+        result["zero_shot_baseline_kappa"] = baseline_kappa
+        result["delta_kappa"] = result["mean_kappa_between_models"] - baseline_kappa
+        if item_steerability is not None:
+            cols = ["condition", "belief_id", "test_statement", "foundation",
+                    "pvq_value", "pvq_value_label", "mean_flip_rate"]
+            result = item_steerability[cols].merge(result, on=["condition", "belief_id"])
+        result = result.sort_values("delta_kappa")
+        self._save(result, "item_agreement_vs_zero_shot.csv")
+        return result
+
     def steerability_vs_item_agreement(
         self, item_steerability: pd.DataFrame, item_agreement: pd.DataFrame,
     ) -> pd.DataFrame:
@@ -318,8 +343,20 @@ class HateSpeechSteeringAnalyzer:
         predictions diverge from each other the most — the item-level
         counterpart of `steerability_vs_model_divergence` (which asks the
         analogous question at the message level, using the variance of
-        each model's own flip rate rather than pairwise label agreement)."""
+        each model's own flip rate rather than pairwise label agreement).
+
+        Saves two files: `item_steerability_vs_agreement.csv` (the
+        per-item merged table — `test_statement`, `foundation`/
+        `pvq_value_label`, `mean_flip_rate`, `mean_kappa_between_models`,
+        etc., so individual items can be inspected, e.g. sorted by
+        `mean_flip_rate` to see which specific items are both
+        highly-steerable and low-agreement) and
+        `steerability_vs_item_agreement.csv` (the aggregate correlation,
+        as before)."""
         merged = item_steerability.merge(item_agreement, on=["condition", "belief_id"])
+        merged = merged.sort_values("mean_flip_rate", ascending=False)
+        self._save(merged, "item_steerability_vs_agreement.csv")
+
         rows = []
         for condition, sub in [("mft", merged[merged["condition"] == "mft"]),
                                 ("pvq", merged[merged["condition"] == "pvq"]),
@@ -1125,6 +1162,7 @@ class HateSpeechSteeringAnalyzer:
         tier_patterns = self.steerability_tier_patterns(item_tiers)
         item_agreement = self.item_level_model_agreement()
         steerability_item_agreement = self.steerability_vs_item_agreement(item_steerability, item_agreement)
+        item_agreement_vs_zs = self.item_agreement_vs_zero_shot(item_agreement, zero_shot_agreement, item_steerability)
         flips_by_model = self.flip_counts_by_model(flips_by_item)
         flips_by_model_value = self.flip_counts_by_model_and_value(flips_by_item)
         flips_by_instance = self.flip_counts_by_instance()
@@ -1148,6 +1186,7 @@ class HateSpeechSteeringAnalyzer:
             "flips_by_item": flips_by_item, "flips_by_model": flips_by_model,
             "item_steerability": item_steerability, "item_tiers": item_tiers,
             "item_agreement": item_agreement, "steerability_item_agreement": steerability_item_agreement,
+            "item_agreement_vs_zero_shot": item_agreement_vs_zs,
             "tier_patterns": tier_patterns,
             "flips_by_model_value": flips_by_model_value, "flips_by_instance": flips_by_instance,
             "flip_rate_tiers": flip_rate_tiers,

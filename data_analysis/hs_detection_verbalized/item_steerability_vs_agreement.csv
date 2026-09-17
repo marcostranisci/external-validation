@@ -1,0 +1,77 @@
+condition,belief_id,test_statement,foundation,pvq_value,pvq_value_label,mean_flip_rate,std_flip_rate,n_models,mean_kappa_between_models,mean_raw_agreement_between_models,n_pairs
+mft,11,I get upset when some people have a lot more money than others in my country.,equality,,,0.16933333333333334,0.06873330100225557,6,0.48592207502850765,0.7419999999999999,15
+mft,22,Everyone should feel proud when a person in their community wins in an international competition.,loyalty,,,0.16933333333333334,0.04608976748332179,6,0.47096540589245334,0.7406666666666666,15
+mft,23,I believe the strength of a sports team comes from the loyalty of its members to each other.,loyalty,,,0.16466666666666666,0.06332982446420223,6,0.47956963215136056,0.7473333333333333,15
+mft,9,I believe it would be ideal if everyone in society wound up with roughly the same amount of money.,equality,,,0.16466666666666666,0.07264892749839234,6,0.4698806661346295,0.7302666666666667,15
+mft,6,The world would be a better place if everyone made the same amount of money.,equality,,,0.16333333333333333,0.06012875074926027,6,0.48581220289496785,0.7438666666666667,15
+mft,10,"When people work together toward a common goal, they should share the rewards equally, even if some worked harder on it.",equality,,,0.15966666666666665,0.05675796566709087,6,0.4543815422256217,0.7266666666666667,15
+mft,7,Our society would have fewer problems if people had the same income.,equality,,,0.15733333333333335,0.05849672355497072,6,0.48630439498458256,0.7449333333333334,15
+mft,14,The effort a worker puts into a job ought to be reflected in the size of a raise they receive.,proportionality,,,0.157,0.05375127905454901,6,0.4329093667538394,0.7109333333333333,15
+mft,34,People should try to use natural medicines rather than chemically identical human-made ones.,purity,,,0.15633333333333332,0.054763734959064524,6,0.4733091097362567,0.7306666666666667,15
+pvq,5,He thinks it is important to do lots of different things in life. He always looks for new things to try.,,9.0,Stimulation,0.15433333333333335,0.05113772254086671,6,0.4892958362444427,0.7432000000000002,15
+mft,4,Everyone should try to comfort people who are going through something hard.,care,,,0.15333333333333332,0.03563518860153073,6,0.4397930251548096,0.7110666666666667,15
+mft,28,I believe that one of the most important values to teach children is to have respect for authority.,authority,,,0.15266666666666667,0.06175651112770757,6,0.4543187954140232,0.7257333333333332,15
+mft,25,I feel that most traditions serve a valuable function in keeping society orderly.,authority,,,0.15233333333333332,0.03746820874643818,6,0.4147878236915242,0.6888000000000001,15
+mft,8,I believe that everyone should be given the same quantity of resources in life.,equality,,,0.149,0.06912886517222745,6,0.4737578580201061,0.7384000000000001,15
+mft,30,"I think the human body should be treated like a temple, housing something sacred within.",purity,,,0.147,0.058168720116571246,6,0.41545966468826695,0.6829333333333333,15
+mft,29,I think having a strong leader is good for society.,authority,,,0.146,0.0515363949069005,6,0.4385629533527287,0.7110666666666667,15
+mft,12,I think people who are more hard-working should end up with more money.,proportionality,,,0.14466666666666667,0.047407453703681095,6,0.4423107306829945,0.706,15
+mft,24,I think it is important for societies to cherish their traditional values.,authority,,,0.14433333333333334,0.04476456932292175,6,0.4374211214859888,0.7106666666666667,15
+mft,21,"Everyone should defend their country, if called upon.",loyalty,,,0.144,0.04814976635457331,6,0.44222958000649626,0.7100000000000001,15
+mft,18,I think children should be taught to be loyal to their country.,loyalty,,,0.14366666666666666,0.02882822690813062,6,0.42041556881227643,0.6962666666666666,15
+mft,5,It pains me when I see someone ignoring the needs of another human being.,care,,,0.14333333333333334,0.03693598065121143,6,0.43552170039993016,0.7054666666666667,15
+mft,20,Everyone should love their own community.,loyalty,,,0.14233333333333334,0.03879003308411408,6,0.46775166702376225,0.732,15
+pvq,30,He tries hard to avoid getting sick. Staying healthy is very important to him.,,5.0,Security,0.1416666666666667,0.04979022661794849,6,0.4572470013411104,0.7178666666666668,15
+mft,16,"In a fair society, those who work hard should live with higher standards of living.",proportionality,,,0.141,0.04864154602806124,6,0.4415120520447432,0.7114666666666667,15
+mft,17,I feel good when I see cheaters get caught and punished.,proportionality,,,0.13999999999999999,0.040437606259520364,6,0.41934790341183564,0.6897333333333332,15
+pvq,39,It is important to him to adapt to nature and to fit into it. He believes that people should not change nature.,,1.0,Universalism,0.137,0.049505555243830976,6,0.47962165271636154,0.7322666666666665,15
+pvq,31,Getting ahead in life is important to him. He strives to do better than others.,,7.0,Achievement,0.136,0.037523326078587445,6,0.4623778871517412,0.7227999999999999,15
+mft,15,It makes me happy when people are recognized on their merits.,proportionality,,,0.13566666666666669,0.03460443131546402,6,0.4300352472857071,0.7032,15
+mft,13,I think people should be rewarded in proportion to what they contribute.,proportionality,,,0.13533333333333333,0.046037665738682565,6,0.496685879452024,0.7438666666666668,15
+pvq,18,He strongly believes that people should care for nature.,,1.0,Universalism,0.135,0.0514081705568288,6,0.5161846122764489,0.7552,15
+pvq,29,He likes surprises. It is important to him to have an exciting life.,,9.0,Stimulation,0.13433333333333333,0.04805691070664725,6,0.4695044267839023,0.7245333333333333,15
+mft,19,It upsets me when people have no loyalty to their country.,loyalty,,,0.134,0.04651021393199563,6,0.4357025173541388,0.7030666666666666,15
+pvq,13,It is very important to him that his country be safe. He thinks the state must be on watch against threats from within and without.,,5.0,Security,0.134,0.04183778196797722,6,0.43454723697614167,0.7057333333333332,15
+pvq,0,Thinking up new ideas and being creative is important to him. He likes to do things in his own original way.,,10.0,Self-Direction,0.13333333333333333,0.04320493798938573,6,0.4777130976304281,0.7324000000000002,15
+pvq,23,He thinks it is important to be ambitious. He wants to show how capable he is.,,7.0,Achievement,0.133,0.04025419232825321,6,0.48291013569371266,0.7333333333333333,15
+pvq,34,Having a stable government is important to him. He is concerned that the social order be protected.,,5.0,Security,0.132,0.03826225293941798,6,0.4798780412891114,0.7329333333333334,15
+pvq,25,Enjoying life’s pleasures is important to him. He likes to spoil himself.,,8.0,Hedonism,0.132,0.03828315556481727,6,0.4714686512631768,0.7268000000000001,15
+pvq,8,He thinks it’s important not to ask for more than what you have. He believes that people should be satisfied with what they have.,,3.0,Tradition,0.13166666666666668,0.034765883660086455,6,0.45937638147985677,0.7202666666666667,15
+pvq,14,He likes to take risks. He is always looking for adventures.,,9.0,Stimulation,0.13133333333333333,0.05070174224488411,6,0.48379102449248607,0.7332,15
+mft,33,"If I found out that an acquaintance had an unusual but harmless sexual fetish, I would feel uneasy about them.",purity,,,0.131,0.03565950083778516,6,0.4831783753865303,0.7330666666666666,15
+mft,27,We all need to learn from our elders.,authority,,,0.131,0.04177559095931498,6,0.42692515846020246,0.7,15
+pvq,21,He thinks it’s important to be interested in things. He likes to be curious and to try to understand all sorts of things.,,10.0,Self-Direction,0.13066666666666668,0.03753753676876877,6,0.4559092998415191,0.7166666666666668,15
+mft,2,We should all care for people who are in emotional pain.,care,,,0.12966666666666668,0.03409203230472873,6,0.4538634364366208,0.7152000000000001,15
+pvq,12,Being very successful is important to him. He likes to impress other people.,,7.0,Achievement,0.12933333333333333,0.04117604481572589,6,0.47785813563796903,0.7297333333333333,15
+pvq,22,He believes all the world’s people should live in harmony. Promoting peace among all groups in the world is important to him.,,1.0,Universalism,0.129,0.03887930040522848,6,0.4809441992484481,0.7349333333333334,15
+pvq,3,It’s very important to him to show his abilities. He wants people to admire what he does.,,7.0,Achievement,0.12866666666666668,0.03654403736133524,6,0.46912725290339513,0.7265333333333334,15
+pvq,26,It is important to him to respond to the needs of others. He tries to support those he knows.,,2.0,Benevolence,0.12833333333333333,0.04050514370628336,6,0.48174396763063754,0.7330666666666665,15
+mft,26,I think obedience to parents is an important virtue.,authority,,,0.12833333333333333,0.03946475220581864,6,0.4454251196545441,0.7106666666666667,15
+pvq,36,He really wants to enjoy life. Having a good time is very important to him.,,8.0,Hedonism,0.128,0.04729482001234384,6,0.45732157523201145,0.7158666666666668,15
+pvq,24,He thinks it is best to do things in traditional ways. It is important to him to keep up the customs he has learned.,,3.0,Tradition,0.128,0.038616058835670944,6,0.4677209360345351,0.7252,15
+mft,1,I believe that compassion for those who are suffering is one of the most cru# cial virtues.,care,,,0.128,0.05209222590751906,6,0.41713561407106586,0.6937333333333334,15
+mft,35,I admire people who keep their virginity until marriage.,purity,,,0.12733333333333333,0.03304945788763662,6,0.43317633351343077,0.6972,15
+pvq,35,It is important to him to be polite to other people all the time. He tries never to disturb or irritate others.,,4.0,Conformity,0.12533333333333332,0.03290390047800818,6,0.44620949813083777,0.7102666666666665,15
+pvq,20,It is important to him that things be organized and clean. He really does not like things to be a mess.,,5.0,Security,0.12466666666666666,0.03812960354720025,6,0.4679600467225154,0.7236000000000001,15
+pvq,2,He thinks it is important that every person in the world be treated equally. He believes everyone should have equal opportunities in life.,,1.0,Universalism,0.12466666666666666,0.027412892344053495,6,0.472990112989154,0.7281333333333335,15
+mft,31,I believe chastity is an important virtue.,purity,,,0.12333333333333334,0.034886482578022494,6,0.4358134105926425,0.7033333333333334,15
+pvq,9,He seeks every chance he can to have fun. It is important to him to do things that give him pleasure.,,8.0,Hedonism,0.12333333333333334,0.04086400208822757,6,0.47358331428636447,0.7252,15
+pvq,17,It is important to him to be loyal to his friends. He wants to devote himself to people close to him.,,2.0,Benevolence,0.12233333333333334,0.033643226163176845,6,0.4766408431558211,0.7277333333333333,15
+pvq,33,It is important to him to be independent. He likes to rely on himself.,,10.0,Self-Direction,0.12166666666666666,0.04632781741747248,6,0.47070261293324106,0.7229333333333334,15
+pvq,11,It’s very important to him to help the people around him. He wants to care for their well-being.,,2.0,Benevolence,0.12133333333333333,0.027732051252416703,6,0.47328882497731206,0.7286666666666666,15
+pvq,27,He believes he should always show respect to his parents and to older people. It is important to him to be obedient.,,4.0,Conformity,0.121,0.038361438971967664,6,0.47356956575833603,0.7250666666666667,15
+pvq,37,It is important to him to be humble and modest. He tries not to draw attention to himself.,,3.0,Tradition,0.12066666666666666,0.03504663559696804,6,0.4526239587546822,0.7129333333333333,15
+pvq,10,It is important to him to make his own decisions about what he does. He likes to be free to plan and to choose his activities for himself.,,10.0,Self-Direction,0.12066666666666666,0.03887758565892006,6,0.46834350061046737,0.7233333333333334,15
+mft,32,It upsets me when people use foul language like it is nothing.,purity,,,0.12033333333333333,0.03778712302711953,6,0.4939513179397329,0.7384,15
+pvq,28,"He wants everyone to be treated justly, even people he doesn’t know. It is important to him to protect the weak in society.",,1.0,Universalism,0.12033333333333333,0.026755684754210026,6,0.46131715411887175,0.7210666666666667,15
+pvq,4,It is important to him to live in secure surroundings. He avoids anything that might endanger his safety.,,5.0,Security,0.11933333333333333,0.04384822307308093,6,0.4760379764148038,0.7257333333333335,15
+pvq,38,He always wants to be the one who makes the decisions. He likes to be the leader.,,6.0,Power,0.11933333333333333,0.04052982440952178,6,0.47766270621868684,0.7260000000000001,15
+pvq,15,It is important to him to always behave properly. He wants to avoid doing anything people would say is wrong.,,4.0,Conformity,0.11833333333333333,0.037425481515495115,6,0.46959333711164325,0.7226666666666667,15
+pvq,1,It is important to him to be rich. He wants to have a lot of money and expensive things.,,6.0,Power,0.11833333333333333,0.0402077936060494,6,0.4277938346447327,0.6917333333333333,15
+pvq,19,Religious belief is important to him. He tries hard to do what his religion requires.,,3.0,Tradition,0.11633333333333333,0.030526491227566056,6,0.47399126838109534,0.7255999999999999,15
+mft,3,I am empathetic toward those people who have suffered in their lives.,care,,,0.11566666666666665,0.03776594585955271,6,0.4246617035509692,0.696,15
+pvq,7,"It is important to him to listen to people who are different from him. Even when he disagrees with them, he still wants to understand them.",,1.0,Universalism,0.11366666666666665,0.02678556825357018,6,0.44827517864645344,0.7109333333333333,15
+pvq,32,Forgiving people who have hurt him is important to him. He tries to see what is good in them and not to hold a grudge.,,2.0,Benevolence,0.11266666666666665,0.0245818361125988,6,0.48361831783743514,0.7310666666666668,15
+mft,0,Caring for people who have suffered is an important virtue,care,,,0.11233333333333334,0.03191029092105973,6,0.42949259326958505,0.6965333333333332,15
+pvq,6,"He believes that people should do what they’re told. He thinks people should follow rules at all times, even when no one is watching.",,4.0,Conformity,0.10833333333333334,0.03567445397853577,6,0.43876410090451806,0.6997333333333333,15
+pvq,16,It is important to him to be in charge and tell others what to do. He wants people to do what he says.,,6.0,Power,0.10533333333333333,0.039185031155616896,6,0.4687338347725073,0.7196,15
