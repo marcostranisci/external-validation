@@ -199,6 +199,27 @@ class SteeringConditionComparison:
         self._save(pd.DataFrame([{kind: kind, **corr}]), f"within_model_rank_correlation_{kind}.csv")
         return result
 
+    def compare_model_agreement(self, kind: str) -> pd.DataFrame:
+        """Does the same pair of models agree the most (or least) with
+        each other regardless of elicitation method? ``kind="zero_shot"``
+        or ``kind="steered"`` selects which of the two pairwise-agreement
+        tables to compare. Joins each pair's `cohens_kappa` between the
+        two conditions and reports the Spearman/Pearson correlation across
+        all 15 pairs — a high one means "which models see hate speech the
+        same way" is a stable property of the model pair, not an artifact
+        of how the belief was elicited."""
+        filename = f"pairwise_model_agreement_{kind}.csv"
+        a, b = self._load(filename)
+        merged = a.merge(b, on=["model_a", "model_b"], suffixes=(f"_{self.label_a}", f"_{self.label_b}"))
+        cols = ["model_a", "model_b", f"cohens_kappa_{self.label_a}", f"cohens_kappa_{self.label_b}"]
+        result = merged[cols].sort_values(f"cohens_kappa_{self.label_a}", ascending=False)
+        corr = self._correlate(
+            merged[f"cohens_kappa_{self.label_a}"], merged[f"cohens_kappa_{self.label_b}"]
+        )
+        self._save(result, f"model_agreement_comparison_{kind}.csv")
+        self._save(pd.DataFrame([{"kind": kind, **corr}]), f"model_agreement_correlation_{kind}.csv")
+        return result
+
     @staticmethod
     def _correlate(x: pd.Series, y: pd.Series) -> dict:
         n = len(x)
@@ -532,6 +553,8 @@ class SteeringConditionComparison:
                 "mft", "Apertus-8B-Instruct"),
             "pvq_rank_comparison": self.compare_within_model_rank("pvq"),
             "mft_rank_comparison": self.compare_within_model_rank("mft"),
+            "model_agreement_zero_shot": self.compare_model_agreement("zero_shot"),
+            "model_agreement_steered": self.compare_model_agreement("steered"),
             "item_level_correlation": self.compare_item_level(),
             "instance_flips": instance_flips, "instance_flip_corr": instance_flip_corr,
             "instance_profile": instance_profile, "instance_profile_corr": instance_profile_corr,

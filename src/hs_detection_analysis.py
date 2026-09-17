@@ -66,6 +66,44 @@ def _mcnemar_exact(b: int, c: int) -> float:
     return float(stats.binomtest(min(b, c), b + c, 0.5, alternative="two-sided").pvalue)
 
 
+def _agreement(a: dict, b: dict) -> dict:
+    """Pairwise agreement between two models' predicted labels on the same
+    set of items (``a``/``b``: id -> predicted label, as strings "0"/"1").
+    Reports raw agreement, Cohen's kappa (chance-corrected; 0 = chance
+    level, 1 = perfect), and a chi-square test of independence between the
+    two models' label distributions (with a phi coefficient, the 2x2
+    effect-size analogue of Cramer's V) — tests whether the two models'
+    predictions are associated at all, as opposed to kappa's "how much
+    better than chance," which can be near 0 even when association is
+    statistically real but weak."""
+    ids = sorted(set(a) & set(b))
+    n = len(ids)
+    result = {"n": n, "raw_agreement": np.nan, "cohens_kappa": np.nan,
+              "chi2_stat": np.nan, "chi2_p": np.nan, "phi": np.nan, "notes": ""}
+    if n == 0:
+        result["notes"] = "no shared ids"
+        return result
+    xa = np.array([str(a[i]) for i in ids])
+    xb = np.array([str(b[i]) for i in ids])
+    contingency = pd.crosstab(pd.Series(xa, name="a"), pd.Series(xb, name="b"))
+    contingency = contingency.reindex(index=["0", "1"], columns=["0", "1"], fill_value=0)
+    observed_agree = np.trace(contingency.to_numpy())
+    p_o = observed_agree / n
+    row_marg = contingency.sum(axis=1).to_numpy() / n
+    col_marg = contingency.sum(axis=0).to_numpy() / n
+    p_e = float((row_marg * col_marg).sum())
+    kappa = (p_o - p_e) / (1 - p_e) if p_e < 1 else np.nan
+    result.update(raw_agreement=p_o, cohens_kappa=kappa)
+    if contingency.shape[0] >= 2 and contingency.shape[1] >= 2 and contingency.to_numpy().sum() > 0:
+        try:
+            chi2, p, _, _ = stats.chi2_contingency(contingency.to_numpy())
+            phi = float(np.sqrt(chi2 / n))
+            result.update(chi2_stat=float(chi2), chi2_p=float(p), phi=phi)
+        except ValueError as exc:
+            result["notes"] = str(exc)
+    return result
+
+
 def _recall(predictions: list[dict]) -> tuple[float, int, int]:
     """Recall on the positive (hate speech, label 1) class.
 
@@ -137,6 +175,94 @@ class HateSpeechSteeringAnalyzer:
                         "recall": recall, "tp": tp, "n_positive": n_pos,
                     })
         return pd.DataFrame(rows)
+
+    # ------------------------------------------------------------------
+    # Do models agree with each other on the predicted label?
+    # ------------------------------------------------------------------
+    def pairwise_model_agreement_zero_shot(self) -> pd.DataFrame:
+        """Pairwise agreement between every pair of models' *zero-shot*
+        predicted labels on the same 500 messages — the cleanest "do these
+        two models fundamentally see hate speech the same way" comparison,
+        unconfounded by which belief steered which model. See `_agreement`
+        for the metrics (raw agreement, Cohen's kappa, chi-square, phi).
+        Saved to `pairwise_model_agreement_zero_shot.csv`, sorted by
+        `cohens_kappa` descending (most-agreeing pair first)."""
+        preds = {
+            model: {p["id"]: p["answer"] for p in model_data["zero_shot"]}
+            for model, model_data in self._data["models"].items()
+        }
+        rows = []
+        for model_a, model_b in itertools.combinations(sorted(preds), 2):
+            row = _agreement(preds[model_a], preds[model_b])
+            rows.append({"model_a": model_a, "model_b": model_b, **row})
+        result = pd.DataFrame(rows).sort_values("cohens_kappa", ascending=False)
+        self._save(result, "pairwise_model_agreement_zero_shot.csv")
+        return result
+
+    def pairwise_model_agreement_steered(self) -> pd.DataFrame:
+        """Pairwise agreement between every pair of models' predicted
+        labels under belief-steering, pooled across all 456 (id,
+        belief_id, condition) combinations shared between the two models
+        (36 MFT + 40 PVQ items x 500 messages) — much higher-powered than
+        the zero-shot comparison. Note this compares model A steered by
+        *its own* belief on item X against model B steered by *its own*
+        belief on item X (`"prediction_setup": "paired_by_model"`): the
+        content slot is the same, but the actual belief text differs per
+        model, so this measures agreement under "the same kind of moral
+        context," not literally the same steering text. Saved to
+        `pairwise_model_agreement_steered.csv`, sorted by `cohens_kappa`
+        descending."""
+        preds: dict[str, dict[tuple, str]] = {}
+        for model, model_data in self._data["models"].items():
+            model_preds = {}
+            for condition in ("mft", "pvq"):
+                for item in model_data[condition]:
+                    for p in item["predictions"]:
+                        model_preds[(condition, item["belief_id"], p["id"])] = p["answer"]
+            preds[model] = model_preds
+        rows = []
+        for model_a, model_b in itertools.combinations(sorted(preds), 2):
+            row = _agreement(preds[model_a], preds[model_b])
+            rows.append({"model_a": model_a, "model_b": model_b, **row})
+        result = pd.DataFrame(rows).sort_values("cohens_kappa", ascending=False)
+        self._save(result, "pairwise_model_agreement_steered.csv")
+        return result
+
+    def model_agreement_summary(
+        self, zero_shot_agreement: pd.DataFrame, steered_agreement: pd.DataFrame,
+    ) -> pd.DataFrame:
+        """Per model: its mean pairwise Cohen's kappa with the other 5
+        models, under zero-shot and under steering — "how much does this
+        model agree with the panel on average," a single ranked score per
+        model rather than a 15-pair matrix. Also reports the Spearman
+        correlation between the two conditions' `cohens_kappa` across the
+        15 pairs (does the "which pair agrees most" ranking hold up under
+        steering, or is it specific to zero-shot?)."""
+        rows = []
+        for model in sorted(set(zero_shot_agreement["model_a"]) | set(zero_shot_agreement["model_b"])):
+            zs = zero_shot_agreement[
+                (zero_shot_agreement["model_a"] == model) | (zero_shot_agreement["model_b"] == model)
+            ]["cohens_kappa"]
+            st = steered_agreement[
+                (steered_agreement["model_a"] == model) | (steered_agreement["model_b"] == model)
+            ]["cohens_kappa"]
+            rows.append({
+                "model": model,
+                "mean_kappa_with_panel_zero_shot": zs.mean(),
+                "mean_kappa_with_panel_steered": st.mean(),
+            })
+        result = pd.DataFrame(rows).sort_values("mean_kappa_with_panel_zero_shot", ascending=False)
+        self._save(result, "model_agreement_summary.csv")
+
+        merged = zero_shot_agreement.merge(
+            steered_agreement, on=["model_a", "model_b"], suffixes=("_zero_shot", "_steered")
+        )
+        corr = stats.spearmanr(merged["cohens_kappa_zero_shot"], merged["cohens_kappa_steered"])
+        corr_row = pd.DataFrame([{
+            "n_pairs": len(merged), "spearman_r": float(corr.statistic), "spearman_p": float(corr.pvalue),
+        }])
+        self._save(corr_row, "model_agreement_zero_shot_vs_steered_correlation.csv")
+        return result
 
     # ------------------------------------------------------------------
     # Does steering shift recall? (within each model)
@@ -910,6 +1036,9 @@ class HateSpeechSteeringAnalyzer:
     def run_all(self, pvq_mapping_path: str | Path | None = None) -> dict[str, pd.DataFrame]:
         table = self.build_recall_table()
         self._save(table, "recall_by_model_condition_item.csv")
+        zero_shot_agreement = self.pairwise_model_agreement_zero_shot()
+        steered_agreement = self.pairwise_model_agreement_steered()
+        agreement_summary = self.model_agreement_summary(zero_shot_agreement, steered_agreement)
         per_model = self.steering_effect_per_model(table)
         by_item = self.item_level_effect(table)
         between = self.between_model_steering_effect(table)
@@ -936,7 +1065,10 @@ class HateSpeechSteeringAnalyzer:
         prediction_bins = self.instance_prediction_bins(prediction_profile)
 
         return {
-            "recall_table": table, "per_model": per_model, "by_item": by_item,
+            "recall_table": table,
+            "zero_shot_agreement": zero_shot_agreement, "steered_agreement": steered_agreement,
+            "agreement_summary": agreement_summary,
+            "per_model": per_model, "by_item": by_item,
             "item_significance": item_significance, "pvq_patterns": pvq_patterns,
             "foundation_patterns": foundation_patterns,
             "pvq_rank": pvq_rank, "foundation_rank": foundation_rank,

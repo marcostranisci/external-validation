@@ -371,8 +371,62 @@ that item; the file's metadata records this as `"prediction_setup":
 "paired_by_model"` — there is no cross-model steering condition in this
 file, i.e. Model A is never steered by Model B's replies).
 
-`HateSpeechSteeringAnalyzer` (`src/hs_detection_analysis.py`) asks two
-questions:
+### Do models agree with each other on the predicted label?
+
+Before asking whether *steering* changes anything, a more basic question:
+do the 6 models even agree with each other on which messages are hate
+speech in the first place? `pairwise_model_agreement_zero_shot` computes,
+for every pair of models, agreement on the 500 zero-shot predictions
+(raw agreement, Cohen's kappa — chance-corrected, 0=chance/1=perfect —
+and a chi-square test with phi as effect size). `pairwise_model_agreement_steered`
+does the same pooled across all 456 (belief × 500 messages) steered
+predictions per pair — note this compares model A steered by *its own*
+belief on item X against model B steered by *its own* belief on the same
+item X (paired_by_model), so it's "agreement under the same kind of moral
+context," not literally the same steering text. `model_agreement_summary`
+reduces each 15-pair matrix to one score per model (its mean kappa with
+the other 5) and tests whether the zero-shot and steered rankings
+correlate. Saved to `pairwise_model_agreement_zero_shot.csv`,
+`pairwise_model_agreement_steered.csv`, `model_agreement_summary.csv`,
+`model_agreement_zero_shot_vs_steered_correlation.csv`.
+
+**Result: substantial but incomplete agreement (kappa 0.4–0.7, all
+p≈0), no dramatic outlier model, and a consistent most-agreeing pair.**
+Zero-shot: every pair's chi-square test is overwhelming (p≈0, n=500) —
+models are clearly not classifying independently — but kappa never
+exceeds ~0.70, meaning even the most-aligned pair still disagrees on
+~13-15% of messages. **Falcon–Qwen (κ=0.697)**, **Apertus–Ministral
+(κ=0.692)**, and **Llama–Ministral (κ=0.682)** are the most-agreeing
+pairs; **Falcon–Llama (κ=0.404)** and **Llama–Olmo (κ=0.437)** the least.
+Per-model average agreement with the panel is fairly compressed
+(0.540–0.592) — no single model is a dramatic outlier in how much it
+agrees with the others zero-shot. Under steering (pooled, n=38,000 pairs
+per model-pair — far more power), the same **Llama–Ministral (κ=0.693)**
+and **Falcon–Qwen (κ=0.685)** pairs remain the most-agreeing; **Llama–Olmo
+(κ=0.254)** and **Ministral–Olmo (κ=0.258)** become the least, dropping to
+merely "fair" agreement by Landis-Koch conventions.
+
+**Which pairs agree most is stable within one elicitation method, but
+does not carry over to the other.** The zero-shot and steered agreement
+rankings correlate significantly *within* the free-text file (Spearman
+ρ=0.77, p=0.0008 across the 15 pairs) — a pair that agrees zero-shot
+tends to also agree once both are steered. But comparing the *steered*
+ranking *between* free-text and verbalized steering
+(`model_agreement_comparison_steered.csv`) gives ρ=0.175 (p=0.53,
+n.s.) — which model pairs end up agreeing most under steering is itself
+an elicitation-method-dependent property, extending the "does steering
+method matter" theme (see below) to inter-model agreement structure, not
+just each model's own effect. (The equivalent zero-shot-vs-zero-shot
+comparison across files is not informative on its own — it's ρ≈0,
+p=0.84, but that's dominated by the already-known prompt-wording
+confound: Apertus's zero-shot agreement with the panel collapses to 0.265
+under the verbalized file's wording alone, matching its 59-point recall
+collapse — yet another independent confirmation, this time via agreement
+rather than recall, that Apertus's own-baseline verbalized zero-shot
+should be excluded rather than compared directly.)
+
+`HateSpeechSteeringAnalyzer` (`src/hs_detection_analysis.py`) also asks
+two more questions, about the effect of *steering* specifically:
 
 1. **Does steering shift recall, within each model?** For each model,
    recall (TP / 250 actual-positive messages) is computed for `zero_shot`
@@ -925,6 +979,12 @@ outputs directly, writing to `data_analysis/hs_detection_comparison/`:
   the two conditions and reports the Pearson/Spearman correlation — does
   a category that's a relatively weak lever for a model under one
   elicitation method stay relatively weak under the other?
+- **`model_agreement_comparison_{zero_shot,steered}.csv`** /
+  **`model_agreement_correlation_{zero_shot,steered}.csv`** — joins each
+  of the 15 model pairs' Cohen's kappa (from "do models agree with each
+  other," above) between the two conditions and reports the correlation —
+  does the same pair of models agree the most (or least) regardless of
+  elicitation method?
 - **`flip_counts_by_value_comparison_pvq.csv`** /
   **`flip_counts_by_value_comparison_mft.csv`** — the raw-flip-volume
   counterpart of the two above (which compare recall-significance

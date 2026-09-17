@@ -78,6 +78,20 @@ zero-shot, and again once per questionnaire item (76 runs) steered by
 *that model's own* free-text opinion on that item (no cross-model
 steering in this data — `"prediction_setup": "paired_by_model"`).
 
+- **Before steering enters the picture at all: models agree with each
+  other substantially but incompletely, with no dramatic outlier and one
+  consistently closest pair.** Pairwise Cohen's kappa on the 500 zero-shot
+  predictions ranges 0.40–0.70 across the 15 model pairs (every pair's
+  association is statistically overwhelming, p≈0, but even the closest
+  pair still disagrees on ~13-15% of messages). **Llama–Ministral** and
+  **Falcon–Qwen** are consistently the most-agreeing pair, both zero-shot
+  and pooled across all steered predictions (κ up to ~0.70); **Llama–Olmo**
+  and **Ministral–Olmo** are consistently the least (κ drops to ~0.25 under
+  steering, "fair" agreement only). Per-model average agreement with the
+  panel is compressed (0.54–0.59 zero-shot) — no model is a dramatic
+  outlier in how much it agrees with the rest, at least in this free-text
+  file. (§3 below revisits this: whether *which pair* agrees most under
+  steering itself depends on how the belief is elicited.)
 - **Steering is far from neutral, and the direction is model-specific.**
   5 of 6 models show a significant shift in recall (Wilcoxon on the
   76-item delta): **boosted** for Ministral (+0.090), Falcon (+0.071),
@@ -253,6 +267,21 @@ reported here.
   Ministral fall from 1st/2nd to 5th/6th (rank shift −4 each); Qwen is the
   most stable (−1). So "model X is unusually steerable" is not a fact
   about model X in isolation — it depends on how the belief was elicited.
+- **Which pair of models agrees most under steering is itself
+  elicitation-method-dependent.** Within one file, zero-shot and steered
+  agreement rankings across the 15 model pairs correlate significantly
+  (Spearman ρ=0.77, p=0.0008 in the free-text file) — a pair that agrees
+  zero-shot tends to also agree once steered. But the *steered* ranking
+  does not carry over *between* free-text and verbalized steering
+  (ρ=0.175, p=0.53, n.s.) — so "which two models see hate speech the same
+  way under moral-belief steering" is not a fixed trait of the model
+  pair, it depends on how the belief was elicited, same as the recall and
+  flip-magnitude findings above. (The equivalent zero-shot-to-zero-shot
+  comparison isn't informative here on its own — ρ≈0 — but that's the
+  already-known prompt-wording confound showing up in a third, independent
+  metric: Apertus's zero-shot agreement with the panel collapses to 0.265
+  under the verbalized file's wording, matching its 59-point recall
+  collapse.)
 - **At the message level, the same picture holds: "fair" agreement, not
   a shared or an unrelated pattern.** Binning each message's flip rate
   into `no_flip`/`mild_flip`/`strong_flip` tiers under each condition and
