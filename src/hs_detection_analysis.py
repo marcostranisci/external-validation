@@ -330,6 +330,18 @@ class HateSpeechSteeringAnalyzer:
             result = item_steerability[cols].merge(result, on=["condition", "belief_id"])
         result = result.sort_values("delta_kappa")
         self._save(result, "item_agreement_vs_zero_shot.csv")
+
+        summary_rows = []
+        for condition, sub in [("mft", result[result["condition"] == "mft"]),
+                                ("pvq", result[result["condition"] == "pvq"]),
+                                ("combined", result)]:
+            summary_rows.append({
+                "condition": condition, "n_items": len(sub),
+                "mean_delta_kappa": float(sub["delta_kappa"].mean()),
+                "median_delta_kappa": float(sub["delta_kappa"].median()),
+                "n_below_zero_shot_baseline": int((sub["delta_kappa"] < 0).sum()),
+            })
+        self._save(pd.DataFrame(summary_rows), "item_agreement_vs_zero_shot_summary.csv")
         return result
 
     def steerability_vs_item_agreement(
