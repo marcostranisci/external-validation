@@ -1,0 +1,7 @@
+condition,foundation,n_items,n_high_both,odds_ratio,p,p_fdr_bh
+mft,authority,6,2,2.5,0.5732167500431258,1.0
+mft,care,6,1,0.8,1.0,1.0
+mft,equality,6,0,0.0,0.3171468000690012,1.0
+mft,loyalty,6,1,0.8,1.0,1.0
+mft,proportionality,6,1,0.8,1.0,1.0
+mft,purity,6,2,2.5,0.5732167500431258,1.0

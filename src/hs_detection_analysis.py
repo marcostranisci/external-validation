@@ -384,6 +384,67 @@ class HateSpeechSteeringAnalyzer:
         self._save(result, "steerability_vs_item_agreement.csv")
         return result
 
+    def recall_effect_vs_agreement_by_category(
+        self, item_level_effect: pd.DataFrame, item_agreement_vs_zero_shot: pd.DataFrame,
+    ) -> dict[str, pd.DataFrame]:
+        """Do items that combine a large recall-shift effect (test 3,
+        `mean_abs_delta`) with a large drop in between-model agreement
+        (`item_agreement_vs_zero_shot`'s `delta_kappa`) concentrate in
+        specific MFT foundations / Schwartz PVQ values? The two per-item
+        metrics are themselves correlated (bigger recall shifts co-occur
+        with bigger agreement drops — same underlying mechanism as
+        `steerability_vs_item_agreement`), so this asks a joint question:
+        is a category over-represented among items that are high on
+        *both* at once, rather than on either alone.
+
+        An item is flagged `high_both` if its `mean_abs_delta` and
+        `abs(delta_kappa)` are both in the top tertile *within its own
+        questionnaire* (MFT's 36 items and PVQ's 40 tiered separately).
+        For each questionnaire, a one-vs-rest Fisher exact test per
+        category (BH-corrected across categories) asks whether that
+        category's items are over-represented among the `high_both` set.
+        Saved to `recall_effect_vs_agreement_items.csv` (per-item, with
+        `high_both`) and `recall_effect_vs_agreement_by_foundation.csv` /
+        `recall_effect_vs_agreement_by_pvq_value.csv` (the Fisher tests)."""
+        effect = item_level_effect.copy()
+        effect["belief_id"] = effect["belief_id"].astype(int)
+        agreement_cols = ["condition", "belief_id", "pvq_value_label", "mean_flip_rate", "delta_kappa"]
+        merged = effect.merge(item_agreement_vs_zero_shot[agreement_cols], on=["condition", "belief_id"])
+        merged["abs_delta_kappa"] = merged["delta_kappa"].abs()
+        merged["high_both"] = False
+        for condition, idx in merged.groupby("condition").groups.items():
+            sub = merged.loc[idx]
+            thr_recall = sub["mean_abs_delta"].quantile(2 / 3)
+            thr_kappa = sub["abs_delta_kappa"].quantile(2 / 3)
+            merged.loc[idx, "high_both"] = (sub["mean_abs_delta"] >= thr_recall) & (sub["abs_delta_kappa"] >= thr_kappa)
+        self._save(merged.sort_values(["condition", "high_both"], ascending=[True, False]),
+                   "recall_effect_vs_agreement_items.csv")
+
+        out: dict[str, pd.DataFrame] = {}
+        for condition, category_col, filename_stub in [
+            ("mft", "foundation", "foundation"), ("pvq", "pvq_value_label", "pvq_value"),
+        ]:
+            sub = merged[merged["condition"] == condition]
+            n_total = len(sub)
+            n_high_total = int(sub["high_both"].sum())
+            rows = []
+            for category, group in sub.groupby(category_col):
+                n_cat = len(group)
+                n_cat_high = int(group["high_both"].sum())
+                table = [[n_cat_high, n_cat - n_cat_high],
+                         [n_high_total - n_cat_high, n_total - n_cat - (n_high_total - n_cat_high)]]
+                odds_ratio, p = stats.fisher_exact(table, alternative="two-sided")
+                rows.append({
+                    "condition": condition, category_col: category, "n_items": n_cat,
+                    "n_high_both": n_cat_high, "odds_ratio": float(odds_ratio), "p": float(p),
+                })
+            fisher_df = pd.DataFrame(rows)
+            fisher_df["p_fdr_bh"] = _benjamini_hochberg(fisher_df["p"])
+            fisher_df = fisher_df.sort_values("p_fdr_bh")
+            out[filename_stub] = fisher_df
+            self._save(fisher_df, f"recall_effect_vs_agreement_by_{filename_stub}.csv")
+        return out
+
     # ------------------------------------------------------------------
     # Does steering shift recall? (within each model)
     # ------------------------------------------------------------------
@@ -1175,6 +1236,7 @@ class HateSpeechSteeringAnalyzer:
         item_agreement = self.item_level_model_agreement()
         steerability_item_agreement = self.steerability_vs_item_agreement(item_steerability, item_agreement)
         item_agreement_vs_zs = self.item_agreement_vs_zero_shot(item_agreement, zero_shot_agreement, item_steerability)
+        recall_vs_agreement_by_category = self.recall_effect_vs_agreement_by_category(by_item, item_agreement_vs_zs)
         flips_by_model = self.flip_counts_by_model(flips_by_item)
         flips_by_model_value = self.flip_counts_by_model_and_value(flips_by_item)
         flips_by_instance = self.flip_counts_by_instance()
@@ -1199,6 +1261,7 @@ class HateSpeechSteeringAnalyzer:
             "item_steerability": item_steerability, "item_tiers": item_tiers,
             "item_agreement": item_agreement, "steerability_item_agreement": steerability_item_agreement,
             "item_agreement_vs_zero_shot": item_agreement_vs_zs,
+            "recall_vs_agreement_by_category": recall_vs_agreement_by_category,
             "tier_patterns": tier_patterns,
             "flips_by_model_value": flips_by_model_value, "flips_by_instance": flips_by_instance,
             "flip_rate_tiers": flip_rate_tiers,
