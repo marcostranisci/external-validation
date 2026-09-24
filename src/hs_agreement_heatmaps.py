@@ -21,6 +21,8 @@ Usage
 
 from __future__ import annotations
 
+import itertools
+import json
 from pathlib import Path
 
 import matplotlib
@@ -30,6 +32,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from matplotlib.colors import LinearSegmentedColormap
+
+from src.hs_detection_analysis import _agreement
 
 # Sequential blue ramp, steps 100->700, from the house data-viz palette
 # (references/palette.md): lightest = near-zero agreement, darkest = near-1.
@@ -77,6 +81,39 @@ def _build_matrix(csv_path: str | Path, models: list[str] = MODEL_ORDER) -> np.n
         if row["model_a"] not in idx or row["model_b"] not in idx:
             continue
         i, j = idx[row["model_a"]], idx[row["model_b"]]
+        mat[i, j] = mat[j, i] = row["cohens_kappa"]
+    return mat
+
+
+def _build_matrix_from_json(
+    json_path: str | Path, questionnaire: str, models: list[str] = MODEL_ORDER,
+) -> np.ndarray:
+    """Build a symmetric kappa matrix (diagonal = NaN) from the raw
+    belief-steered JSON, restricted to one questionnaire's items
+    (``"mft"`` or ``"pvq"``) rather than the pooled 76-item agreement the
+    saved CSVs report. ``"zero_shot"`` uses the (questionnaire-independent)
+    zero-shot predictions instead."""
+    with open(json_path) as fh:
+        data = json.load(fh)
+    preds: dict[str, dict] = {}
+    for model, model_data in data["models"].items():
+        if model not in models:
+            continue
+        if questionnaire == "zero_shot":
+            preds[model] = {p["id"]: p["answer"] for p in model_data["zero_shot"]}
+        else:
+            preds[model] = {
+                (item["belief_id"], p["id"]): p["answer"]
+                for item in model_data[questionnaire]
+                for p in item["predictions"]
+            }
+
+    n = len(models)
+    mat = np.full((n, n), np.nan)
+    idx = {m: i for i, m in enumerate(models)}
+    for model_a, model_b in itertools.combinations(sorted(preds), 2):
+        row = _agreement(preds[model_a], preds[model_b])
+        i, j = idx[model_a], idx[model_b]
         mat[i, j] = mat[j, i] = row["cohens_kappa"]
     return mat
 
@@ -139,6 +176,56 @@ def plot_agreement_heatmaps(
         im = _draw_heatmap(ax, mat, labels, title, vmin, vmax)
 
     fig.suptitle(suptitle, fontsize=13.5, color=C_INK_PRIMARY, fontweight="bold", y=1.03)
+    cbar = fig.colorbar(im, ax=axes, fraction=0.025, pad=0.02)
+    cbar.set_label("Cohen's $\\kappa$", fontsize=10.5, color=C_INK_SECONDARY)
+    cbar.ax.tick_params(labelsize=9, color=C_INK_MUTED, labelcolor=C_INK_SECONDARY)
+    cbar.outline.set_visible(False)
+
+    out_path = Path(out_path)
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(out_path, dpi=300, bbox_inches="tight", facecolor=C_SURFACE)
+    fig.savefig(out_path.with_suffix(".pdf"), bbox_inches="tight", facecolor=C_SURFACE)
+    plt.close(fig)
+    return out_path
+
+
+def plot_agreement_heatmaps_by_questionnaire(
+    generated_json: str | Path,
+    verbalized_json: str | Path,
+    out_path: str | Path,
+    models: list[str] = MODEL_ORDER,
+    suptitle: str = "Pairwise inter-model agreement in hate-speech classification, by questionnaire (Cohen's $\\kappa$)",
+) -> Path:
+    """Render a 2 (MFT / PVQ) x 3 (zero-shot / generated / verbalized) grid
+    of agreement heatmaps, each steered condition restricted to just that
+    questionnaire's belief-steered items (rather than the pooled 76-item
+    agreement ``plot_agreement_heatmaps`` reports), on one shared color
+    scale, and save to ``out_path`` (both the given extension and a .pdf
+    alongside it)."""
+    labels = [MODEL_LABELS.get(m, m) for m in models]
+
+    mats = {
+        ("MFT", "Zero-shot"): _build_matrix_from_json(generated_json, "zero_shot", models),
+        ("MFT", "Generated belief"): _build_matrix_from_json(generated_json, "mft", models),
+        ("MFT", "Verbalized belief"): _build_matrix_from_json(verbalized_json, "mft", models),
+        ("PVQ", "Zero-shot"): _build_matrix_from_json(generated_json, "zero_shot", models),
+        ("PVQ", "Generated belief"): _build_matrix_from_json(generated_json, "pvq", models),
+        ("PVQ", "Verbalized belief"): _build_matrix_from_json(verbalized_json, "pvq", models),
+    }
+
+    all_values = np.concatenate([m[~np.isnan(m)] for m in mats.values()])
+    vmin, vmax = float(np.floor(all_values.min() * 20) / 20), float(np.ceil(all_values.max() * 20) / 20)
+
+    fig, axes = plt.subplots(2, 3, figsize=(14, 10), facecolor=C_SURFACE)
+    im = None
+    for row, questionnaire in enumerate(("MFT", "PVQ")):
+        for col, condition in enumerate(("Zero-shot", "Generated belief", "Verbalized belief")):
+            title = condition if row == 0 else ""
+            im = _draw_heatmap(axes[row, col], mats[(questionnaire, condition)], labels, title, vmin, vmax)
+        axes[row, 0].set_ylabel(questionnaire, fontsize=13, color=C_INK_PRIMARY,
+                                  fontweight="bold", labelpad=14)
+
+    fig.suptitle(suptitle, fontsize=14, color=C_INK_PRIMARY, fontweight="bold", y=1.01)
     cbar = fig.colorbar(im, ax=axes, fraction=0.025, pad=0.02)
     cbar.set_label("Cohen's $\\kappa$", fontsize=10.5, color=C_INK_SECONDARY)
     cbar.ax.tick_params(labelsize=9, color=C_INK_MUTED, labelcolor=C_INK_SECONDARY)
