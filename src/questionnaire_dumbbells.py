@@ -46,6 +46,11 @@ MODEL_ORDER = [
     "Apertus-8B-Instruct",
 ]
 
+# Display label per model (file stem -> label shown on the chart); only
+# Ministral differs from its file stem, dropping the internal "-2512" tag.
+MODEL_DISPLAY_LABELS = {m: m for m in MODEL_ORDER}
+MODEL_DISPLAY_LABELS["Ministral-3-8B-Instruct-2512"] = "Ministral-3-8B-Instruct"
+
 
 def _model_means(folder: str | Path, models: list[str] = MODEL_ORDER) -> pd.DataFrame:
     """Mean ``opinion`` (questionnaire) and ``external_opinion`` (interview)
@@ -77,7 +82,8 @@ def _draw_dumbbell(ax, means: pd.DataFrame, title: str) -> None:
                label="Interview", edgecolor=C_SURFACE, linewidth=0.8)
 
     ax.set_yticks(list(y))
-    ax.set_yticklabels(means["model"], fontsize=10.5, color=C_INK_PRIMARY)
+    ax.set_yticklabels([MODEL_DISPLAY_LABELS.get(m, m) for m in means["model"]],
+                        fontsize=10.5, color=C_INK_PRIMARY)
     ax.set_xlabel("Mean score", fontsize=10.5, color=C_INK_SECONDARY)
     ax.set_title(title, fontsize=13, color=C_INK_PRIMARY, fontweight="bold", pad=12)
 
