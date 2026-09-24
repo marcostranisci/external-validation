@@ -68,12 +68,15 @@ def _significance_stars(p: float) -> str:
 def _per_model_recall(
     json_path: str | Path, baseline_json_path: str | Path | None = None,
     models: list[str] = MODEL_ORDER, output_subdir: str = "hs_detection",
+    condition: str = "combined",
 ) -> dict[str, dict[str, float]]:
-    """Per model: zero-shot recall (single value), mean recall across all
-    76 belief-steered items (mft + pvq), and whether that steered-vs-
-    zero-shot shift is significant (one-sample Wilcoxon signed-rank test
-    on the per-item deltas, ``steering_effect_per_model``'s ``combined``
-    row, Benjamini-Hochberg corrected across the 6 models).
+    """Per model: zero-shot recall (single value), mean recall across the
+    belief-steered items for ``condition`` (``"combined"`` = all 76 mft+pvq
+    items, or ``"mft"``/``"pvq"`` for just that questionnaire's items), and
+    whether that steered-vs-zero-shot shift is significant (one-sample
+    Wilcoxon signed-rank test on the per-item deltas,
+    ``steering_effect_per_model``'s matching row, Benjamini-Hochberg
+    corrected across the 6 models).
 
     ``output_subdir`` keeps this in line with the matching
     run_hs_detection*_analysis.py pipeline for the same JSON, so the
@@ -84,44 +87,21 @@ def _per_model_recall(
     )
     table = analyzer.build_recall_table()
     effect = analyzer.steering_effect_per_model(table)
-    combined = effect[effect["condition"] == "combined"].set_index("model")
-    combined["wilcoxon_p_fdr_bh"] = _benjamini_hochberg(combined["wilcoxon_p"])
+    rows = effect[effect["condition"] == condition].set_index("model")
+    rows["wilcoxon_p_fdr_bh"] = _benjamini_hochberg(rows["wilcoxon_p"])
 
+    steered_conditions = ["mft", "pvq"] if condition == "combined" else [condition]
     out = {}
     for model in models:
         sub = table[table["model"] == model]
         zero_shot = sub.loc[sub["condition"] == "zero_shot", "recall"].iloc[0]
-        steered = sub.loc[sub["condition"].isin(["mft", "pvq"]), "recall"].mean()
-        p_fdr = combined.loc[model, "wilcoxon_p_fdr_bh"] if model in combined.index else np.nan
+        steered = sub.loc[sub["condition"].isin(steered_conditions), "recall"].mean()
+        p_fdr = rows.loc[model, "wilcoxon_p_fdr_bh"] if model in rows.index else np.nan
         out[model] = {"zero_shot": zero_shot, "steered": steered, "p_fdr": p_fdr}
     return out
 
 
-def plot_recall_barplot(
-    generated_json: str | Path,
-    verbalized_json: str | Path,
-    out_path: str | Path,
-    zero_shot_baseline_json: str | Path | None = None,
-    models: list[str] = MODEL_ORDER,
-    title: str = "Hate-speech classification recall by model and condition",
-) -> Path:
-    """Render the 3-bars-per-model grouped bar chart and save to
-    ``out_path`` (both the given extension and a .pdf alongside it).
-
-    ``zero_shot_baseline_json`` lets the verbalized file's own zero-shot be
-    overridden by a shared baseline (matching
-    ``HateSpeechSteeringAnalyzer.baseline_json_path``); defaults to using
-    ``generated_json``'s zero-shot as that shared baseline, since the
-    zero-shot bar is drawn once per model, not once per condition.
-    """
-    gen = _per_model_recall(generated_json, models=models, output_subdir="hs_detection")
-    verb = _per_model_recall(
-        verbalized_json,
-        baseline_json_path=zero_shot_baseline_json or generated_json,
-        models=models,
-        output_subdir="hs_detection_verbalized_shared_baseline",
-    )
-
+def _draw_recall_bars(ax, gen: dict, verb: dict, models: list[str], title: str) -> None:
     zero_shot = [gen[m]["zero_shot"] for m in models]
     generated = [gen[m]["steered"] for m in models]
     verbalized = [verb[m]["steered"] for m in models]
@@ -131,8 +111,6 @@ def plot_recall_barplot(
 
     x = np.arange(len(models))
     width = 0.26
-
-    fig, ax = plt.subplots(figsize=(12.5, 6), facecolor=C_SURFACE)
     ax.set_facecolor(C_SURFACE)
 
     bars = [
@@ -150,10 +128,10 @@ def plot_recall_barplot(
                             fontsize=12, color=C_INK_PRIMARY, fontweight="bold", zorder=4)
 
     ax.set_xticks(x)
-    ax.set_xticklabels(labels, fontsize=10.5, color=C_INK_PRIMARY)
+    ax.set_xticklabels(labels, rotation=25, ha="right", fontsize=10, color=C_INK_PRIMARY)
     ax.set_ylabel("Recall (positive / HS class)", fontsize=11, color=C_INK_SECONDARY)
     ax.set_ylim(0, 1.05)
-    ax.set_title(title, fontsize=14, color=C_INK_PRIMARY, fontweight="bold", pad=14)
+    ax.set_title(title, fontsize=13.5, color=C_INK_PRIMARY, fontweight="bold", pad=12)
 
     ax.grid(axis="y", color=C_GRID, linewidth=1, zorder=0)
     ax.set_axisbelow(True)
@@ -164,11 +142,81 @@ def plot_recall_barplot(
     ax.spines["bottom"].set_color(C_INK_PRIMARY)
     ax.spines["bottom"].set_linewidth(1.1)
 
-    ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.14), ncol=3,
+
+def plot_recall_barplot(
+    generated_json: str | Path,
+    verbalized_json: str | Path,
+    out_path: str | Path,
+    zero_shot_baseline_json: str | Path | None = None,
+    models: list[str] = MODEL_ORDER,
+    title: str = "Hate-speech classification recall by model and condition",
+) -> Path:
+    """Render the 3-bars-per-model grouped bar chart (all 76 mft+pvq items
+    pooled) and save to ``out_path`` (both the given extension and a .pdf
+    alongside it).
+
+    ``zero_shot_baseline_json`` lets the verbalized file's own zero-shot be
+    overridden by a shared baseline (matching
+    ``HateSpeechSteeringAnalyzer.baseline_json_path``); defaults to using
+    ``generated_json``'s zero-shot as that shared baseline, since the
+    zero-shot bar is drawn once per model, not once per condition.
+    """
+    gen = _per_model_recall(generated_json, models=models, output_subdir="hs_detection")
+    verb = _per_model_recall(
+        verbalized_json,
+        baseline_json_path=zero_shot_baseline_json or generated_json,
+        models=models,
+        output_subdir="hs_detection_verbalized_shared_baseline",
+    )
+
+    fig, ax = plt.subplots(figsize=(12.5, 6), facecolor=C_SURFACE)
+    _draw_recall_bars(ax, gen, verb, models, title)
+    ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.16), ncol=3,
                frameon=False, fontsize=10.5)
-    ax.text(0.5, -0.22, "* $p_{\\mathrm{FDR}}$<0.05, ** $p_{\\mathrm{FDR}}$<0.01, *** $p_{\\mathrm{FDR}}$<0.001 "
+    ax.text(0.5, -0.25, "* $p_{\\mathrm{FDR}}$<0.05, ** $p_{\\mathrm{FDR}}$<0.01, *** $p_{\\mathrm{FDR}}$<0.001 "
                           "(Wilcoxon signed-rank vs. zero-shot, BH-corrected across models)",
             transform=ax.transAxes, ha="center", va="top", fontsize=9, color=C_INK_SECONDARY)
+
+    fig.tight_layout()
+    out_path = Path(out_path)
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(out_path, dpi=300, bbox_inches="tight", facecolor=C_SURFACE)
+    fig.savefig(out_path.with_suffix(".pdf"), bbox_inches="tight", facecolor=C_SURFACE)
+    plt.close(fig)
+    return out_path
+
+
+def plot_recall_barplot_by_questionnaire(
+    generated_json: str | Path,
+    verbalized_json: str | Path,
+    out_path: str | Path,
+    zero_shot_baseline_json: str | Path | None = None,
+    models: list[str] = MODEL_ORDER,
+    suptitle: str = "Hate-speech classification recall by model, condition, and questionnaire",
+) -> Path:
+    """Render MFT and PVQ recall bar charts side by side (each model's
+    zero-shot / generated-belief / verbalized-belief recall computed only
+    over that questionnaire's items, with its own significance test) and
+    save to ``out_path`` (both the given extension and a .pdf alongside
+    it)."""
+    baseline = zero_shot_baseline_json or generated_json
+
+    fig, axes = plt.subplots(1, 2, figsize=(15, 6.4), facecolor=C_SURFACE)
+    for ax, questionnaire, title in zip(axes, ("mft", "pvq"), ("MFT", "PVQ")):
+        gen = _per_model_recall(generated_json, models=models, output_subdir="hs_detection",
+                                 condition=questionnaire)
+        verb = _per_model_recall(verbalized_json, baseline_json_path=baseline, models=models,
+                                  output_subdir="hs_detection_verbalized_shared_baseline",
+                                  condition=questionnaire)
+        _draw_recall_bars(ax, gen, verb, models, title)
+
+    fig.suptitle(suptitle, fontsize=14.5, color=C_INK_PRIMARY, fontweight="bold", y=1.03)
+    handles, labels = axes[0].get_legend_handles_labels()
+    fig.legend(handles, labels, loc="lower center", bbox_to_anchor=(0.5, -0.1),
+               ncol=3, frameon=False, fontsize=10.5)
+    fig.text(0.5, -0.16, "* $p_{\\mathrm{FDR}}$<0.05, ** $p_{\\mathrm{FDR}}$<0.01, *** $p_{\\mathrm{FDR}}$<0.001 "
+                          "(Wilcoxon signed-rank vs. zero-shot, BH-corrected across models, within questionnaire)",
+             ha="center", fontsize=9, color=C_INK_SECONDARY)
 
     fig.tight_layout()
     out_path = Path(out_path)
