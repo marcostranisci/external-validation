@@ -1,19 +1,3 @@
-# Internal Validation First, External Validation follows
+# How You Ask Shapes What You Get: a Framework to Measure the Moral Profiles of LLMs
 
-This is the repository of the research xyz
-
-### How To
-
-1. create a conda environment with python 3.10
-2. install requirements.txt
-
-### the experiments
-This first draft of the experiment involves 3 experiments that you can find in 'src/tasks.py'
-
-* **mft_questionnaire:** it asks the LLM to fill the MFQ-2 questionnaire to determine its moral stance
-* **mft_social_media:** it asks the LLM to identify the presence of moral foundations in social media messages
-* **mft_offensiveness:** it asks the LLM to rank the offensiveness of a set of posts annotated by an annotator with a given moral stance.
-
-### configuration
-give a look at 'config.yml' to check the configuration of each experiments (they are very shallow and straightforward).
-
+Understanding the mechanisms underlying moral reasoning is central to designing language technologies aligned with human values and preferences. Despite growing research on this topic, existing methods that systematically elicit the moral profile from Large Language Models (LLMs) through surveys show lack of reliability and generalizability to downstream behaviors. In this work we address this gap by presenting a methodological framework that combines psychological questionnaires and open-ended interviews to elicit differences in moral reasoning between LLMs, and test whether these differences shape model behavior in a downstream task. We apply this approach to two established psychological theories -- Moral Foundations Theory and the Theory of Basic Values -- across six open-weight models. Our results show that changing the elicitation method from psychological questionnaires to open-ended interviews leads to the elicitation of different moral profiles. The profiles of LLMs differ between each other both when they derived from closed-ended replies to questionnaires (Kruskal-Wallis $\eta^2\approx0.46–0.49$) and from open-ended interviews ($\eta^2\approx0.11–0.14$), though with differences in magnitude. Steering models with their own elicited moral beliefs reduces inter-model agreement on hate speech classification, showing that our framework enables quantifying the effects of different moral profiles on a downstream classification task. Thus, our study presents a first step towards a moral profile elicitation method that is explanatory of downstream behavior.
