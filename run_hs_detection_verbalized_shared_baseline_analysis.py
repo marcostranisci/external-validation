@@ -1,15 +1,17 @@
-"""Entry point: same analysis as run_hs_detection_verbalized_analysis.py,
-but with every model's zero_shot baseline replaced by that model's
-zero_shot predictions from the free-text file
-(hs_detection/implicit_hate_all_models.json) instead of the verbalized
-file's own zero_shot run.
+"""Entry point: HateSpeechSteeringAnalyzer on the verbalized-belief
+steering JSON (hs_detection/implicit_hate_verbalized_all_models.json),
+with every model's zero_shot baseline replaced by that model's zero_shot
+predictions from the free-text file (hs_detection/implicit_hate_all_models.json)
+instead of the verbalized file's own zero_shot run.
 
-This controls for the wording difference in zero_shot_prompt/belief_prompt
+This controls for a wording difference in zero_shot_prompt/belief_prompt
 between the two files (documented in data_analysis/README.md, "does
 steering method matter?") by forcing both steering conditions to share
-one baseline — so every recall/flip/significance number here is directly
-comparable to hs_detection/'s own-baseline numbers, not just the
-post-hoc shared-baseline check in steering_effect_shared_baseline_check.csv.
+one baseline. There is no own-baseline verbalized analysis in this
+codebase to compare against — comparing the verbalized condition against
+its own zero-shot would confound belief content with prompt wording, so
+every downstream recall/flip/significance number for the verbalized
+condition is computed this way.
 
 Usage:
     python run_hs_detection_verbalized_shared_baseline_analysis.py

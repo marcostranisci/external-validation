@@ -11,8 +11,8 @@ Usage
 
     cmp = SteeringConditionComparison(
         dir_a="data_analysis/hs_detection", label_a="free_text",
-        dir_b="data_analysis/hs_detection_verbalized", label_b="verbalized",
-        output_dir="data_analysis/hs_detection_comparison",
+        dir_b="data_analysis/hs_detection_verbalized_shared_baseline", label_b="verbalized",
+        output_dir="data_analysis/hs_detection_comparison_shared_baseline",
     )
     cmp.run_all()
 """
