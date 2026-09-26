@@ -31,23 +31,23 @@ per-test results in detail.
   `hs_detection/implicit_hate_all_models.json` and writes everything under
   `data_analysis/hs_detection/` (see "Belief-steered hate-speech detection"
   below).
-- `run_hs_detection_verbalized_analysis.py` — the same analyzer, on
-  `hs_detection/implicit_hate_verbalized_all_models.json` (steering by the
-  verbalized questionnaire item/Likert score instead of free-text opinion),
-  writing to `data_analysis/hs_detection_verbalized/`.
 - `run_hs_detection_verbalized_shared_baseline_analysis.py` — the same
-  verbalized run, but with every model's `zero_shot` baseline replaced by
-  its `zero_shot` predictions from the free-text file (via
+  analyzer, on `hs_detection/implicit_hate_verbalized_all_models.json`
+  (steering by the verbalized questionnaire item/Likert score instead of
+  free-text opinion), but with every model's `zero_shot` baseline replaced
+  by its `zero_shot` predictions from the free-text file (via
   `HateSpeechSteeringAnalyzer`'s `baseline_json_path`), writing to
-  `data_analysis/hs_detection_verbalized_shared_baseline/` — controls for
-  the wording confound (see "does steering method matter?" below) across
-  the *entire* pipeline, not just the one-off check in
-  `steering_effect_shared_baseline_check.csv`.
-- `src/hs_detection_comparison.py` — `SteeringConditionComparison` class
-  and `run_hs_detection_comparison.py` — compares the two runs above (see
-  "Free-text opinion vs. verbalized questionnaire item" below).
-  `run_hs_detection_comparison_shared_baseline.py` runs the same
-  comparison against the shared-baseline run instead.
+  `data_analysis/hs_detection_verbalized_shared_baseline/`. This is the
+  only verbalized-steering analysis in the codebase: the two JSON files'
+  `zero_shot_prompt` wording differs, so comparing verbalized steering
+  against its *own* zero-shot would confound belief content with prompt
+  wording (see "does steering method matter?" below) — forcing a shared
+  baseline removes that confound across the *entire* pipeline, not just a
+  one-off check.
+- `src/hs_detection_comparison.py` — `SteeringConditionComparison` class —
+  and `run_hs_detection_comparison_shared_baseline.py`, which compares the
+  free-text and shared-baseline-verbalized runs (see "Free-text opinion
+  vs. verbalized questionnaire item" below).
 
 ### Re-running the analysis
 
@@ -58,9 +58,7 @@ python run_mft_pvq_correlation_comparison.py
 python run_annotator_analysis.py
 python run_annotator_demographics.py
 python run_hs_detection_analysis.py
-python run_hs_detection_verbalized_analysis.py
 python run_hs_detection_verbalized_shared_baseline_analysis.py
-python run_hs_detection_comparison.py
 python run_hs_detection_comparison_shared_baseline.py
 ```
 
@@ -417,13 +415,10 @@ n.s.) — which model pairs end up agreeing most under steering is itself
 an elicitation-method-dependent property, extending the "does steering
 method matter" theme (see below) to inter-model agreement structure, not
 just each model's own effect. (The equivalent zero-shot-vs-zero-shot
-comparison across files is not informative on its own — it's ρ≈0,
-p=0.84, but that's dominated by the already-known prompt-wording
-confound: Apertus's zero-shot agreement with the panel collapses to 0.265
-under the verbalized file's wording alone, matching its 59-point recall
-collapse — yet another independent confirmation, this time via agreement
-rather than recall, that Apertus's own-baseline verbalized zero-shot
-should be excluded rather than compared directly.)
+comparison across files is not a meaningful check here: every analysis of
+the verbalized condition in this codebase forces its `zero_shot` to equal
+the free-text file's, so the two conditions' zero-shot agreement rankings
+are identical by construction, not an independent result.)
 
 `HateSpeechSteeringAnalyzer` (`src/hs_detection_analysis.py`) also asks
 two more questions, about the effect of *steering* specifically:
@@ -535,13 +530,13 @@ two more questions, about the effect of *steering* specifically:
 
    **Caveat: unlike the message-level tiers, this is a narrow-band split,
    not a qualitative one.** Every item's `mean_flip_rate` falls in a tight
-   range — 0.077-0.163 (free-text) / 0.105-0.169 (verbalized) — nothing
-   like the message-level 0-0.53 spread where `no_flip` vs. `strong_flip`
-   is a real "does this move at all" distinction. The tiers' *means* are
-   only 2.6-3.8 percentage points apart at the extremes (low 0.093 →
-   high 0.130 free-text, a 41% relative gap; low 0.121 → high 0.147
-   verbalized, 22%) — cleanly separated (the within-tier spread is
-   equally tight, Cohen's d≈2.4-3.9 low-vs-high) but a difference of
+   range — 0.077-0.163 (free-text) / 0.144-0.193 (verbalized, shared
+   baseline) — nothing like the message-level 0-0.53 spread where
+   `no_flip` vs. `strong_flip` is a real "does this move at all"
+   distinction. The tiers' *means* are only 2-3.8 percentage points apart
+   at the extremes (low 0.093 → high 0.130 free-text, a 41% relative gap;
+   low 0.159 → high 0.180 verbalized, 13%) — cleanly separated (the
+   within-tier spread is equally tight) but a difference of
    *degree within a narrow band*, not "some items barely flip anything."
    Read the foundation/value findings below accordingly: "Universalism's
    items are high-steerability" means they consistently rank in the top
@@ -664,10 +659,12 @@ even where it doesn't flip to a net negative.
 **Item-wise steerability tiers (test 7): Universalism items are the most
 steerable under free-text, and this specific finding is the one item-level
 result in this whole analysis that survives correction — but it
-disappears under verbalized steering, replicating the §3 pattern from a
-completely independent statistical approach.** Splitting each
-questionnaire's items into 3 roughly equal tiers by mean flip rate
-(low/mid/high steerability, computed within MFT and PVQ separately):
+disappears under verbalized steering (shared baseline), replicating the
+§3 pattern from a completely independent statistical approach. The MFT
+pattern, however, does *not* replicate the same way — it partially
+reverses.** Splitting each questionnaire's items into 3 roughly equal
+tiers by mean flip rate (low/mid/high steerability, computed within MFT
+and PVQ separately):
 
 - *PVQ, free-text:* **all 6 of Universalism's items land in the
   high-steerability tier** (6/6, vs. an overall base rate of 30% items in
@@ -675,16 +672,28 @@ questionnaire's items into 3 roughly equal tiers by mean flip rate
   the only PVQ value that survives BH correction across the 10 values
   (p_fdr=0.0024). No other value comes close (next highest: Stimulation
   2/3, p_fdr=0.50).
-- *PVQ, verbalized:* Universalism's items scatter evenly across all 3
-  tiers (2/2/2) — indistinguishable from chance (p_fdr=1.0). The
-  high-steerability concentration is gone entirely.
-- *MFT, both conditions:* **equality** is consistently the most
-  concentrated in the high-steerability tier (5/6 items, both free-text
-  and verbalized), and **care**/**purity** are consistently the least
-  (free-text: care 0/6 high-steerability items; verbalized: care and
-  purity both 1/6) — directionally exactly the weakest-lever pattern from
-  tests 4-5, though none of these MFT associations survive BH correction
-  (equality's p_fdr≈0.061 in both conditions — close, but not quite).
+- *PVQ, verbalized (shared baseline):* **none of Universalism's items
+  land in the high-steerability tier at all** (0/6, p_fdr=0.51) — the
+  concentration doesn't just weaken, it disappears entirely. The two
+  values that come closest to a (still non-significant) concentration
+  are different ones: Power (3/3 high, p_fdr=0.29) and Tradition (3/4
+  high, p_fdr=0.46).
+- *MFT, free-text:* **equality** is the most concentrated in the
+  high-steerability tier (5/6 items, p_fdr≈0.061 — close to, but not
+  surviving, correction), and **care** the least (0/6 high-steerability
+  items) — directionally the weakest-lever pattern from tests 4-5.
+- *MFT, verbalized (shared baseline): this specific ranking reverses.*
+  **equality now has zero items in the high-steerability tier** (0/6,
+  the *least* concentrated foundation), while **care and loyalty are now
+  tied for the most concentrated** (3/6 each) — the opposite of the
+  free-text ordering. None of this reaches significance either
+  (smallest p_fdr=0.48, for equality's absence), so treat both orderings
+  as suggestive rather than confirmed, but the direction of the ordering
+  itself is not stable across elicitation methods for MFT, unlike the
+  within-model-rank result on the recall delta itself (§3), which found
+  MFT's care/purity pattern *does* replicate at the level of relative
+  effect magnitude. Tier membership and effect-magnitude rank are
+  evidently not measuring quite the same thing here.
 
 This item-count-based test is a genuinely different, better-powered angle
 on the same question as test 3 (which found 0/76 items survive correction
@@ -856,107 +865,41 @@ model's own *Likert rating* itself (e.g. `"Caring for people who have
 suffered is an important virtue" describes you extremely well.`, plus
 scale text) rather than its free-text explanation — confirmed the `score`
 field exactly equals that model's own `opinion` in `surveys/mft`/`surveys/pvq`.
-Because `HateSpeechSteeringAnalyzer` only assumes the belief-steering JSON
-shape, no code changes were needed — `run_hs_detection_verbalized_analysis.py`
-runs the identical pipeline (tests 1-8 above) against it, writing to
-`data_analysis/hs_detection_verbalized/`.
 
 **Important confound: the two files do not hold the instruction prompt
 constant.** `zero_shot_prompt` and `belief_prompt` differ in wording
 between the two files (the verbalized file's adds an explicit "If it is,
 label it as 1, otherwise label it as 0. Answer with only 1 or 0." and
 minor rephrasing elsewhere) — this is *not* an isolated
-belief-content-only manipulation. Because `delta_recall` is always
-computed against *that file's own* zero-shot baseline, the within-file
-"does steering shift recall" conclusions are still valid — but the
-prompt wording alone (with **no belief/steering involved at all**) shifts
-zero-shot recall substantially for some models:
-
-| model | zero-shot recall (free-text file's prompt) | zero-shot recall (verbalized file's prompt) | shift from wording alone |
-|---|---|---|---|
-| Apertus | 0.856 | 0.264 | **−0.592** |
-| Llama | 0.896 | 0.816 | −0.080 |
-| Qwen | 0.716 | 0.660 | −0.056 |
-| Falcon | 0.620 | 0.572 | −0.048 |
-| Olmo | 0.628 | 0.684 | +0.056 |
-| Ministral | 0.856 | 0.868 | +0.012 |
-
-Apertus's zero-shot recall collapses by 59 points from prompt wording
-alone — larger than any steering effect measured anywhere in this
-analysis. **Apertus's comparison result below should be read as
-unreliable**: its "flip from no effect to a large positive effect" is
-at least partly, possibly mostly, an artifact of an anomalously low,
-easy-to-improve-on baseline rather than a genuine property of verbalized
-steering. The other five models' zero-shot shift from wording alone
-(−0.08 to +0.06) is far smaller than their measured steering effects, so
-their comparisons below are less contaminated but not perfectly clean —
-treat the cross-condition comparison as suggestive, not as a controlled
-isolation of "belief content type" as the only variable.
-
-**A direct check, using data already collected, confirms this is
-Apertus-specific rather than a problem for the headline direction-flip
-finding.** `compare_steering_effect_shared_baseline` forces the
-verbalized condition's steered recall to be compared against the
-*free-text* condition's zero-shot recall instead of its own — the most
-conservative possible test, since it removes any advantage a model could
-get from an artificially depressed or inflated baseline within its own
-file. Results (`steering_effect_shared_baseline_check.csv`):
-
-| model | free-text delta | verbalized delta (own baseline) | verbalized delta (forced onto free-text baseline) | survives? |
-|---|---|---|---|---|
-| Apertus | −0.003 (n.s.) | **+0.173** | **−0.419** | **No — reverses sign entirely** |
-| Olmo | −0.096 | +0.053 | **+0.109** | Yes — same sign, even larger |
-| Qwen | +0.051 | −0.057 | **−0.113** | Yes — same sign, even larger |
-| Falcon | +0.071 | +0.200 | +0.152 | Yes, magnitude shrinks ~25% |
-| Llama | +0.040 | +0.108 | +0.028 | Yes, but magnitude shrinks ~74% |
-| Ministral | +0.090 | +0.042 | +0.054 | Yes, magnitude similar |
-
-**Apertus's result is not just "unreliable" — under a fair, shared
-baseline it doesn't just shrink, it reverses sign** (+0.173 → −0.419),
-confirming it should be excluded rather than merely caveated. **Olmo and
-Qwen's direction flips are robust**: forcing their verbalized-condition
-recall onto the free-text baseline doesn't just preserve the flip, it
-makes it slightly larger — this is strong evidence these two flips are a
-genuine property of the belief content/elicitation method, not an
-artifact of the wording-shifted baseline. Falcon, Llama, and Ministral
-keep their direction too, though Llama's magnitude is mostly explained by
-the baseline shift (+0.108 own-baseline shrinks to +0.028 once the
-baseline is held fixed) — so Llama's "verbalized steering is much bigger"
-claim should be softened, while Falcon's and Ministral's hold up
-reasonably well. **Net effect: the core cross-condition claims (Olmo/Qwen
-sign flips) do not depend on the prompt-wording confound being
-resolved** — they were already the two "clean" cases by the simpler check
-above, and this stricter test confirms it quantitatively rather than by
-just noting their baseline shift was small.
-
-**This shared-baseline substitution is also run as a full, standalone
-pipeline** (`run_hs_detection_verbalized_shared_baseline_analysis.py`,
-writing to `data_analysis/hs_detection_verbalized_shared_baseline/`), not
-just the one-off model-level check above — every downstream test (flip
-counts, item significance, category patterns, instance profiles) is
-recomputed with the verbalized condition's `zero_shot` replaced by the
-free-text file's, so any of the tests above can be directly compared
-against the free-text run without the wording confound. The category-
-level results from this full run are folded into the corrected
-Universalism/Benevolence-vs-care/purity discussion below, since that is
-exactly where the confound mattered most.
+belief-content-only manipulation. Comparing the verbalized condition
+against *its own* zero-shot baseline would confound belief content with
+prompt wording, since prompt wording alone (with **no belief/steering
+involved at all**) shifted zero-shot recall substantially for some models
+when this was checked directly against the raw JSON files — most
+dramatically for Apertus. **For this reason, every analysis of the
+verbalized condition in this codebase forces its `zero_shot` baseline to
+be the free-text file's `zero_shot`** (via `HateSpeechSteeringAnalyzer`'s
+`baseline_json_path`, run by
+`run_hs_detection_verbalized_shared_baseline_analysis.py`, writing to
+`data_analysis/hs_detection_verbalized_shared_baseline/`) rather than the
+verbalized file's own, wording-confounded zero-shot. There is no
+own-baseline verbalized analysis left in this codebase to compare
+against — every number below is already the confound-controlled one.
 
 `src/hs_detection_comparison.py` (`SteeringConditionComparison`,
-`run_hs_detection_comparison.py`) then compares the two conditions'
-outputs directly, writing to `data_analysis/hs_detection_comparison/`:
+`run_hs_detection_comparison_shared_baseline.py`) compares the free-text
+run against this shared-baseline verbalized run, writing to
+`data_analysis/hs_detection_comparison_shared_baseline/`:
 
 - **`steering_effect_comparison.csv`** — per model: recall-shift
   magnitude, significance, and direction agreement between the two
   conditions.
-- **`steering_effect_shared_baseline_check.csv`** — a direct robustness
-  check for the wording confound above, using only data already
-  collected: for each model, recomputes the verbalized condition's
-  steering delta against the *free-text* condition's zero-shot recall
-  instead of its own (forcing both conditions to share one baseline), and
-  reports whether (a) the verbalized condition's own direction survives
-  being forced onto the free-text baseline (`b_direction_survives_shared_baseline`),
-  and (b) the original free-text-vs-verbalized direction flip still holds
-  under this fairer comparison (`ab_flip_survives_shared_baseline`).
+- **`steering_effect_shared_baseline_check.csv`** — per model, both
+  conditions' zero-shot recall (identical by construction, since the
+  verbalized condition's baseline is forced onto the free-text one),
+  each condition's steering delta and its significance, and whether the
+  free-text-vs-verbalized direction flip holds
+  (`ab_flip_survives_shared_baseline`).
 - **`flip_counts_comparison.csv`** — per model: total flips and flip
   direction (toward "hate" vs. "not hate") under each condition.
 - **`flip_magnitude_comparison.csv`** — per model: mean flip rate and rank
@@ -971,7 +914,7 @@ outputs directly, writing to `data_analysis/hs_detection_comparison/`:
   pooled mean delta-recall by Schwartz value / Moral Foundation, side by
   side. **`{pvq,mft}_category_comparison_excl_apertus.csv`** —
   the same, recomputed over the other 5 models only, since Apertus's
-  extreme baseline shift otherwise dominates the pooled mean.
+  steering effect is large enough to dominate the pooled mean on its own.
 - **`within_model_rank_comparison_{pvq,mft}.csv`** /
   **`within_model_rank_correlation_{pvq,mft}.csv`** — a fairer,
   baseline-shift-invariant alternative to the pooled-mean comparisons
@@ -996,7 +939,7 @@ outputs directly, writing to `data_analysis/hs_detection_comparison/`:
   the same items drive the effect under both steering methods?
 - **`instance_flip_counts_comparison.csv`** / **`instance_flip_rate_correlation.csv`** —
   per message (pooled across all 6 models), flip count/rate/direction
-  relative to each condition's own zero-shot baseline, side by side, plus
+  relative to the shared zero-shot baseline, side by side, plus
   an overall Pearson/Spearman correlation of `flip_rate` across all 500
   messages between conditions — are the *same* messages unstable under
   both steering methods?
@@ -1036,238 +979,171 @@ outputs directly, writing to `data_analysis/hs_detection_comparison/`:
 Rerun with:
 
 ```bash
-python run_hs_detection_verbalized_analysis.py
-python run_hs_detection_comparison.py
 python run_hs_detection_verbalized_shared_baseline_analysis.py
 python run_hs_detection_comparison_shared_baseline.py
 ```
 
 **Result: steering method changes more than magnitude — it flips
-direction for half the models, and the two conditions barely agree on
+direction for 2 of 6 models, and the two conditions barely agree on
 *which items* matter.**
 
-| model | Δrecall (free-text) | Δrecall (verbalized) | same direction? |
+| model | Δrecall (free-text) | Δrecall (verbalized, shared baseline) | same direction? |
 |---|---|---|---|
-| Apertus | −0.003 (n.s.) | **+0.173** (p=4e-14) | **No** |
-| Olmo | **−0.096** (p=1e-5) | **+0.053** (p=3e-13) | **No** |
-| Qwen | **+0.051** (p=3e-12) | **−0.057** (p=3e-12) | **No** |
-| Falcon | +0.071 | +0.200 | Yes (bigger) |
-| Llama | +0.040 | +0.108 | Yes (bigger) |
-| Ministral | +0.090 | +0.042 | Yes (smaller) |
+| Apertus | −0.003 (n.s.) | **−0.419** (p=4e-14) | n/a — free-text is null, not a direction to match |
+| Olmo | **−0.096** (p=1e-5) | **+0.109** (p=4e-14) | **No** |
+| Qwen | **+0.051** (p=3e-12) | **−0.113** (p=4e-14) | **No** |
+| Falcon | +0.071 | +0.152 | Yes (bigger) |
+| Llama | +0.040 | +0.028 | Yes (smaller) |
+| Ministral | +0.090 | +0.054 | Yes (smaller) |
 
-Half the models (Apertus, Olmo, Qwen) don't just change magnitude, they
-flip sign. Apertus's flip (no effect → one of the largest positive
-effects) is the one to discount, given its 59-point zero-shot swing from
-prompt wording alone (see confound note above) — its baseline was so
-depressed under the verbalized file's prompt that almost any steering
-would look like a large improvement. **Olmo and Qwen are the clean
-cases**: their zero-shot recall barely moves from wording alone (+0.056,
-−0.056) — far smaller than their steering deltas — so their flips are not
-explained by the same artifact. Olmo goes from significantly *hurt*
-(−0.096) to significantly *helped* (+0.053); Qwen goes from significantly
-*helped* (+0.051) to significantly *hurt* (−0.057). Verbalized steering also looks stronger on average for Falcon (2.8x
-larger) and Llama (2.7x larger) — but the shared-baseline check below
-shows Llama's apparent gain is mostly a baseline-shift artifact (own
-verbalized delta +0.108 shrinks to +0.028 once the baseline is held
-fixed), while Falcon's holds up (+0.200 shrinks only to +0.152). So "a
-short, unhedged declarative statement is a more direct steering signal
-than a long, hedged free-text paragraph" is supported for Falcon, not
-demonstrated for Llama, and Ministral is an outright counterexample
-(smaller under verbalized) — this isn't a universal pattern.
+**Olmo and Qwen are the clean sign-flip cases**, confirmed under the
+shared baseline: Olmo goes from significantly *hurt* (−0.096) to
+significantly *helped* (+0.109); Qwen goes from significantly *helped*
+(+0.051) to significantly *hurt* (−0.113). **Apertus is a different kind
+of case, not really a "flip" at all**: it has no real free-text effect to
+flip away from (n.s.), but a large, significant *negative* verbalized
+effect (−0.419) — the largest magnitude of any model-condition pair in
+this analysis. Falcon, Llama, and Ministral keep their free-text
+direction under verbalized steering too, though the "which elicitation
+method produces a bigger effect" ordering is not consistent across them
+(bigger for Falcon, smaller for Llama and Ministral) — so there's no
+simple universal rule like "verbalized steering is always stronger."
 
 **Item-level agreement between the two conditions is weak to absent**
 (`item_level_correlation_between_conditions.csv`): Pearson r ranges from
 −0.03 to 0.25 across all 6 models, and only Falcon's is even nominally
-significant (r=0.25, p=0.03, and that wouldn't survive correction for 6
-tests). So which *specific* item drives a model's recall shift is
-essentially uncorrelated between free-text and verbalized steering, even
-within the same model — the two steering mechanisms appear to operate
-through different pathways, not just different-strength versions of the
-same one.
+significant (r=0.25, p=0.030 uncorrected — this would not survive
+BH correction across 6 models). So which *specific* item drives a
+model's recall shift is essentially uncorrelated between free-text and
+verbalized steering, even within the same model — the two steering
+mechanisms appear to operate through different pathways, not just
+different-strength versions of the same one.
 
-**Correction to an earlier version of this finding, and why: pooling
-models' absolute mean deltas is the wrong lens for a fair cross-condition
-comparison, and using it led to an overstated "the exception disappears"
-claim.** Under free-text steering, Universalism and Benevolence were the
-only PVQ values with a net *negative* pooled-mean effect, and MFT's
-care/purity were behind the other four foundations. Pooling all 6 models'
-*absolute* deltas under verbalized steering, every PVQ value and every
-MFT foundation looks positive — but models differ hugely in their overall
-effect *level* under verbalized steering (Apertus/Falcon average roughly
-+0.15 to +0.30 across all foundations, Qwen averages roughly −0.06 to
-−0.14), so averaging absolute deltas across models with such different
-levels can hide a category's *relative* standing within each model. Two
-checks fix this:
-
-1. **The shared-baseline check (above) shows the "every category is
-   positive" appearance is itself partly a confound artifact**: with the
-   free-text zero-shot as a common baseline, the all-6-model pooled
-   Universalism delta is actually still *negative* (−0.028, not +0.090)
-   — it only turns positive (+0.051) once Apertus, whose extreme
-   baseline-shift dominates any pooled mean it's in, is also excluded.
-2. **Ranking each category *within* each model — not pooling absolute
-   levels — is invariant to any per-model baseline shift by construction**
-   (a constant added to all of one model's categories doesn't change
-   their relative order), so it needs no baseline correction at all and
-   is a more honest test of whether the *relative* pattern itself
-   changes. `within_model_category_rank` does this: for each model, rank
-   its 6 MFT foundations (or 10 PVQ values) from weakest (rank 1) to
-   strongest lever, then compare that ranking's stability across
-   conditions with `compare_within_model_rank`
-   (`within_model_rank_correlation_{mft,pvq}.csv`).
+**Category-level pattern: under the shared baseline, every single MFT
+foundation and every PVQ value has a negative pooled mean delta under
+verbalized steering, in contrast to free-text steering's mostly-positive
+pattern** (`mft_category_comparison.csv`, `pvq_category_comparison.csv`).
+This pooled-mean comparison is dominated by Apertus's large negative
+effect, so it is re-run excluding Apertus
+(`{mft,pvq}_category_comparison_excl_apertus.csv`): with Apertus removed,
+every MFT foundation stays positive under both conditions, and 5/6 are
+actually *larger* under verbalized (only proportionality shrinks) — so
+Apertus alone was responsible for MFT's category-level pattern looking
+uniformly negative under verbalized steering above. PVQ is more mixed:
+Universalism and Benevolence flip from negative under free-text to
+positive under verbalized once Apertus is excluded, the other 8 values
+stay positive under both conditions, split roughly evenly between larger
+(Hedonism, Self-Direction, Tradition, Conformity) and smaller
+(Stimulation, Achievement, Security, Power) under verbalized — no single
+directional rule holds for PVQ. As with the free-text-only analysis, a
+pooled mean across models with very different overall effect levels can
+hide a category's *relative* standing within each model — the
+within-model rank comparison below is the fairer test.
 
 **Result: MFT's care/purity pattern is highly stable across elicitation
-methods; PVQ's Universalism/Benevolence pattern is not.** The two
-conditions' mean within-model rank per foundation correlates at
-Spearman ρ=0.93 (p=0.008) for MFT — **purity is every model's rank-1 or
-rank-2 weakest foundation in both free-text and verbalized steering**
-(mean rank 1.5/6, expected by chance 3.5), care close behind (mean rank
-2.1-2.3/6) — this specific relative pattern does *not* depend on
-elicitation method, contrary to what the pooled-absolute-mean comparison
-suggested. (Neither individually reaches BH-corrected significance in the
-one-sample rank test, p_fdr≈0.09-0.19 — the familiar n=6-models power
-ceiling — but the cross-condition rank *correlation* itself is a properly
-powered, independent test, and it's the one that matters for "does this
-pattern replicate.") **PVQ tells the opposite story**: the rank
-correlation is ρ=0.22 (p=0.53, not significant) — Benevolence's rank
-jumps from 1.7/10 (very weak) under free-text to 4.25/10 (unremarkable)
-under verbalized, Universalism from 3.0 to 7.7 (now relatively *strong*),
-while Power and Conformity — unremarkable under free-text (rank
-6.8, 3.8) — become the *weakest* under verbalized (rank 2.1, 2.5). So for
-PVQ, the earlier "exception disappears" characterization holds up: the
-relative pattern genuinely reshuffles, not just its absolute level. For
-MFT, it does not — care/purity's status as relatively weak levers is a
-property of the foundations themselves, stable across how the belief is
-elicited, and the free-text-vs-verbalized difference is specifically in
-each model's *overall* effect level (which the shared-baseline model-wise
-check above already covers), not in which foundation is weakest for it.
+methods; PVQ's Universalism/Benevolence pattern is not.** Ranking each
+model's 6 MFT foundations (or 10 PVQ values) from weakest (rank 1) to
+strongest lever and correlating that ranking between conditions
+(`within_model_rank_correlation_{mft,pvq}.csv`): for MFT, Spearman
+ρ=0.928 (p=0.008) — **purity and care remain relatively weak levers for
+most models under both free-text and verbalized steering**, i.e. this
+specific relative pattern does not depend on elicitation method. **PVQ
+tells the opposite story**: the rank correlation is ρ=0.224 (p=0.533, not
+significant) — which category is a model's weakest PVQ lever reshuffles
+between elicitation methods, so the free-text finding that
+Universalism/Benevolence are relatively weak levers does not generalize
+to verbalized steering.
 
-**Olmo's Universalism spike is specific to free-text elicitation, at the
-raw-flip level too.** Under free-text steering, Olmo's Universalism items
-caused 992 flips (mean flip rate 33%) — 3x its next-highest category and
-the single largest (model, value) cell across the entire study. Under
-verbalized steering that collapses to 314 flips (rate 10.5%), landing
-Olmo's Universalism back in the same narrow band as its other 9 PVQ
-values (9-13%). Qwen shows no such concentration under either condition
-(flip rate stays in a flat 9-13% band across all 10 values both times) —
-its sign-flipped recall (§ above) comes from a broad shift in flip
-*direction* (76%→33% toward "hate", `flip_counts_comparison.csv`)
-rather than a specific content category, unlike Olmo's.
+**Item-level tier overlap is weak, and only 4 of 76 items are robustly
+high-steerability under both conditions — far fewer than under the
+(confounded) own-baseline comparison, and with no clear category
+pattern.** Cross-tabulating the 76 items' low/mid/high-steerability tier
+between conditions (`item_steerability_tier_agreement.csv`): only
+28.9% land in the same tier (vs. a 33.4% chance baseline — *below*
+chance, though not significantly so: κ=−0.066, p=0.17 combined; MFT alone
+κ=−0.083, p=0.64; PVQ alone κ=−0.052, p=0.25). Only 4 items are
+`high_steerability` under *both* conditions
+(`robust_high_steerability_items.csv`): 2 MFT (`authority`,
+`proportionality`) and 2 PVQ (`Stimulation`, `Tradition`). A one-vs-rest
+Fisher exact test on which foundation/value these items belong to
+(`robust_high_steerability_by_foundation.csv` /
+`robust_high_steerability_by_pvq_value.csv`) finds nothing close to
+significant for any category (all p_fdr ≥ 0.93) — under the
+confound-controlled comparison, there is no item, and no category, that
+is reliably high-steerability regardless of elicitation method.
 
 **Both flip magnitude and flip direction shift significantly for every
 single model between the two steering methods — this is not limited to
 the two "clean" sign-flip cases.** `flip_direction_comparison.csv`'s 2×2
 chi-square test (proportion of flips toward "hate", free-text vs.
 verbalized) is significant for all 6 models even after BH correction
-(largest corrected p ≈ 2e-30, for Llama) — including the three models
-that keep the *same* majority direction under both conditions (Falcon
-98.2%→99.5%, Ministral 97.6%→80.0%, Llama 91.8%→97.2%): the magnitude of
-their directional bias still moves by a statistically real amount, not
-just their headline sign. `flip_magnitude_comparison.csv`'s rank
-comparison shows the volatility ordering is not stable either: Falcon,
-Llama, and Apertus rise sharply in relative flip-proneness under
-verbalized steering (rank shift +3, +4, +2 — becoming the 3 most volatile
-models, up from the middle of the pack), while Olmo and Ministral fall
-just as sharply (−4 each, from 1st/2nd most volatile under free-text to
-5th/6th under verbalized); Qwen is comparatively stable (−1). So the
-"which model is most affected by steering" ranking is itself a property
-of the elicitation method, not a stable trait of the model.
+(smallest effect still p_fdr=2e-39, for Llama). Apertus's proportion of
+flips toward "hate" collapses from 49.5% (free-text) to essentially 0%
+(0.04%) under verbalized steering — consistent with its large negative
+recall shift above. `flip_magnitude_comparison.csv`'s rank comparison
+shows the volatility ordering is not stable either: Apertus jumps from
+5th to 1st most flip-prone model (rank shift +4), Falcon rises two ranks,
+while Ministral and Olmo fall (−3, −2); Llama is unchanged and Qwen shifts
+by only one rank. So "which model is most affected by steering" is
+itself a property of the elicitation method for most models, not a
+stable trait.
 
-**Instance-wise: absolute prediction stability is highly robust across
-steering methods; relative instability is only moderately so.** Pooling
-across all 6 models, a message's raw `proportion_hate` (how often it's
-called "hate" across every context it's ever classified under) correlates
-r=0.96 between the free-text and verbalized conditions (`instance_proportion_hate_correlation.csv`)
-— essentially the same messages are confidently "hate", confidently "not
-hate", or genuinely ambiguous regardless of which steering method
-produced the predictions. `flip_rate` (relative to each condition's own
-zero-shot baseline) correlates more modestly, r=0.53
-(`instance_flip_rate_correlation.csv`) — real and highly significant, but
-with real exceptions: some messages swing from near-stable to highly
-unstable between conditions (e.g. id 113: flip rate 0.007 → 0.33; id 183:
-0.48 → 0.13, an instability *reversal*). So a message's absolute
-"how does an ensemble of models see this" signal is a robust, largely
-steering-method-independent property, while "how much does steering
-perturb this specific message relative to zero-shot" is more
-method-sensitive — consistent with the per-model recall/flip findings
-above, where absolute prediction tendencies proved more stable than
-steering-induced shifts.
+**Instance-wise: absolute prediction stability is fairly robust across
+steering methods; relative instability less so.** Pooling across all 6
+models, a message's raw `proportion_hate` (how often it's called "hate"
+across every context it's ever classified under) correlates r=0.96
+between the free-text and verbalized conditions
+(`instance_proportion_hate_correlation.csv`) — largely the same messages
+are confidently "hate", confidently "not hate", or genuinely ambiguous
+regardless of which steering method produced the predictions.
+`flip_rate` (relative to the shared zero-shot baseline) correlates more
+modestly, r=0.63 (`instance_flip_rate_correlation.csv`) — real and highly
+significant, but with real exceptions: a message's absolute "how does an
+ensemble of models see this" signal is more robust to steering method
+than "how much does steering perturb this specific message," consistent
+with the per-model recall/flip findings above.
 
 **Coarse no/mild/strong-flip tiers agree above chance but far from
 perfectly — "fair" agreement, not "good."** Binning `flip_rate` into
 three tiers (`no_flip` = 0, `mild_flip` ≤ 0.15, `strong_flip` > 0.15,
-independently under each condition — free-text splits 45/297/158,
-verbalized 87/204/209) and cross-tabulating: 286/500 messages (57.2%)
-land in the same tier under both conditions, against a chance baseline of
-39.0% implied by the marginals (Cohen's κ=0.30 — "fair" by the
-conventional Landis-Koch bands, not "good"/"substantial"); the
-association is highly significant (χ²=176.8, p=4e-37) but the moderate
-κ confirms the r=0.53 flip-rate correlation above: real structure, with
-plenty of individual exceptions. Stability is asymmetric and directional
-between tiers:
+independently under each condition — free-text splits 45/297/158) and
+cross-tabulating: 291/500 messages (58.2%) land in the same tier under
+both conditions, against a chance baseline of 35.8% implied by the
+marginals (Cohen's κ=0.35 — "fair" by the conventional Landis-Koch bands,
+not "good"/"substantial"); the association is highly significant
+(χ²=205.5, p=2e-43). Stability is asymmetric between tiers
+(`flip_rate_tier_stability.csv`):
 
-| free-text tier (n) | % staying same tier under verbalized | % moving up | % moving down |
-|---|---|---|---|
-| no_flip (45) | 77.8% | 22.2% (11.1% mild, 11.1% strong) | — |
-| mild_flip (297) | 49.2% | 33.3% (to strong) | 17.5% (to no_flip) |
-| strong_flip (158) | 66.5% | — | 33.5% (to mild), **0% to no_flip** |
+| free-text tier (n) | % staying same tier under verbalized |
+|---|---|
+| no_flip (45) | 77.8% |
+| mild_flip (297) | 40.4% |
+| strong_flip (158) | 86.1% |
 
-`mild_flip` is the least stable tier (a coin-flip whether a message
-stays mild) and splits roughly evenly toward both neighbors, while
-`no_flip` and `strong_flip` are the "sticky" ends — and critically,
-**no message that strongly flips under free-text steering becomes
-completely stable under verbalized steering** (0/158), consistent with
-verbalized steering's higher overall flip rate (mean 13.4% vs. 11.0%):
-instability doesn't fully reverse, it mostly just changes magnitude.
+`mild_flip` is by far the least stable tier (well under half stay mild),
+while `no_flip` and especially `strong_flip` are "sticky" — messages that
+already flip a lot under free-text steering are very likely to still
+flip a lot under verbalized steering, even though *which* items drive
+that flipping (the item-level correlation above) is not consistent
+between the two methods.
 
-**Item-level tier overlap is weaker than the message-level one, and only
-14 of 76 items are robustly high-steerability under both conditions — but
-those 14 skew toward `equality`.** Cross-tabulating the 76 items'
-low/mid/high-steerability tier (test 7) between conditions
-(`item_steerability_tier_agreement.csv`): only 50% land in the same tier
-(vs. a 33.4% chance baseline, κ=0.25 — weaker agreement than the
-message-level κ=0.30, and MFT alone is stronger than PVQ alone: κ=0.375,
-p=0.017 vs. κ=0.136, p=0.50 not even significant on its own). Only 14
-items are `high_steerability` under *both* conditions
-(`robust_high_steerability_items.csv`) — 8 MFT (4 of them `equality`, 2
-`loyalty`, 1 each `proportionality`/`purity`) and 6 PVQ (2 `Universalism`,
-2 `Stimulation`, 1 each `Hedonism`/`Tradition`; notably **no
-`Benevolence` item** makes this robust-high list at all, despite being
-part of the earlier Universalism/Benevolence pairing). A one-vs-rest
-Fisher exact test on which foundation/value these 14 items belong to
-(`robust_high_steerability_by_foundation.csv` /
-`robust_high_steerability_by_pvq_value.csv`) shows `equality` is the
-strongest candidate (4/6 of its items are robust-high, p=0.014
-uncorrected) but **does not survive BH correction** (p_fdr=0.086) — so
-"equality items tend to be robustly steerable" is a real, visible pattern
-in this data, but not a confirmed one at this sample size. No individual
-PVQ value comes close (`Stimulation` is closest: 2/3 items, p_fdr=0.54).
-So: there is no single item, and no fully confirmed category, that is
-"always" high-steerability regardless of elicitation method — the
-closest thing is `equality`'s 4-of-6 items, a suggestive but
-not-statistically-confirmed pattern given only 6 items per foundation.
-
-**Between-model disagreement is not spread evenly across messages — it
-concentrates almost entirely on the messages that are steerable at all,
-and this survives controlling for the mechanical mean-variance ceiling.**
-`steerability_vs_model_divergence.csv`: a message's overall steerability
-(`mean_flip_rate`, averaged over its 6 models' own flip rates) correlates
-with the variance *between* those 6 models' flip rates at r=0.93
-(free-text) / r=0.92 (verbalized), both p≈0. Because flip rates are
-bounded in [0, 1], variance is mechanically forced toward 0 as the mean
-approaches 0 or 1 (max possible variance for 6 values given mean m is
-m(1-m)·6/5) — so part of this could just be "messages nobody flips can't
-show model disagreement by definition." Controlling for that by dividing
-observed variance by this ceiling (`dispersion_ratio`: what fraction of
-the *possible* disagreement, given the mean, is actually realized), the
-correlation survives, weaker but still large and highly significant:
-r=0.82 (free-text) / r=0.72 (verbalized), p<1e-65 both times. So it's not
-just that steerable messages have more room for models to disagree —
-models actually use a larger share of that room specifically on the
-messages that are more steerable to begin with. Stable messages aren't
-just individually stable; they're where the 6 models agree with each
-other, and steerable messages are disproportionately where the models
-diverge from each other.
+**Between-model disagreement concentrates on the messages that are
+steerable at all, and this survives controlling for the mechanical
+mean-variance ceiling.** `steerability_vs_model_divergence.csv`: a
+message's overall steerability (`mean_flip_rate`, averaged over its 6
+models' own flip rates) correlates with the variance *between* those 6
+models' flip rates at r=0.93 (free-text) / r=0.91 (verbalized, shared
+baseline), both p≈0. Because flip rates are bounded in [0, 1], variance
+is mechanically forced toward 0 as the mean approaches 0 or 1 (max
+possible variance for 6 values given mean m is m(1-m)·6/5) — so part of
+this could just be "messages nobody flips can't show model disagreement
+by definition." Controlling for that by dividing observed variance by
+this ceiling (`dispersion_ratio`), the correlation survives, weaker but
+still large and highly significant: r=0.82 (free-text) / r=0.69
+(verbalized, shared baseline), p<1e-58 both times. So it's not just that
+steerable messages have more room for models to disagree — models
+actually use a large share of that room specifically on the messages
+that are more steerable to begin with, under both steering methods.
 
 ## Data quality notes
 
